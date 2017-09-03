@@ -44,6 +44,8 @@ private:
 	GLFWwindow *window;
 	VkInstance instance;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+	VkDevice device;
+	VkQueue graphicsQueue;
 
 	void initWindow(const char *windowName)
 	{
@@ -56,6 +58,7 @@ private:
 	{
 		createInstance(APP_NAME, ENGINE_NAME);
 		pickPhysicalDevice();
+		createLogicalDevice();
 	}
 	void mainLoop()
 	{
@@ -65,6 +68,7 @@ private:
 	}
 	void cleanup()
 	{
+		vkDestroyDevice(device, nullptr);
 		vkDestroyInstance(instance, nullptr);
 		glfwDestroyWindow(window);
 		glfwTerminate();
@@ -163,11 +167,45 @@ private:
 		}
 		delete[] devices;
 	}
+	void createLogicalDevice()
+	{
+		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+
+		VkDeviceQueueCreateInfo queueCreateInfo = {};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.pNext = NULL;
+		queueCreateInfo.flags = 0;
+		queueCreateInfo.queueFamilyIndex = indices.graphicsFamily;
+		queueCreateInfo.queueCount = 1;
+		float queuePriority = 1.0f;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+
+		VkPhysicalDeviceFeatures deviceFeatures = {};
+
+		VkDeviceCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+		createInfo.pNext = NULL;
+		createInfo.flags = 0;
+		createInfo.queueCreateInfoCount = 1;
+		createInfo.pQueueCreateInfos = &queueCreateInfo;
+		createInfo.enabledLayerCount = 0;
+		createInfo.ppEnabledLayerNames = NULL;
+		createInfo.enabledExtensionCount = 0;
+		createInfo.ppEnabledExtensionNames = NULL;
+		createInfo.pEnabledFeatures = &deviceFeatures;
+
+		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
+		{
+			std::cout << "Failed to create logical device!" << std::endl;
+			exit(1);
+		}
+		
+		vkGetDeviceQueue(device, indices.graphicsFamily, 0, &graphicsQueue);
+	}
 	void printDeviceStats(VkPhysicalDevice device)
 	{
 		VkPhysicalDeviceProperties deviceProperties;
 		vkGetPhysicalDeviceProperties(device, &deviceProperties);
-		
 		std::cout << "\t" << "Device Properties:" << std::endl;
 		std::cout << "\t\t" << "Api Version:" << "\t" << deviceProperties.apiVersion << std::endl;
 		std::cout << "\t\t" << "Device ID:" << "\t" << deviceProperties.deviceID << std::endl;
@@ -228,12 +266,9 @@ private:
 	}
 	bool isDeviceSuitable(VkPhysicalDevice device)
 	{
-		VkPhysicalDeviceProperties deviceProperties;
-		VkPhysicalDeviceFeatures deviceFeatures;
-		vkGetPhysicalDeviceProperties(device, &deviceProperties);
-		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+		QueueFamilyIndices indices = findQueueFamilies(device);
 
-		return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader;
+		return indices.isComplete();
 	}
 };
 

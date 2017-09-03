@@ -22,14 +22,6 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
 
-struct QueueFamilyIndices {
-	int graphicsFamily = -1;
-
-	bool isComplete() {
-		return graphicsFamily >= 0;
-	}
-};
-
 class TriangleApp
 {
 public:
@@ -43,9 +35,10 @@ public:
 private:
 	GLFWwindow *window;
 	VkInstance instance;
+	VkSurfaceKHR surface;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device;
-	VkQueue graphicsQueue;
+	VkQueue queue;
 
 	void initWindow(const char *windowName)
 	{
@@ -56,7 +49,8 @@ private:
 	}
 	void initVulkan()
 	{
-		createInstance(APP_NAME, ENGINE_NAME);
+		createInstance();
+		createSurface();
 		pickPhysicalDevice();
 		createLogicalDevice();
 	}
@@ -69,11 +63,12 @@ private:
 	void cleanup()
 	{
 		vkDestroyDevice(device, nullptr);
+		vkDestroySurfaceKHR(instance, surface, nullptr);
 		vkDestroyInstance(instance, nullptr);
 		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
-	void createInstance(const char *appName, const char *engineName)
+	void createInstance()
 	{
 		uint32_t layerCount;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -97,9 +92,9 @@ private:
 		VkApplicationInfo appInfo = {};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pNext = NULL;
-		appInfo.pApplicationName = appName;
+		appInfo.pApplicationName = APP_NAME;
 		appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 0);
-		appInfo.pEngineName = engineName;
+		appInfo.pEngineName = ENGINE_NAME;
 		appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 0);
 		appInfo.apiVersion = VK_API_VERSION_1_0;
 
@@ -137,6 +132,13 @@ private:
 		delete[] extensions;
 		delete[] availableLayers;
 	}
+	void createSurface()
+	{
+		if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
+		{
+			std::cout << "Failed to create window surface!" << std::endl;
+		}
+	}
 	void pickPhysicalDevice()
 	{
 		uint32_t deviceCount = 0;
@@ -169,13 +171,13 @@ private:
 	}
 	void createLogicalDevice()
 	{
-		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+		int indices = findQueueFamilies(physicalDevice);
 
 		VkDeviceQueueCreateInfo queueCreateInfo = {};
 		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		queueCreateInfo.pNext = NULL;
 		queueCreateInfo.flags = 0;
-		queueCreateInfo.queueFamilyIndex = indices.graphicsFamily;
+		queueCreateInfo.queueFamilyIndex = indices;
 		queueCreateInfo.queueCount = 1;
 		float queuePriority = 1.0f;
 		queueCreateInfo.pQueuePriorities = &queuePriority;
@@ -200,7 +202,7 @@ private:
 			exit(1);
 		}
 		
-		vkGetDeviceQueue(device, indices.graphicsFamily, 0, &graphicsQueue);
+		vkGetDeviceQueue(device, indices, 0, &queue);
 	}
 	void printDeviceStats(VkPhysicalDevice device)
 	{
@@ -243,9 +245,9 @@ private:
 		}
 		delete[] queueFamilies;
 	}
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
+	int findQueueFamilies(VkPhysicalDevice device)
 	{
-		QueueFamilyIndices indices;
+		int indices = -1;
 
 		uint32_t queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -254,11 +256,14 @@ private:
 
 		for (unsigned int i = 0; i < queueFamilyCount; i++)
 		{
-			if (queueFamilies[i].queueCount > 0 && queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+			if (queueFamilies[i].queueCount > 0 && queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT && presentSupport)
 			{
-				indices.graphicsFamily = i;
+				indices = i;
 			}
-			if (indices.isComplete()) break;
+
+			if (indices >= 0) break;
 		}
 
 		delete[] queueFamilies;
@@ -266,9 +271,9 @@ private:
 	}
 	bool isDeviceSuitable(VkPhysicalDevice device)
 	{
-		QueueFamilyIndices indices = findQueueFamilies(device);
+		int indices = findQueueFamilies(device);
 
-		return indices.isComplete();
+		return indices >= 0;
 	}
 };
 

@@ -23,9 +23,18 @@ private:
 	PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
 	PFN_vkEnumerateInstanceLayerProperties vkEnumerateInstanceLayerProperties;
 	PFN_vkEnumerateInstanceExtensionProperties vkEnumerateInstanceExtensionProperties;
+	PFN_vkCreateInstance vkCreateInstance;
+	VkInstance instance;
 
 	void loadVulkanLibrary()
 	{
+		#define VK_GLOBAL_LEVEL_FUNCTION( fun )														\
+			fun = (PFN_##fun)vkGetInstanceProcAddr( nullptr, #fun );								\
+			if (fun == nullptr)																		\
+			{																						\
+			  std::cout << "Could not load global level function: " << #fun << "!" << std::endl;	\
+			  exit(1);																				\
+			}
 		vulkanLibrary = LoadLibrary("vulkan-1.dll");
 		if (vulkanLibrary == nullptr)
 		{
@@ -35,21 +44,12 @@ private:
 		vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress(vulkanLibrary, "vkGetInstanceProcAddr");
 		if (vkGetInstanceProcAddr == nullptr)
 		{
-			std::cout << "Could not get vkGetInstanceProcAddr" << std::endl;
+			std::cout << "Could not load vkGetInstanceProcAddr" << std::endl;
 			exit(1);
 		}
-		vkEnumerateInstanceLayerProperties = (PFN_vkEnumerateInstanceLayerProperties)vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceLayerProperties");
-		if (vkEnumerateInstanceLayerProperties == nullptr)
-		{
-			std::cout << "Could not get vkEnumerateInstanceLayerProperties" << std::endl;
-			exit(1);
-		}
-		vkEnumerateInstanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceExtensionProperties");
-		if (vkEnumerateInstanceExtensionProperties == nullptr)
-		{
-			std::cout << "Could not get vkEnumerateInstanceExtensionProperties" << std::endl;
-			exit(1);
-		}
+		VK_GLOBAL_LEVEL_FUNCTION(vkEnumerateInstanceLayerProperties);
+		VK_GLOBAL_LEVEL_FUNCTION(vkEnumerateInstanceExtensionProperties);
+		VK_GLOBAL_LEVEL_FUNCTION(vkCreateInstance);
 	}
 
 	void initVulkan()
@@ -75,8 +75,36 @@ private:
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions);
 		std::cout << "\n" << "Available extensions:" << std::endl;
 		for (uint32_t i = 0; i < extensionCount; i++) {
-			std::cout << "\t" << extensions[i].extensionName << std::endl;
+			std::cout << "\t#" << i << "\t" << extensions[i].extensionName << std::endl;
 		}
+
+		VkApplicationInfo appInfo = {};
+		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+		appInfo.pNext = NULL;
+		appInfo.pApplicationName = "";
+		appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 0);
+		appInfo.pEngineName = "";
+		appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 0);
+		appInfo.apiVersion = VK_API_VERSION_1_0;
+
+		VkInstanceCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		createInfo.pNext = NULL;
+		createInfo.flags = 0;
+		createInfo.pApplicationInfo = &appInfo;
+		createInfo.enabledLayerCount = 0;
+		createInfo.ppEnabledLayerNames = nullptr;
+		createInfo.enabledExtensionCount = 0;
+		createInfo.ppEnabledExtensionNames = nullptr;
+
+		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+		{
+			std::cout << "Failed to create instance!" << std::endl;
+			exit(1);
+		}
+
+		delete[] extensions;
+		delete[] availableLayers;
 	}
 };
 

@@ -15,6 +15,8 @@ const int WIDTH = 800;
 const int HEIGHT = 800;
 const unsigned int validationLayerCount = 1;
 const char *validationLayers[] = { "VK_LAYER_LUNARG_standard_validation" };
+const unsigned int deviceExtensionCount = 1;
+const char *deviceExtensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -84,7 +86,7 @@ private:
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 		VkExtensionProperties *extensions = new VkExtensionProperties[extensionCount];
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions);
-		std::cout << "\n" << "Available extensions:" << std::endl;
+		std::cout << "\n" << "Available instance extensions:" << std::endl;
 		for (uint32_t i = 0; i < extensionCount; i++) {
 			std::cout << "\t#" << i << "\t" << extensions[i].extensionName << std::endl;
 		}
@@ -192,8 +194,8 @@ private:
 		createInfo.pQueueCreateInfos = &queueCreateInfo;
 		createInfo.enabledLayerCount = 0;
 		createInfo.ppEnabledLayerNames = NULL;
-		createInfo.enabledExtensionCount = 0;
-		createInfo.ppEnabledExtensionNames = NULL;
+		createInfo.enabledExtensionCount = deviceExtensionCount;
+		createInfo.ppEnabledExtensionNames = deviceExtensions;
 		createInfo.pEnabledFeatures = &deviceFeatures;
 
 		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
@@ -206,6 +208,15 @@ private:
 	}
 	void printDeviceStats(VkPhysicalDevice device)
 	{
+		uint32_t extensionCount;
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+		VkExtensionProperties *extensions = new VkExtensionProperties[extensionCount];
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, extensions);
+		std::cout << "\t" << "Available device extensions:" << std::endl;
+		for (uint32_t i = 0; i < extensionCount; i++) {
+			std::cout << "\t\t#" << i << "\t" << extensions[i].extensionName << std::endl;
+		}
+
 		VkPhysicalDeviceProperties deviceProperties;
 		vkGetPhysicalDeviceProperties(device, &deviceProperties);
 		std::cout << "\t" << "Device Properties:" << std::endl;
@@ -269,11 +280,32 @@ private:
 		delete[] queueFamilies;
 		return indices;
 	}
+	bool checkDeviceExtensionSupport(VkPhysicalDevice device)
+	{
+		bool extensionsSupported = false;
+
+		uint32_t extensionCount;
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+		VkExtensionProperties *availableExtensions = new VkExtensionProperties[extensionCount];
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions);
+
+		for (uint32_t i = 0; i < extensionCount; i++)
+		{
+			if (std::strcmp(availableExtensions[i].extensionName, deviceExtensions[0]) == 0)
+			{
+				extensionsSupported = true;
+				break;
+			}
+		}
+
+		return extensionsSupported;
+	}
 	bool isDeviceSuitable(VkPhysicalDevice device)
 	{
 		int indices = findQueueFamilies(device);
+		bool extensionsSupported = checkDeviceExtensionSupport(device);
 
-		return indices >= 0;
+		return indices >= 0 && extensionsSupported;
 	}
 };
 

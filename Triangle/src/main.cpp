@@ -24,6 +24,15 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
 
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR capabilities;
+	uint32_t formatCount;
+	VkSurfaceFormatKHR *formats;
+	uint32_t presentModeCount;
+	VkPresentModeKHR *presentModes;
+};
+
 class TriangleApp
 {
 public:
@@ -220,19 +229,19 @@ private:
 		VkPhysicalDeviceProperties deviceProperties;
 		vkGetPhysicalDeviceProperties(device, &deviceProperties);
 		std::cout << "\t" << "Device Properties:" << std::endl;
-		std::cout << "\t\t" << "Api Version:" << "\t" << deviceProperties.apiVersion << std::endl;
-		std::cout << "\t\t" << "Device ID:" << "\t" << deviceProperties.deviceID << std::endl;
-		std::cout << "\t\t" << "Device Name:" << "\t" << deviceProperties.deviceName << std::endl;
-		std::cout << "\t\t" << "Device Type:" << "\t" << deviceProperties.deviceType << std::endl;
-		std::cout << "\t\t" << "Driver Version:" << "\t" << deviceProperties.driverVersion << std::endl;
-		std::cout << "\t\t" << "Vendor ID:" << "\t" << deviceProperties.vendorID << std::endl;
+		std::cout << "\t\t" << "Api Version:    " << deviceProperties.apiVersion << std::endl;
+		std::cout << "\t\t" << "Device ID:      " << deviceProperties.deviceID << std::endl;
+		std::cout << "\t\t" << "Device Name:    " << deviceProperties.deviceName << std::endl;
+		std::cout << "\t\t" << "Device Type:    " << deviceProperties.deviceType << std::endl;
+		std::cout << "\t\t" << "Driver Version: " << deviceProperties.driverVersion << std::endl;
+		std::cout << "\t\t" << "Vendor ID:      " << deviceProperties.vendorID << std::endl;
 
 		VkPhysicalDeviceFeatures deviceFeatures;
 		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 		std::cout << "\t" << "Device Featers:" << std::endl;
-		std::cout << "\t\t" << "Tessellation Shader:" << "\t" << deviceFeatures.tessellationShader << std::endl;
-		std::cout << "\t\t" << "Geometry Shader:" << "\t" << deviceFeatures.geometryShader << std::endl;
-		std::cout << "\t\t" << "fullDrawIndexUint32:" << "\t" << deviceFeatures.fullDrawIndexUint32 << std::endl;
+		std::cout << "\t\t" << "Tessellation Shader: " << deviceFeatures.tessellationShader << std::endl;
+		std::cout << "\t\t" << "Geometry Shader:     " << deviceFeatures.geometryShader << std::endl;
+		std::cout << "\t\t" << "fullDrawIndexUint32: " << deviceFeatures.fullDrawIndexUint32 << std::endl;
 
 		uint32_t queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -243,17 +252,32 @@ private:
 		for (uint32_t i = 0; i < queueFamilyCount; i++)
 		{
 			std::cout << "\t\t" << "Queue Family (#" << i <<"):" << std::endl;
-			std::cout << "\t\t\t" << "VK_QUEUE_GRAPHICS_BIT:" << "\t\t" << ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) << std::endl;
-			std::cout << "\t\t\t" << "VK_QUEUE_COMPUTE_BIT:" << "\t\t" << ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) != 0) << std::endl;
-			std::cout << "\t\t\t" << "VK_QUEUE_TRANSFER_BIT:" << "\t\t" << ((queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT) != 0) << std::endl;
-			std::cout << "\t\t\t" << "VK_QUEUE_SPARSE_BINDING_BIT:" << "\t" << ((queueFamilies[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) != 0) << std::endl;
-			std::cout << "\t\t\t" << "Queue Count:" << "\t\t\t" << queueFamilies[i].queueCount << std::endl;
-			std::cout << "\t\t\t" << "Timestamp Valid Bits:" << "\t\t" << queueFamilies[i].timestampValidBits << std::endl;
+			std::cout << "\t\t\t" << "VK_QUEUE_GRAPHICS_BIT:           " << ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) << std::endl;
+			std::cout << "\t\t\t" << "VK_QUEUE_COMPUTE_BIT:            " << ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) != 0) << std::endl;
+			std::cout << "\t\t\t" << "VK_QUEUE_TRANSFER_BIT:           " << ((queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT) != 0) << std::endl;
+			std::cout << "\t\t\t" << "VK_QUEUE_SPARSE_BINDING_BIT:     " << ((queueFamilies[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) != 0) << std::endl;
+			std::cout << "\t\t\t" << "Queue Count:                     " << queueFamilies[i].queueCount << std::endl;
+			std::cout << "\t\t\t" << "Timestamp Valid Bits:            " << queueFamilies[i].timestampValidBits << std::endl;
 			uint32_t width = queueFamilies[i].minImageTransferGranularity.width;
 			uint32_t height = queueFamilies[i].minImageTransferGranularity.height;
 			uint32_t depth = queueFamilies[i].minImageTransferGranularity.depth;
-			std::cout << "\t\t\t" << "Min Image Timestamp Granularity:" << width << ", " << height << ", " << depth << std::endl;
+			std::cout << "\t\t\t" << "Min Image Timestamp Granularity: " << width << ", " << height << ", " << depth << std::endl;
 		}
+
+		VkSurfaceCapabilitiesKHR capabilities;
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &capabilities);
+		std::cout << "\t" << "Surface capabilities:" << std::endl;
+		std::cout << "\t\t" << "minImageCount:           " << capabilities.minImageCount << std::endl;
+		std::cout << "\t\t" << "maxImageCount:           " << capabilities.maxImageCount << std::endl;
+		std::cout << "\t\t" << "currentExtent:           " << capabilities.currentExtent.width << "," << capabilities.currentExtent.height << std::endl;
+		std::cout << "\t\t" << "minImageExtent:          " << capabilities.minImageExtent.width << "," << capabilities.minImageExtent.height << std::endl;
+		std::cout << "\t\t" << "maxImageExtent:          " << capabilities.maxImageExtent.width << "," << capabilities.maxImageExtent.height << std::endl;
+		std::cout << "\t\t" << "maxImageArrayLayers:     " << capabilities.maxImageArrayLayers << std::endl;
+		std::cout << "\t\t" << "supportedTransforms:     " << capabilities.supportedTransforms << std::endl;
+		std::cout << "\t\t" << "currentTransform:        " << capabilities.currentTransform << std::endl;
+		std::cout << "\t\t" << "supportedCompositeAlpha: " << capabilities.supportedCompositeAlpha << std::endl;
+		std::cout << "\t\t" << "supportedUsageFlags:     " << capabilities.supportedUsageFlags << std::endl;
+
 		delete[] queueFamilies;
 	}
 	int findQueueFamilies(VkPhysicalDevice device)
@@ -297,15 +321,38 @@ private:
 				break;
 			}
 		}
-
+		delete[] availableExtensions;
 		return extensionsSupported;
+	}
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device)
+	{
+		SwapChainSupportDetails details;
+
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &details.formatCount, nullptr);
+		details.formats = new VkSurfaceFormatKHR[details.formatCount];
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &details.formatCount, details.formats);
+
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &details.presentModeCount, nullptr);
+		details.presentModes = new VkPresentModeKHR[details.presentModeCount];
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &details.presentModeCount, details.presentModes);
+
+		return details;
 	}
 	bool isDeviceSuitable(VkPhysicalDevice device)
 	{
 		int indices = findQueueFamilies(device);
 		bool extensionsSupported = checkDeviceExtensionSupport(device);
+		bool swapChainAdequate = false;
 
-		return indices >= 0 && extensionsSupported;
+		if (extensionsSupported)
+		{
+			SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+			swapChainAdequate = swapChainSupport.formatCount && swapChainSupport.presentModeCount;
+		}
+
+		return indices >= 0 && extensionsSupported && swapChainAdequate;
 	}
 };
 

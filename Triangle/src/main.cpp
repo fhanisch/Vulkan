@@ -278,6 +278,30 @@ private:
 		std::cout << "\t\t" << "supportedCompositeAlpha: " << capabilities.supportedCompositeAlpha << std::endl;
 		std::cout << "\t\t" << "supportedUsageFlags:     " << capabilities.supportedUsageFlags << std::endl;
 
+		uint32_t formatCount;
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+		VkSurfaceFormatKHR *formats = new VkSurfaceFormatKHR[formatCount];
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, formats);
+		std::cout << "\t" << "Supported formats:" << std::endl;
+		for (uint32_t i = 0; i < formatCount; i++)
+		{
+			std::cout << "\t\t" << "Format #" << i << ":" << std::endl;
+			std::cout << "\t\t\t" << "format:     " << formats[i].format << std::endl;
+			std::cout << "\t\t\t" << "colorSpace: " << formats[i].colorSpace << std::endl;
+		}
+
+		uint32_t presentModeCount;
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+		VkPresentModeKHR *presentModes = new VkPresentModeKHR[presentModeCount];
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, presentModes);
+		std::cout << "\t" << "Supported presentation modes:" << std::endl;
+		for (uint32_t i = 0; i < presentModeCount; i++)
+		{
+			std::cout << "\t\t" << "Present mode #" << i << ": " << presentModes[i] << std::endl;
+		}
+
+		delete[] presentModes;
+		delete[] formats;
 		delete[] queueFamilies;
 	}
 	int findQueueFamilies(VkPhysicalDevice device)
@@ -353,6 +377,28 @@ private:
 		}
 
 		return indices >= 0 && extensionsSupported && swapChainAdequate;
+	}
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(uint32_t formatCount, VkSurfaceFormatKHR *availableFormats)
+	{
+		if (formatCount == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED)
+		{
+			return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+		}
+		for (uint32_t i = 0; i < formatCount; i++)
+		{
+			if (availableFormats[i].format == VK_FORMAT_B8G8R8A8_UNORM && availableFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+				return availableFormats[i];
+		}
+		return availableFormats[0];
+	}
+	VkPresentModeKHR chooseSwapPresentMode(uint32_t presentModeCount, VkPresentModeKHR availablePresentModes)
+	{
+		for (uint32_t i = 0; i < presentModeCount; i++)
+		{
+
+		}
+
+		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 };
 

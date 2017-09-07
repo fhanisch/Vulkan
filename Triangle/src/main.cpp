@@ -7,6 +7,7 @@
 #include <GLFW\glfw3.h>
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 const char WINDOW_NAME[] = "Hello Vulkan Triangle";
 const char APP_NAME[] = "Triangle";
@@ -50,6 +51,7 @@ private:
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device;
 	VkQueue queue;
+	VkSwapchainKHR swapChain;
 
 	void initWindow(const char *windowName)
 	{
@@ -64,6 +66,7 @@ private:
 		createSurface();
 		pickPhysicalDevice();
 		createLogicalDevice();
+		createSwapChain();
 	}
 	void mainLoop()
 	{
@@ -73,6 +76,7 @@ private:
 	}
 	void cleanup()
 	{
+		vkDestroySwapchainKHR(device, swapChain, nullptr);
 		vkDestroyDevice(device, nullptr);
 		vkDestroySurfaceKHR(instance, surface, nullptr);
 		vkDestroyInstance(instance, nullptr);
@@ -214,6 +218,44 @@ private:
 		}
 		
 		vkGetDeviceQueue(device, indices, 0, &queue);
+	}
+	void createSwapChain()
+	{
+		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+
+		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formatCount, swapChainSupport.formats);
+		VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModeCount, swapChainSupport.presentModes);
+		VkExtent2D extent = chooseSwapExtent(&swapChainSupport.capabilities);
+
+		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+		if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
+			imageCount = swapChainSupport.capabilities.maxImageCount;
+
+		VkSwapchainCreateInfoKHR createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+		createInfo.pNext = nullptr;
+		createInfo.flags = 0;
+		createInfo.surface = surface;
+		createInfo.minImageCount = imageCount;
+		createInfo.imageFormat = surfaceFormat.format;
+		createInfo.imageColorSpace = surfaceFormat.colorSpace;
+		createInfo.imageExtent = extent;
+		createInfo.imageArrayLayers = 1;
+		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		createInfo.queueFamilyIndexCount = 0;
+		createInfo.pQueueFamilyIndices = nullptr;
+		createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+		createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		createInfo.presentMode = presentMode;
+		createInfo.clipped = VK_TRUE;
+		createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+		if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
+		{
+			std::cout << "Failed to create swap chain!" << std::endl;
+			exit(1);
+		}
 	}
 	void printDeviceStats(VkPhysicalDevice device)
 	{
@@ -391,14 +433,32 @@ private:
 		}
 		return availableFormats[0];
 	}
-	VkPresentModeKHR chooseSwapPresentMode(uint32_t presentModeCount, VkPresentModeKHR availablePresentModes)
+	VkPresentModeKHR chooseSwapPresentMode(uint32_t presentModeCount, VkPresentModeKHR *availablePresentModes)
 	{
+		VkPresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
+
 		for (uint32_t i = 0; i < presentModeCount; i++)
 		{
-
+			if (availablePresentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
+				return availablePresentModes[i];
+			else if (availablePresentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)
+				bestMode = availablePresentModes[i];
 		}
 
-		return VK_PRESENT_MODE_FIFO_KHR;
+		return bestMode;
+	}
+	VkExtent2D chooseSwapExtent(VkSurfaceCapabilitiesKHR *capabilities)
+	{
+		if (capabilities->currentExtent.width != std::numeric_limits<uint32_t>::max())
+			return capabilities->currentExtent;
+		else
+		{
+			VkExtent2D actualExtent = { WIDTH, HEIGHT };
+			actualExtent.width = std::max(capabilities->minImageExtent.width, std::min(capabilities->maxImageExtent.width, actualExtent.width));
+			actualExtent.height = std::max(capabilities->minImageExtent.height, std::min(capabilities->maxImageExtent.height, actualExtent.height));
+
+			return actualExtent;
+		}
 	}
 };
 

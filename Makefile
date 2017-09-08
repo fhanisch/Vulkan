@@ -10,7 +10,7 @@ LIBS = vulkan-1.lib glfw3.lib user32.lib gdi32.lib shell32.lib
 App:
 	cl /nologo /EHsc /I$(INC_VULKAN) /Fo$(BuildPath)\ $(SrcPath)\main.cpp /link /out:$(BuildPath)\app.exe
 
-TriangleApp:
+T1:
 	cl /nologo /EHsc /MD /I$(INC_VULKAN) /I$(INC_GLFW) /Fo$(BuildPath)\ $(SrcPathTriangle)\main.cpp /link $(LIBS) /LIBPATH:$(LIB_VULKAN) /LIBPATH:$(LIB_GLFW) /out:$(BuildPath)\Triangle.exe
 
 clean:

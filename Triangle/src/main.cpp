@@ -52,6 +52,11 @@ private:
 	VkDevice device;
 	VkQueue queue;
 	VkSwapchainKHR swapChain;
+	uint32_t swapChainImagesCount;
+	VkImage *swapChainImages;
+	VkFormat swapChainImageFormat;
+	VkExtent2D swapChainExtent;
+	VkImageView *swapChainImageViews;
 
 	void initWindow(const char *windowName)
 	{
@@ -67,6 +72,7 @@ private:
 		pickPhysicalDevice();
 		createLogicalDevice();
 		createSwapChain();
+		createImageViews();
 	}
 	void mainLoop()
 	{
@@ -76,6 +82,7 @@ private:
 	}
 	void cleanup()
 	{
+		for (uint32_t i = 0; i < swapChainImagesCount; i++) vkDestroyImageView(device, swapChainImageViews[i], nullptr);
 		vkDestroySwapchainKHR(device, swapChain, nullptr);
 		vkDestroyDevice(device, nullptr);
 		vkDestroySurfaceKHR(instance, surface, nullptr);
@@ -256,6 +263,43 @@ private:
 			std::cout << "Failed to create swap chain!" << std::endl;
 			exit(1);
 		}
+		vkGetSwapchainImagesKHR(device, swapChain, &swapChainImagesCount, nullptr);
+		swapChainImages = new VkImage[swapChainImagesCount];
+		vkGetSwapchainImagesKHR(device, swapChain, &swapChainImagesCount, swapChainImages);
+
+		swapChainImageFormat = surfaceFormat.format;
+		swapChainExtent = extent;
+	}
+	void createImageViews()
+	{
+		swapChainImageViews = new VkImageView[swapChainImagesCount];
+
+		for (uint32_t i = 0; i < swapChainImagesCount; i++)
+		{
+			VkImageViewCreateInfo createInfo = {};
+			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			createInfo.pNext = nullptr;
+			createInfo.flags = 0;
+			createInfo.image = swapChainImages[i];
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			createInfo.format = swapChainImageFormat;
+			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+			createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			createInfo.subresourceRange.baseMipLevel = 0;
+			createInfo.subresourceRange.levelCount = 1;
+			createInfo.subresourceRange.baseArrayLayer = 0;
+			createInfo.subresourceRange.layerCount = 1;
+
+			if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
+			{
+				std::cout << "Failed to create image views!" << std::endl;
+				exit(1);
+			}
+		}
+		std::cout << "\n" << swapChainImagesCount << " image views created." << std::endl;
 	}
 	void printDeviceStats(VkPhysicalDevice device)
 	{

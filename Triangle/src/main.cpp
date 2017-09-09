@@ -2,6 +2,7 @@
 	Erstellt: 27.08.2017
 */
 
+#define _CRT_SECURE_NO_WARNINGS
 #define GLFW_INCLUDE_VULKAN
 
 #include <GLFW\glfw3.h>
@@ -24,6 +25,12 @@ const bool enableValidationLayers = false;
 #else
 const bool enableValidationLayers = true;
 #endif
+
+struct ShaderCode
+{
+	uint32_t filesize;
+	char *data;
+};
 
 struct SwapChainSupportDetails
 {
@@ -214,7 +221,7 @@ private:
 		createInfo.queueCreateInfoCount = 1;
 		createInfo.pQueueCreateInfos = &queueCreateInfo;
 		createInfo.enabledLayerCount = 0;
-		createInfo.ppEnabledLayerNames = NULL;
+		createInfo.ppEnabledLayerNames = NULL; // evtl. auch hier den validationLayer eintragen
 		createInfo.enabledExtensionCount = deviceExtensionCount;
 		createInfo.ppEnabledExtensionNames = deviceExtensions;
 		createInfo.pEnabledFeatures = &deviceFeatures;
@@ -304,7 +311,34 @@ private:
 	}
 	void createGraphicsPipeline()
 	{
+		ShaderCode vertShaderCode = loadShader("vs.spv");
+		ShaderCode fragShaderCode = loadShader("fs.spv");
 
+		VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+		VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
+		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertShaderStageInfo.pNext = nullptr;
+		vertShaderStageInfo.flags = 0;
+		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.module = vertShaderModule;
+		vertShaderStageInfo.pName = "main";
+		vertShaderStageInfo.pSpecializationInfo = nullptr;
+
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.pNext = nullptr;
+		fragShaderStageInfo.flags = 0;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.module = fragShaderModule;
+		fragShaderStageInfo.pName = "main";
+		fragShaderStageInfo.pSpecializationInfo = nullptr;
+
+		VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo,fragShaderStageInfo };
+
+		vkDestroyShaderModule(device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	}
 	void printDeviceStats(VkPhysicalDevice device)
 	{
@@ -508,6 +542,40 @@ private:
 
 			return actualExtent;
 		}
+	}
+	ShaderCode loadShader(char *fileName)
+	{
+		ShaderCode code;
+
+		FILE *file = fopen(fileName, "rb"); // ***** !!! Sehr Wichtig: hier muss das b bei "rb" übergeben werden !!! b steht für binäre Datei *****
+
+		fseek(file, 0, SEEK_END);
+		code.filesize = ftell(file);
+		rewind(file);
+		code.data = (char*)malloc(code.filesize);
+		fread(code.data, 1, code.filesize, file);
+		printf("\n%s geladen. Filesize: %d\n", fileName, code.filesize);
+		fclose(file);
+
+		return code;
+	}
+	VkShaderModule createShaderModule(ShaderCode code)
+	{
+		VkShaderModuleCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		createInfo.pNext = nullptr;
+		createInfo.flags = 0;
+		createInfo.codeSize = code.filesize;
+		createInfo.pCode = (uint32_t*)code.data; // ! alignment Anforderungen von uint32_t beachten !
+
+		VkShaderModule shaderModule;
+		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+		{
+			std::cout << "Failed to create shader module!" << std::endl;
+			exit(1);
+		}
+
+		return shaderModule;
 	}
 };
 

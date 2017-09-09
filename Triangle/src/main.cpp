@@ -73,6 +73,7 @@ private:
 		createLogicalDevice();
 		createSwapChain();
 		createImageViews();
+		createGraphicsPipeline();
 	}
 	void mainLoop()
 	{
@@ -300,6 +301,10 @@ private:
 			}
 		}
 		std::cout << "\n" << swapChainImagesCount << " image views created." << std::endl;
+	}
+	void createGraphicsPipeline()
+	{
+
 	}
 	void printDeviceStats(VkPhysicalDevice device)
 	{

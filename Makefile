@@ -10,8 +10,16 @@ LIBS = vulkan-1.lib glfw3.lib user32.lib gdi32.lib shell32.lib
 App:
 	cl /nologo /EHsc /I$(INC_VULKAN) /Fo$(BuildPath)\ $(SrcPath)\main.cpp /link /out:$(BuildPath)\app.exe
 
-T1:
+T1: build
 	cl /nologo /EHsc /MD /I$(INC_VULKAN) /I$(INC_GLFW) /Fo$(BuildPath)\ $(SrcPathTriangle)\main.cpp /link $(LIBS) /LIBPATH:$(LIB_VULKAN) /LIBPATH:$(LIB_GLFW) /out:$(BuildPath)\Triangle.exe
 
+Shader: build
+	glslangValidator -V Triangle\shader\shader.vert -o build\vs.spv
+	glslangValidator -V Triangle\shader\shader.frag -o build\fs.spv
+	copy build\*.spv x64\Debug
+
+build:
+	mkdir build
+
 clean:
-	del build\*.exe build\*.obj
+	del build\*.exe build\*.obj build\*.spv

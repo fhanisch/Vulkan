@@ -9,12 +9,13 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <time.h>
 
 const char WINDOW_NAME[] = "Hello Vulkan Triangle";
 const char APP_NAME[] = "Triangle";
 const char ENGINE_NAME[] = "MyVulkanEngine";
-const int WIDTH = 800;
-const int HEIGHT = 800;
+const int WIDTH = 1800;
+const int HEIGHT = 1800;
 const unsigned int validationLayerCount = 1;
 const char *validationLayers[] = { "VK_LAYER_LUNARG_standard_validation" };
 const unsigned int deviceExtensionCount = 1;
@@ -68,6 +69,10 @@ private:
 	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
+	VkCommandPool commandPool;
+	VkCommandBuffer *commandBuffers;
+	VkSemaphore imageAvailableSemaphore;
+	VkSemaphore renderFinishedSemaphore;
 
 	void initWindow(const char *windowName)
 	{
@@ -87,15 +92,37 @@ private:
 		createRenderPass();
 		createGraphicsPipeline();
 		createFramebuffers();
+		createCommandPool();
+		createCommandBuffers();
+		createSemaphores();
 	}
 	void mainLoop()
 	{
-		while (!glfwWindowShouldClose(window)) {
+		clock_t start_t, delta_t;
+		uint32_t framecount = 0;
+
+		start_t = clock(); //FPS
+		while (!glfwWindowShouldClose(window))
+		{
+			delta_t = clock() - start_t;
+			if (delta_t >= CLOCKS_PER_SEC)
+			{
+				printf("FPS = %u\n", framecount);
+				start_t = clock();
+				framecount = 0;
+			}
 			glfwPollEvents();
+			drawFrame();
+			framecount++;
 		}
+
+		vkDeviceWaitIdle(device);
 	}
 	void cleanup()
 	{
+		vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+		vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+		vkDestroyCommandPool(device, commandPool, nullptr);
 		for (uint32_t i = 0; i < swapChainImagesCount; i++) vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
 		vkDestroyPipeline(device, graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
@@ -342,14 +369,25 @@ private:
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &colorAttachmentRef;
 
+		VkSubpassDependency dependency = {};
+		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependency.dstSubpass = 0;
+		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.srcAccessMask = 0;
+		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 		VkRenderPassCreateInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassInfo.attachmentCount = 1;
 		renderPassInfo.pAttachments = &colorAttachment;
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
+		renderPassInfo.dependencyCount = 1;
+		renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+		if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+		{
 			std::cout << "Failed to create render pass!" << std::endl;
 			exit(1);
 		}
@@ -501,7 +539,8 @@ private:
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 		pipelineInfo.basePipelineIndex = -1; // Optional
 
-		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
+		{
 			std::cout << "failed to create graphics pipeline!" << std::endl;
 			exit(1);
 		}
@@ -527,11 +566,126 @@ private:
 			framebufferInfo.height = swapChainExtent.height;
 			framebufferInfo.layers = 1;
 
-			if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+			if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS)
+			{
 				std::cout << "failed to create framebuffer!" << std::endl;
 				exit(1);
 			}
 		}
+	}
+	void createCommandPool()
+	{
+		int queueFamilyIndex = findQueueFamilies(physicalDevice);
+
+		VkCommandPoolCreateInfo poolInfo = {};
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.flags = 0; // Optional
+		poolInfo.queueFamilyIndex = queueFamilyIndex;
+
+		if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
+		{
+			std::cout << "failed to create command pool!" << std::endl;
+			exit(1);
+		}
+	}
+	void createCommandBuffers()
+	{
+		commandBuffers = new VkCommandBuffer[swapChainImagesCount];
+
+		VkCommandBufferAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = commandPool;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = swapChainImagesCount;
+
+		if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers) != VK_SUCCESS)
+		{
+			std::cout << "failed to allocate command buffers!" << std::endl;
+			exit(1);
+		}
+
+		for (uint32_t i = 0; i < swapChainImagesCount; i++)
+		{
+			VkCommandBufferBeginInfo beginInfo = {};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+			beginInfo.pInheritanceInfo = nullptr; // Optional
+
+			vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
+				
+				VkRenderPassBeginInfo renderPassInfo = {};
+				renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+				renderPassInfo.renderPass = renderPass;
+				renderPassInfo.framebuffer = swapChainFramebuffers[i];
+				renderPassInfo.renderArea.offset = { 0, 0 };
+				renderPassInfo.renderArea.extent = swapChainExtent;
+				VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+				renderPassInfo.clearValueCount = 1;
+				renderPassInfo.pClearValues = &clearColor;
+
+				vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+				
+					vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+					vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+				
+				vkCmdEndRenderPass(commandBuffers[i]);
+
+			if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS)
+			{
+				std::cout << "failed to record command buffer!" << std::endl;
+				exit(1);
+			}
+		}
+	}
+	void createSemaphores()
+	{
+		VkSemaphoreCreateInfo semaphoreInfo = {};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
+			vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS)
+		{
+
+			std::cout << "failed to create semaphores!" << std::endl;
+			exit(1);
+		}
+	}
+	void drawFrame()
+	{
+		uint32_t imageIndex;
+		vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+		VkSubmitInfo submitInfo = {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
+		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = waitSemaphores;
+		submitInfo.pWaitDstStageMask = waitStages;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+		VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = signalSemaphores;
+
+		if (vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+		{
+			std::cout << "failed to submit draw command buffer!" << std::endl;
+			exit(1);
+		}
+
+		VkPresentInfoKHR presentInfo = {};
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = signalSemaphores;
+		VkSwapchainKHR swapChains[] = { swapChain };
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = swapChains;
+		presentInfo.pImageIndices = &imageIndex;
+
+		vkQueuePresentKHR(queue, &presentInfo);
+
+		vkQueueWaitIdle(queue); // Synchronisation der App mit der GPU (nicht notwendig)
 	}
 	void printDeviceStats(VkPhysicalDevice device)
 	{
@@ -704,7 +858,8 @@ private:
 		}
 		for (uint32_t i = 0; i < formatCount; i++)
 		{
-			if (availableFormats[i].format == VK_FORMAT_B8G8R8A8_UNORM && availableFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+			if (availableFormats[i].format == VK_FORMAT_B8G8R8A8_UNORM &&
+				availableFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 				return availableFormats[i];
 		}
 		return availableFormats[0];

@@ -69,7 +69,6 @@ const Vertex vertices[] = {
 	{ { -0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f } }
 };
 
-
 struct ShaderCode
 {
 	uint32_t filesize;
@@ -674,6 +673,11 @@ private:
 			memcpy(data, vertices, bufferInfo.size);
 		vkUnmapMemory(device, vertexBufferMemory);
 
+		std::cout << "\n" << "Amount of vertices: " << sizeof(vertices) / sizeof(Vertex) << std::endl;
+
+		// Test: Vertex veränderbar, da der Buffer-Memory in den CPU-Memory gemappt wird.
+		//float *f = (float*)data;
+		//f[1] = -1.0f;
 	}
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 	{
@@ -729,7 +733,7 @@ private:
 					vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 					VkDeviceSize offsets[] = { 0 };
 					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &vertexBuffer, offsets);
-					vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+					vkCmdDraw(commandBuffers[i], sizeof(vertices) / sizeof(Vertex), 1, 0, 0);
 				
 				vkCmdEndRenderPass(commandBuffers[i]);
 

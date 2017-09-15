@@ -1,4 +1,6 @@
 /*
+	Hello Triangle
+
 	Erstellt: 27.08.2017
 */
 
@@ -251,6 +253,7 @@ private:
 		if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
 		{
 			std::cout << "Failed to create window surface!" << std::endl;
+			exit(1);
 		}
 	}
 	void pickPhysicalDevice()

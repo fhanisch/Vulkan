@@ -10,6 +10,7 @@
 
 #include <Windows.h>
 #include <vulkan\vulkan.h>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <algorithm>
@@ -17,9 +18,6 @@
 
 #undef min
 #undef max
-
-typedef float vec2[2];
-typedef float vec3[3];
 
 static boolean	key[256];
 const char WINDOW_NAME[] = "2D Action";
@@ -167,6 +165,11 @@ private:
 		RegisterClass(&wc);
 		window = CreateWindow(wc.lpszClassName, windowName, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
 			0, 0, WIDTH, HEIGHT, NULL, NULL, hInstance, NULL);
+		RECT rcClient, rcWindow;
+		GetClientRect(window, &rcClient);
+		GetWindowRect(window, &rcWindow);
+		MoveWindow(window, rcWindow.left, rcWindow.top, WIDTH + (rcWindow.right - rcWindow.left) - rcClient.right,
+			HEIGHT + (rcWindow.bottom - rcWindow.top) - rcClient.bottom, FALSE);
 	}
 	void initVulkan()
 	{
@@ -242,8 +245,7 @@ private:
 		vkDestroyDevice(device, nullptr);
 		vkDestroySurfaceKHR(instance, surface, nullptr);
 		vkDestroyInstance(instance, nullptr);
-		//glfwDestroyWindow(window);
-		//glfwTerminate();
+		DestroyWindow(window);
 	}
 	void createInstance()
 	{
@@ -1111,6 +1113,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	std::cout << "=====================================" << std::endl;
 
 	app.run();
+
+	mat4 I;
+	identity4(I);
+	printMatrix4(I, "Einheitsmatrix:");
 
 	return 0;
 }

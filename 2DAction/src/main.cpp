@@ -166,16 +166,7 @@ private:
 		wc.cbWndExtra = 0;
 		RegisterClass(&wc);
 		window = CreateWindow(wc.lpszClassName, windowName, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
-		RECT rcClient, rcWindow;
-		GetClientRect(window, &rcClient);
-		GetWindowRect(window, &rcWindow);
-		MoveWindow(window,
-			rcWindow.left,
-			rcWindow.top,
-			WIDTH + (rcWindow.right - rcWindow.left) - rcClient.right,
-			HEIGHT + (rcWindow.bottom - rcWindow.top) - rcClient.bottom,
-			FALSE);
+			0, 0, WIDTH, HEIGHT, NULL, NULL, hInstance, NULL);
 	}
 	void initVulkan()
 	{

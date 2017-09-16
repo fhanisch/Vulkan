@@ -6,6 +6,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 #define VK_USE_PLATFORM_WIN32_KHR
+#define NOCONSOLE
 
 #include <Windows.h>
 #include <vulkan\vulkan.h>
@@ -22,7 +23,7 @@ typedef float vec3[3];
 
 static boolean	key[256];
 const char WINDOW_NAME[] = "2D Action";
-const char APP_NAME[] = "Triangle";
+const char APP_NAME[] = "2D Action";
 const char ENGINE_NAME[] = "MyVulkanEngine";
 const int WIDTH = 1800;
 const int HEIGHT = 1800;
@@ -147,6 +148,8 @@ private:
 
 	void initWindow(const char *windowName)
 	{
+		//SetProcessDpiAwarenessContext((DPI_AWARENESS_CONTEXT)DPI_AWARENESS_SYSTEM_AWARE);
+
 		hInstance = GetModuleHandle(nullptr);
 
 		WNDCLASS wc;
@@ -1105,12 +1108,15 @@ private:
 	}
 };
 
-
+#ifndef NOCONSOLE
 int main(int argc, char *argv[])
+#else
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+#endif
 {
 	App2DAction app;
 
-	std::cout << "***** Hello Vulkan Triangle !!! *****" << std::endl;
+	std::cout << "***** 2D Action !!! *****" << std::endl;
 	std::cout << "=====================================" << std::endl;
 
 	app.run();

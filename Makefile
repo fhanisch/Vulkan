@@ -1,6 +1,7 @@
 BuildPath = build
 SrcPath = BaseTemplate\src
 SrcPathTriangle = Triangle\src
+SrcPath2DAction = 2DAction\src
 INC_VULKAN = C:\VulkanSDK\1.0.57.0\Include
 LIB_VULKAN = C:\VulkanSDK\1.0.57.0\Lib
 INC_GLFW = C:\Home\Entwicklung\glfw-3.2.1.bin.WIN64\include
@@ -13,6 +14,11 @@ App:
 T1: build
 	cl /nologo /W3 /EHsc /MD /I$(INC_VULKAN) /I$(INC_GLFW) /Fo$(BuildPath)\ $(SrcPathTriangle)\main.cpp \
 		/link $(LIBS) /LIBPATH:$(LIB_VULKAN) /LIBPATH:$(LIB_GLFW) /out:$(BuildPath)\Triangle.exe
+	del build\*.obj
+
+T2: build
+	cl /nologo /W3 /EHsc /I$(INC_VULKAN) /Fo$(BuildPath)\ $(SrcPath2DAction)\main.cpp \
+		/link vulkan-1.lib user32.lib /LIBPATH:$(LIB_VULKAN) /out:$(BuildPath)\2DAction.exe
 	del build\*.obj
 
 Shader: build

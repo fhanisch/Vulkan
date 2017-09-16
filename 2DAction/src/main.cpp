@@ -6,9 +6,10 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 #define VK_USE_PLATFORM_WIN32_KHR
-//#define NOCONSOLE
+#define NOCONSOLE
 
 #include <Windows.h>
+#include <ShellScalingApi.h> // notwendig für high dpi scaling
 #include <vulkan\vulkan.h>
 #include <matrix.h>
 #include <iostream>
@@ -149,8 +150,8 @@ private:
 
 	void initWindow(const char *windowName)
 	{
-		//SetProcessDpiAwarenessContext((DPI_AWARENESS_CONTEXT)DPI_AWARENESS_SYSTEM_AWARE);
-
+		SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE); // notwendig für high dpi scaling
+		
 		hInstance = GetModuleHandle(nullptr);
 
 		WNDCLASS wc;

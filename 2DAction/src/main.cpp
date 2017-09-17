@@ -850,7 +850,6 @@ private:
 	}
 	void createUniformBuffer()
 	{
-		//VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 		VkDeviceSize bufferSize = 0x200;
 		createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,

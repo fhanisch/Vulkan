@@ -53,6 +53,7 @@ struct Vertex
 {
 	vec2 pos;
 	vec3 color;
+	vec2 texCoords;
 	
 	static VkVertexInputBindingDescription getBindingDescription()
 	{
@@ -66,7 +67,7 @@ struct Vertex
 
 	static VkVertexInputAttributeDescription *getAttributeDescriptions()
 	{
-		VkVertexInputAttributeDescription *attributeDescriptions = new VkVertexInputAttributeDescription[2];
+		VkVertexInputAttributeDescription *attributeDescriptions = new VkVertexInputAttributeDescription[3];
 
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -78,6 +79,11 @@ struct Vertex
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[1].offset = offsetof(Vertex, color);
 
+		attributeDescriptions[2].binding = 0;
+		attributeDescriptions[2].location = 2;
+		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[2].offset = offsetof(Vertex, texCoords);
+
 		return attributeDescriptions;
 	}
 };
@@ -88,10 +94,10 @@ struct UniformBufferObject
 };
 
 const Vertex vertices[] = {
-	{ { -0.5f, -0.5f },{ 1.0f, 0.0f, 0.0f } },
-	{ { 0.5f, -0.5f },{ 0.0f, 1.0f, 0.0f } },
-	{ { 0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f } },
-	{ { -0.5f, 0.5f },{ 1.0f, 1.0f, 1.0f } }
+	{ { -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, { -1.0f, -1.0f } },
+	{ {  1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }, {  1.0f, -1.0f } },
+	{ {  1.0f,  1.0f }, { 0.0f, 0.0f, 1.0f }, {  1.0f,  1.0f } },
+	{ { -1.0f,  1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f,  1.0f } }
 };
 
 const uint16_t indices[] = { 0, 1, 2, 2, 3, 0 };
@@ -128,9 +134,34 @@ LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
+class RenderObject
+{
+public:
+	char *vertexShaderFileName;
+	char *fragmentShaderFileName;
+	VkPipelineLayout pipelineLayout;
+	VkPipeline graphicsPipeline;
+	VkDescriptorSet descriptorSet;
+	UniformBufferObject ubo;
+	VkDeviceSize uboOffset;
+
+	RenderObject(char *vertName, char *fragName, VkDeviceSize _uboOffset)
+	{
+		vertexShaderFileName = vertName;
+		fragmentShaderFileName = fragName;
+		uboOffset = _uboOffset;
+		identity4(ubo.mModel);
+	}
+};
+
 class App2DAction
 {
 public:
+	App2DAction(RenderObject *obj0, RenderObject *obj1)
+	{
+		renderObject[0] = obj0;
+		renderObject[1] = obj1;
+	}
 	void run()
 	{
 		initWindow(WINDOW_NAME);
@@ -155,16 +186,15 @@ private:
 	VkFramebuffer *swapChainFramebuffers;
 	VkRenderPass renderPass;
 	VkDescriptorSetLayout descriptorSetLayout;
-	VkPipelineLayout pipelineLayout;
-	VkPipeline graphicsPipeline;
 	VkCommandPool commandPool;
 	VkBuffer vertexBuffer, indexBuffer, uniformBuffer;
 	VkDeviceMemory vertexBufferMemory, indexBufferMemory, uniformBufferMemory;
 	VkDescriptorPool descriptorPool;
-	VkDescriptorSet descriptorSet;
 	VkCommandBuffer *commandBuffers;
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
+
+	RenderObject *renderObject[2];
 
 	void initWindow(const char *windowName)
 	{
@@ -203,14 +233,16 @@ private:
 		createImageViews();
 		createRenderPass();
 		createDescriptorSetLayout();
-		createGraphicsPipeline();
+		createGraphicsPipeline(renderObject[0]);
+		createGraphicsPipeline(renderObject[1]);
 		createFramebuffers();
 		createCommandPool();
 		createVertexBuffer();
 		createIndexBuffer();
 		createUniformBuffer();
 		createDescriptorPool();
-		createDescriptorSet();
+		createDescriptorSet(renderObject[0]);
+		createDescriptorSet(renderObject[1]);
 		createCommandBuffers();
 		createSemaphores();
 	}
@@ -263,8 +295,11 @@ private:
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
 			vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
 		vkFreeCommandBuffers(device, commandPool, swapChainImagesCount, commandBuffers);
-		vkDestroyPipeline(device, graphicsPipeline, nullptr);
-		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+		for (uint32_t i = 0; i < 2; i++)
+		{
+			vkDestroyPipeline(device, renderObject[i]->graphicsPipeline, nullptr);
+			vkDestroyPipelineLayout(device, renderObject[i]->pipelineLayout, nullptr);
+		}
 		vkDestroyRenderPass(device, renderPass, nullptr);
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
 			vkDestroyImageView(device, swapChainImageViews[i], nullptr);
@@ -568,10 +603,10 @@ private:
 			exit(1);
 		}
 	}
-	void createGraphicsPipeline()
+	void createGraphicsPipeline(RenderObject *obj)
 	{
-		ShaderCode vertShaderCode = loadShader("2d.spv");
-		ShaderCode fragShaderCode = loadShader("fs.spv");
+		ShaderCode vertShaderCode = loadShader(obj->vertexShaderFileName);
+		ShaderCode fragShaderCode = loadShader(obj->fragmentShaderFileName);
 
 		VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
 		VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -605,7 +640,7 @@ private:
 		vertexInputInfo.flags = 0;
 		vertexInputInfo.vertexBindingDescriptionCount = 1;
 		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-		vertexInputInfo.vertexAttributeDescriptionCount = 2;
+		vertexInputInfo.vertexAttributeDescriptionCount = 3;
 		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
 
 		VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
@@ -694,7 +729,7 @@ private:
 		pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 		pipelineLayoutInfo.pPushConstantRanges = 0; // Optional
 
-		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &obj->pipelineLayout) != VK_SUCCESS)
 		{
 			PRINT("Failed to create pipeline layout!");
 			exit(1);
@@ -712,13 +747,13 @@ private:
 		pipelineInfo.pDepthStencilState = nullptr; // Optional
 		pipelineInfo.pColorBlendState = &colorBlending;
 		pipelineInfo.pDynamicState = nullptr; // Optional
-		pipelineInfo.layout = pipelineLayout;
+		pipelineInfo.layout = obj->pipelineLayout;
 		pipelineInfo.renderPass = renderPass;
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 		pipelineInfo.basePipelineIndex = -1; // Optional
 
-		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &obj->graphicsPipeline) != VK_SUCCESS)
 		{
 			PRINT("failed to create graphics pipeline!");
 			exit(1);
@@ -815,7 +850,8 @@ private:
 	}
 	void createUniformBuffer()
 	{
-		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+		//VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+		VkDeviceSize bufferSize = 0x200;
 		createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			&uniformBuffer, &uniformBufferMemory);
@@ -824,13 +860,13 @@ private:
 	{
 		VkDescriptorPoolSize poolSize = {};
 		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSize.descriptorCount = 1;
+		poolSize.descriptorCount = 2;
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = 1;
 		poolInfo.pPoolSizes = &poolSize;
-		poolInfo.maxSets = 1;
+		poolInfo.maxSets = 2;
 		
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{
@@ -838,7 +874,7 @@ private:
 			exit(1);
 		}
 	}
-	void createDescriptorSet()
+	void createDescriptorSet(RenderObject *obj)
 	{
 		VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
 		VkDescriptorSetAllocateInfo allocInfo = {};
@@ -847,7 +883,7 @@ private:
 		allocInfo.descriptorSetCount = 1;
 		allocInfo.pSetLayouts = layouts;
 
-		if (vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet) != VK_SUCCESS)
+		if (vkAllocateDescriptorSets(device, &allocInfo, &obj->descriptorSet) != VK_SUCCESS)
 		{
 			PRINT("Failed to allocate descriptor set!");
 			exit(1);
@@ -855,12 +891,12 @@ private:
 
 		VkDescriptorBufferInfo bufferInfo = {};
 		bufferInfo.buffer = uniformBuffer;
-		bufferInfo.offset = 0;
+		bufferInfo.offset = obj->uboOffset;
 		bufferInfo.range = sizeof(UniformBufferObject);
 		
 		VkWriteDescriptorSet descriptorWrite = {};
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = descriptorSet;
+		descriptorWrite.dstSet = obj->descriptorSet;
 		descriptorWrite.dstBinding = 0;
 		descriptorWrite.dstArrayElement = 0;
 		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -988,13 +1024,18 @@ private:
 
 				vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 				
-					vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 					VkDeviceSize offsets[] = { 0 };
 					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &vertexBuffer, offsets);
 					vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-						0, 1, &descriptorSet, 0, nullptr);
-					vkCmdDrawIndexed(commandBuffers[i], sizeof(indices) / sizeof(uint16_t), 1, 0, 0, 0);
+
+					for (uint32_t j = 0; j < 2; j++)
+					{
+						vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+							renderObject[j]->graphicsPipeline);
+						vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+							renderObject[j]->pipelineLayout, 0, 1, &renderObject[j]->descriptorSet, 0, nullptr);
+						vkCmdDrawIndexed(commandBuffers[i], sizeof(indices) / sizeof(uint16_t), 1, 0, 0, 0);
+					}
 				
 				vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -1019,14 +1060,19 @@ private:
 	}
 	void updateUniformBuffer()
 	{
-		UniformBufferObject ubo;
 		static clock_t startTime = clock();
+		VkDeviceSize bufferSize = 0x200;
+		mat4 R, S;
 
-		getRotZ4(ubo.mModel, (float)(clock() - startTime) / CLOCKS_PER_SEC / 2.0f);
+		identity4(S);
+		scale4(S, 0.5f, 0.5f, 1.0f);
+		getRotZ4(R, (float)(clock() - startTime) / CLOCKS_PER_SEC / 2.0f);
+		mult4(renderObject[1]->ubo.mModel, S, R);
 
 		void* data;
-		vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
-		memcpy(data, &ubo, sizeof(ubo));
+		vkMapMemory(device, uniformBufferMemory, 0, bufferSize, 0, &data);
+		memcpy(data, &renderObject[0]->ubo, sizeof(UniformBufferObject));
+		memcpy((char*)data+renderObject[1]->uboOffset, &renderObject[1]->ubo, sizeof(UniformBufferObject));
 		vkUnmapMemory(device, uniformBufferMemory);
 	}
 	void drawFrame()
@@ -1313,7 +1359,9 @@ int main(int argc, char *argv[])
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #endif
 {
-	App2DAction app;
+	RenderObject powerMeter("vs_2d.spv", "fs_powermeter.spv", 0);
+	RenderObject square("vs_2d.spv", "fs_2d.spv", 0x100);
+	App2DAction app(&powerMeter, &square);
 
 	logfile.open("log.txt");
 	PRINT("***** 2D Action !!! *****");

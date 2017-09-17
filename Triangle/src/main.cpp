@@ -444,8 +444,8 @@ private:
 	}
 	void createGraphicsPipeline()
 	{
-		ShaderCode vertShaderCode = loadShader("vs.spv");
-		ShaderCode fragShaderCode = loadShader("fs.spv");
+		ShaderCode vertShaderCode = loadShader("vs_triangle.spv");
+		ShaderCode fragShaderCode = loadShader("fs_triangle.spv");
 
 		VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
 		VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);

@@ -12,7 +12,9 @@ LIB_DEV = C:\Home\Entwicklung\lib
 LIBS_T1 = vulkan-1.lib glfw3.lib user32.lib gdi32.lib shell32.lib
 LIBS_T2 = vulkan-1.lib mathlib.lib user32.lib Shcore.lib
 
-App:
+all: App T1 T2 ML Shader
+
+App: build
 	cl /nologo /EHsc /I$(INC_VULKAN) /Fo$(BuildPath)\ $(SrcPath)\main.cpp /link /out:$(BuildPath)\app.exe
 
 T1: build
@@ -33,13 +35,15 @@ ML: build
 	del build\*.obj
 
 Shader: build
-	glslangValidator -V shader\shader.vert -o build\vs.spv
-	glslangValidator -V shader\2d.vert -o build\2d.spv
-	glslangValidator -V shader\shader.frag -o build\fs.spv
+	glslangValidator -V shader\triangle.vert -o build\vs_triangle.spv
+	glslangValidator -V shader\2d.vert -o build\vs_2d.spv
+	glslangValidator -V shader\triangle.frag -o build\fs_triangle.spv
+	glslangValidator -V shader\2d.frag -o build\fs_2d.spv
+	glslangValidator -V shader\powermeter.frag -o build\fs_powermeter.spv
 	copy build\*.spv x64\Debug
 
 build:
 	mkdir build
 
 clean:
-	del build\*.exe build\*.obj build\*.spv
+	del build\*.exe build\*.obj build\*.spv build\*.lib build\*.txt

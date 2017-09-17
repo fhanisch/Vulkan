@@ -14,11 +14,20 @@
 #include <matrix.h>
 #include <iostream>
 #include <string>
+#include <fstream>
 #include <algorithm>
 #include <time.h>
 
 #undef min
 #undef max
+
+#ifndef NOCONSOLE
+	#define OUTPUT std::cout
+#else
+	#define OUTPUT logfile
+#endif
+
+#define PRINT(msg) OUTPUT << msg << std::endl
 
 static boolean	key[256];
 const char WINDOW_NAME[] = "2D Action";
@@ -32,6 +41,7 @@ const unsigned int globalExtensionCount = 2;
 const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME };
 const unsigned int deviceExtensionCount = 1;
 const char *deviceExtensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+std::ofstream logfile;
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -212,7 +222,6 @@ private:
 		uint32_t framecount = 0;
 
 		ShowWindow(window, SW_SHOW);
-		//UpdateWindow(window);
 
 		start_t = clock(); //FPS
 		while (!quit)
@@ -220,7 +229,9 @@ private:
 			delta_t = clock() - start_t;
 			if (delta_t >= CLOCKS_PER_SEC)
 			{
-				printf("FPS = %u\n", framecount);
+#ifndef NOCONSOLE
+				PRINT("FPS = " << framecount);
+#endif
 				start_t = clock();
 				framecount = 0;
 			}
@@ -284,19 +295,19 @@ private:
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 		VkLayerProperties *availableLayers = new VkLayerProperties[layerCount];
 		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers);
-		std::cout << "\n" << "Available layers:" << std::endl;
+		PRINT("\n" << "Available layers:");
 		for (uint32_t i = 0; i < layerCount; i++)
 		{
-			std::cout << "\t#" << i << "\t" << availableLayers[i].layerName << std::endl;
+			PRINT("\t#" << i << "\t" << availableLayers[i].layerName);
 		}
 
 		uint32_t extensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 		VkExtensionProperties *extensions = new VkExtensionProperties[extensionCount];
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions);
-		std::cout << "\n" << "Available instance extensions:" << std::endl;
+		PRINT("\n" << "Available instance extensions:");
 		for (uint32_t i = 0; i < extensionCount; i++) {
-			std::cout << "\t#" << i << "\t" << extensions[i].extensionName << std::endl;
+			PRINT("\t#" << i << "\t" << extensions[i].extensionName);
 		}
 
 		VkApplicationInfo appInfo = {};
@@ -313,7 +324,7 @@ private:
 		{
 			if (std::strcmp(availableLayers[i].layerName, validationLayers[0]) == 0)
 			{
-				std::cout << "\n" << "Layers: " << availableLayers[i].layerName << std::endl;
+				PRINT("\n" << "Layers: " << availableLayers[i].layerName);
 				enabledLayerCount = validationLayerCount;
 				break;
 			}
@@ -331,7 +342,7 @@ private:
 
 		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
 		{
-			std::cout << "Failed to create instance!" << std::endl;
+			PRINT("Failed to create instance!");
 			exit(1);
 		}
 		
@@ -347,7 +358,7 @@ private:
 
 		if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS)
 		{
-			std::cout << "Failed to create window surface!" << std::endl;
+			PRINT("Failed to create window surface!");
 			exit(1);
 		}
 	}
@@ -356,14 +367,14 @@ private:
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 		if (deviceCount == 0) {
-			std::cout << "failed to find GPUs with Vulkan support!" << std::endl;
+			PRINT("failed to find GPUs with Vulkan support!");
 		}
 		VkPhysicalDevice *devices = new VkPhysicalDevice[deviceCount];
 		vkEnumeratePhysicalDevices(instance, &deviceCount, devices);
 
 		for (unsigned int i = 0; i < deviceCount; i++)
 		{
-			std::cout << "\n" << "Device Stats (Device #" << i << "):" << std::endl;
+			PRINT("\n" << "Device Stats (Device #" << i << "):");
 			printDeviceStats(devices[i]);
 		}
 		for (unsigned int i = 0; i < deviceCount; i++)
@@ -376,7 +387,7 @@ private:
 		}
 		if (physicalDevice == VK_NULL_HANDLE)
 		{
-			std::cout << "Failed to find a suitable GPU!" << std::endl;
+			PRINT("Failed to find a suitable GPU!");
 			exit(1);
 		}
 		delete[] devices;
@@ -410,7 +421,7 @@ private:
 
 		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
 		{
-			std::cout << "Failed to create logical device!" << std::endl;
+			PRINT("Failed to create logical device!");
 			exit(1);
 		}
 		
@@ -450,7 +461,7 @@ private:
 
 		if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
 		{
-			std::cout << "Failed to create swap chain!" << std::endl;
+			PRINT("Failed to create swap chain!");
 			exit(1);
 		}
 		vkGetSwapchainImagesKHR(device, swapChain, &swapChainImagesCount, nullptr);
@@ -485,11 +496,11 @@ private:
 
 			if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
 			{
-				std::cout << "Failed to create image views!" << std::endl;
+				PRINT("Failed to create image views!");
 				exit(1);
 			}
 		}
-		std::cout << "\n" << swapChainImagesCount << " image views created." << std::endl;
+		PRINT("\n" << swapChainImagesCount << " image views created.");
 	}
 	void createRenderPass()
 	{
@@ -533,7 +544,7 @@ private:
 
 		if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
 		{
-			std::cout << "Failed to create render pass!" << std::endl;
+			PRINT("Failed to create render pass!");
 			exit(1);
 		}
 	}
@@ -553,7 +564,7 @@ private:
 
 		if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
 		{
-			std::cout << "Failed to create descriptor set layout!" << std::endl;
+			PRINT("Failed to create descriptor set layout!");
 			exit(1);
 		}
 	}
@@ -685,7 +696,7 @@ private:
 
 		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
 		{
-			std::cout << "Failed to create pipeline layout!" << std::endl;
+			PRINT("Failed to create pipeline layout!");
 			exit(1);
 		}
 
@@ -709,11 +720,11 @@ private:
 
 		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
 		{
-			std::cout << "failed to create graphics pipeline!" << std::endl;
+			PRINT("failed to create graphics pipeline!");
 			exit(1);
 		}
 
-		std::cout << "\n" << "Graphics Pipeline created." << std::endl;
+		PRINT("\n" << "Graphics Pipeline created.");
 
 		vkDestroyShaderModule(device, fragShaderModule, nullptr);
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
@@ -736,7 +747,7 @@ private:
 
 			if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS)
 			{
-				std::cout << "failed to create framebuffer!" << std::endl;
+				PRINT("failed to create framebuffer!");
 				exit(1);
 			}
 		}
@@ -752,7 +763,7 @@ private:
 
 		if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
 		{
-			std::cout << "failed to create command pool!" << std::endl;
+			PRINT("failed to create command pool!");
 			exit(1);
 		}
 	}
@@ -823,7 +834,7 @@ private:
 		
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{
-			std::cout << "Failed to create descriptor pool!" << std::endl;
+			PRINT("Failed to create descriptor pool!");
 			exit(1);
 		}
 	}
@@ -838,7 +849,7 @@ private:
 
 		if (vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet) != VK_SUCCESS)
 		{
-			std::cout << "Failed to allocate descriptor set!" << std::endl;
+			PRINT("Failed to allocate descriptor set!");
 			exit(1);
 		}
 
@@ -870,7 +881,7 @@ private:
 
 		if (vkCreateBuffer(device, &bufferInfo, nullptr, buffer) != VK_SUCCESS)
 		{
-			std::cout << "Failed to create vertex buffer!" << std::endl;
+			PRINT("Failed to create vertex buffer!");
 			exit(1);
 		}
 
@@ -884,7 +895,7 @@ private:
 
 		if (vkAllocateMemory(device, &allocInfo, nullptr, bufferMemory) != VK_SUCCESS)
 		{
-			std::cout << "Failed to allocate vertex buffer memory!" << std::endl;
+			PRINT("Failed to allocate vertex buffer memory!");
 			exit(1);
 		}
 
@@ -937,7 +948,7 @@ private:
 				return i;
 		}
 
-		std::cout << "Failed to find suitable memory type!" << std::endl;
+		PRINT("Failed to find suitable memory type!");
 		exit(1);
 	}
 	void createCommandBuffers()
@@ -952,7 +963,7 @@ private:
 
 		if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers) != VK_SUCCESS)
 		{
-			std::cout << "failed to allocate command buffers!" << std::endl;
+			PRINT("failed to allocate command buffers!");
 			exit(1);
 		}
 
@@ -989,7 +1000,7 @@ private:
 
 			if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS)
 			{
-				std::cout << "failed to record command buffer!" << std::endl;
+				PRINT("failed to record command buffer!");
 				exit(1);
 			}
 		}
@@ -1002,7 +1013,7 @@ private:
 			vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS)
 		{
 
-			std::cout << "failed to create semaphores!" << std::endl;
+			PRINT("failed to create semaphores!");
 			exit(1);
 		}
 	}
@@ -1038,7 +1049,7 @@ private:
 
 		if (vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
 		{
-			std::cout << "failed to submit draw command buffer!" << std::endl;
+			PRINT("failed to submit draw command buffer!");
 			exit(1);
 		}
 
@@ -1062,83 +1073,83 @@ private:
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 		VkExtensionProperties *extensions = new VkExtensionProperties[extensionCount];
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, extensions);
-		std::cout << "\t" << "Available device extensions:" << std::endl;
+		PRINT("\t" << "Available device extensions:");
 		for (uint32_t i = 0; i < extensionCount; i++) {
-			std::cout << "\t\t#" << i << "\t" << extensions[i].extensionName << std::endl;
+			PRINT("\t\t#" << i << "\t" << extensions[i].extensionName);
 		}
 
 		VkPhysicalDeviceProperties deviceProperties;
 		vkGetPhysicalDeviceProperties(device, &deviceProperties);
-		std::cout << "\t" << "Device Properties:" << std::endl;
-		std::cout << "\t\t" << "Api Version:    " << deviceProperties.apiVersion << std::endl;
-		std::cout << "\t\t" << "Device ID:      " << deviceProperties.deviceID << std::endl;
-		std::cout << "\t\t" << "Device Name:    " << deviceProperties.deviceName << std::endl;
-		std::cout << "\t\t" << "Device Type:    " << deviceProperties.deviceType << std::endl;
-		std::cout << "\t\t" << "Driver Version: " << deviceProperties.driverVersion << std::endl;
-		std::cout << "\t\t" << "Vendor ID:      " << deviceProperties.vendorID << std::endl;
+		PRINT("\t" << "Device Properties:");
+		PRINT("\t\t" << "Api Version:    " << deviceProperties.apiVersion);
+		PRINT("\t\t" << "Device ID:      " << deviceProperties.deviceID);
+		PRINT("\t\t" << "Device Name:    " << deviceProperties.deviceName);
+		PRINT("\t\t" << "Device Type:    " << deviceProperties.deviceType);
+		PRINT("\t\t" << "Driver Version: " << deviceProperties.driverVersion);
+		PRINT("\t\t" << "Vendor ID:      " << deviceProperties.vendorID);
 
 		VkPhysicalDeviceFeatures deviceFeatures;
 		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-		std::cout << "\t" << "Device Featers:" << std::endl;
-		std::cout << "\t\t" << "Tessellation Shader: " << deviceFeatures.tessellationShader << std::endl;
-		std::cout << "\t\t" << "Geometry Shader:     " << deviceFeatures.geometryShader << std::endl;
-		std::cout << "\t\t" << "fullDrawIndexUint32: " << deviceFeatures.fullDrawIndexUint32 << std::endl;
+		PRINT("\t" << "Device Featers:");
+		PRINT("\t\t" << "Tessellation Shader: " << deviceFeatures.tessellationShader);
+		PRINT("\t\t" << "Geometry Shader:     " << deviceFeatures.geometryShader);
+		PRINT("\t\t" << "fullDrawIndexUint32: " << deviceFeatures.fullDrawIndexUint32);
 
 		uint32_t queueFamilyCount = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 		VkQueueFamilyProperties *queueFamilies = new VkQueueFamilyProperties[queueFamilyCount];
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies);
 
-		std::cout<< "\t" << "Queue Families:" << std::endl;
+		PRINT("\t" << "Queue Families:");
 		for (uint32_t i = 0; i < queueFamilyCount; i++)
 		{
-			std::cout << "\t\t" << "Queue Family (#" << i <<"):" << std::endl;
-			std::cout << "\t\t\t" << "VK_QUEUE_GRAPHICS_BIT:           " << ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) << std::endl;
-			std::cout << "\t\t\t" << "VK_QUEUE_COMPUTE_BIT:            " << ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) != 0) << std::endl;
-			std::cout << "\t\t\t" << "VK_QUEUE_TRANSFER_BIT:           " << ((queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT) != 0) << std::endl;
-			std::cout << "\t\t\t" << "VK_QUEUE_SPARSE_BINDING_BIT:     " << ((queueFamilies[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) != 0) << std::endl;
-			std::cout << "\t\t\t" << "Queue Count:                     " << queueFamilies[i].queueCount << std::endl;
-			std::cout << "\t\t\t" << "Timestamp Valid Bits:            " << queueFamilies[i].timestampValidBits << std::endl;
+			PRINT("\t\t" << "Queue Family (#" << i <<"):");
+			PRINT("\t\t\t" << "VK_QUEUE_GRAPHICS_BIT:           " << ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0));
+			PRINT("\t\t\t" << "VK_QUEUE_COMPUTE_BIT:            " << ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) != 0));
+			PRINT("\t\t\t" << "VK_QUEUE_TRANSFER_BIT:           " << ((queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT) != 0));
+			PRINT("\t\t\t" << "VK_QUEUE_SPARSE_BINDING_BIT:     " << ((queueFamilies[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) != 0));
+			PRINT("\t\t\t" << "Queue Count:                     " << queueFamilies[i].queueCount);
+			PRINT("\t\t\t" << "Timestamp Valid Bits:            " << queueFamilies[i].timestampValidBits);
 			uint32_t width = queueFamilies[i].minImageTransferGranularity.width;
 			uint32_t height = queueFamilies[i].minImageTransferGranularity.height;
 			uint32_t depth = queueFamilies[i].minImageTransferGranularity.depth;
-			std::cout << "\t\t\t" << "Min Image Timestamp Granularity: " << width << ", " << height << ", " << depth << std::endl;
+			PRINT("\t\t\t" << "Min Image Timestamp Granularity: " << width << ", " << height << ", " << depth);
 		}
 
 		VkSurfaceCapabilitiesKHR capabilities;
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &capabilities);
-		std::cout << "\t" << "Surface capabilities:" << std::endl;
-		std::cout << "\t\t" << "minImageCount:           " << capabilities.minImageCount << std::endl;
-		std::cout << "\t\t" << "maxImageCount:           " << capabilities.maxImageCount << std::endl;
-		std::cout << "\t\t" << "currentExtent:           " << capabilities.currentExtent.width << "," << capabilities.currentExtent.height << std::endl;
-		std::cout << "\t\t" << "minImageExtent:          " << capabilities.minImageExtent.width << "," << capabilities.minImageExtent.height << std::endl;
-		std::cout << "\t\t" << "maxImageExtent:          " << capabilities.maxImageExtent.width << "," << capabilities.maxImageExtent.height << std::endl;
-		std::cout << "\t\t" << "maxImageArrayLayers:     " << capabilities.maxImageArrayLayers << std::endl;
-		std::cout << "\t\t" << "supportedTransforms:     " << capabilities.supportedTransforms << std::endl;
-		std::cout << "\t\t" << "currentTransform:        " << capabilities.currentTransform << std::endl;
-		std::cout << "\t\t" << "supportedCompositeAlpha: " << capabilities.supportedCompositeAlpha << std::endl;
-		std::cout << "\t\t" << "supportedUsageFlags:     " << capabilities.supportedUsageFlags << std::endl;
+		PRINT("\t" << "Surface capabilities:");
+		PRINT("\t\t" << "minImageCount:           " << capabilities.minImageCount);
+		PRINT("\t\t" << "maxImageCount:           " << capabilities.maxImageCount);
+		PRINT("\t\t" << "currentExtent:           " << capabilities.currentExtent.width << "," << capabilities.currentExtent.height);
+		PRINT("\t\t" << "minImageExtent:          " << capabilities.minImageExtent.width << "," << capabilities.minImageExtent.height);
+		PRINT("\t\t" << "maxImageExtent:          " << capabilities.maxImageExtent.width << "," << capabilities.maxImageExtent.height);
+		PRINT("\t\t" << "maxImageArrayLayers:     " << capabilities.maxImageArrayLayers);
+		PRINT("\t\t" << "supportedTransforms:     " << capabilities.supportedTransforms);
+		PRINT("\t\t" << "currentTransform:        " << capabilities.currentTransform);
+		PRINT("\t\t" << "supportedCompositeAlpha: " << capabilities.supportedCompositeAlpha);
+		PRINT("\t\t" << "supportedUsageFlags:     " << capabilities.supportedUsageFlags);
 
 		uint32_t formatCount;
 		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 		VkSurfaceFormatKHR *formats = new VkSurfaceFormatKHR[formatCount];
 		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, formats);
-		std::cout << "\t" << "Supported formats:" << std::endl;
+		PRINT("\t" << "Supported formats:");
 		for (uint32_t i = 0; i < formatCount; i++)
 		{
-			std::cout << "\t\t" << "Format #" << i << ":" << std::endl;
-			std::cout << "\t\t\t" << "format:     " << formats[i].format << std::endl;
-			std::cout << "\t\t\t" << "colorSpace: " << formats[i].colorSpace << std::endl;
+			PRINT("\t\t" << "Format #" << i << ":");
+			PRINT("\t\t\t" << "format:     " << formats[i].format);
+			PRINT("\t\t\t" << "colorSpace: " << formats[i].colorSpace);
 		}
 
 		uint32_t presentModeCount;
 		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 		VkPresentModeKHR *presentModes = new VkPresentModeKHR[presentModeCount];
 		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, presentModes);
-		std::cout << "\t" << "Supported presentation modes:" << std::endl;
+		PRINT("\t" << "Supported presentation modes:");
 		for (uint32_t i = 0; i < presentModeCount; i++)
 		{
-			std::cout << "\t\t" << "Present mode #" << i << ": " << presentModes[i] << std::endl;
+			PRINT("\t\t" << "Present mode #" << i << ": " << presentModes[i]);
 		}
 
 		delete[] presentModes;
@@ -1271,7 +1282,7 @@ private:
 		rewind(file);
 		code.data = (char*)malloc(code.filesize);
 		fread(code.data, 1, code.filesize, file);
-		printf("\n%s geladen. Filesize: %d\n", fileName, code.filesize);
+		PRINT("\n" << fileName << " geladen. Filesize: " << code.filesize);
 		fclose(file);
 
 		return code;
@@ -1288,7 +1299,7 @@ private:
 		VkShaderModule shaderModule;
 		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
 		{
-			std::cout << "Failed to create shader module!" << std::endl;
+			PRINT("Failed to create shader module!");
 			exit(1);
 		}
 
@@ -1304,10 +1315,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 {
 	App2DAction app;
 
-	std::cout << "***** 2D Action !!! *****" << std::endl;
-	std::cout << "=====================================" << std::endl;
+	logfile.open("log.txt");
+	PRINT("***** 2D Action !!! *****");
+	PRINT("=========================");
 
 	app.run();
+	logfile.close();
 
 	return 0;
 }

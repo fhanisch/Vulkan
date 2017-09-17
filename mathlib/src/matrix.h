@@ -3,15 +3,15 @@
 
 #define PI 3.14159f
 
+typedef float vec2[2];
+typedef float vec3[3];
+typedef float vec4[4];
+typedef vec4 mat4[4];
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-	typedef float vec2[2];
-	typedef float vec3[3];
-	typedef float vec4[4];
-	typedef vec4 mat4[4];
-
 	void printMatrix4(mat4 M, char *name);
 	void zero4(mat4 M);
 	void identity4(mat4 M);

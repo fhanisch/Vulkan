@@ -33,8 +33,9 @@ ML: build
 	del build\*.obj
 
 Shader: build
-	glslangValidator -V Triangle\shader\shader.vert -o build\vs.spv
-	glslangValidator -V Triangle\shader\shader.frag -o build\fs.spv
+	glslangValidator -V shader\shader.vert -o build\vs.spv
+	glslangValidator -V shader\2d.vert -o build\2d.spv
+	glslangValidator -V shader\shader.frag -o build\fs.spv
 	copy build\*.spv x64\Debug
 
 build:

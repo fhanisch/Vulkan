@@ -142,6 +142,8 @@ public:
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	VkDescriptorSet descriptorSet;
+	uint16_t idicesLength;
+	VkDeviceSize indexOffset;
 	UniformBufferObject ubo;
 	VkDeviceSize uboOffset;
 
@@ -154,13 +156,27 @@ public:
 	}
 };
 
+class RenderScene
+{
+public:
+	mat4 mView;
+	RenderObject *powerMeter;
+	RenderObject *square;
+	RenderScene()
+	{
+		identity4(mView);
+		powerMeter = new RenderObject("vs_2d.spv", "fs_powermeter.spv", 0);
+		square = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x100);
+	}
+};
+
 class App2DAction
 {
 public:
-	App2DAction(RenderObject *obj0, RenderObject *obj1)
+	App2DAction(RenderScene *scene)
 	{
-		renderObject[0] = obj0;
-		renderObject[1] = obj1;
+		renderObject[0] = scene->powerMeter;
+		renderObject[1] = scene->square;
 	}
 	void run()
 	{
@@ -1358,15 +1374,16 @@ int main(int argc, char *argv[])
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #endif
 {
-	RenderObject powerMeter("vs_2d.spv", "fs_powermeter.spv", 0);
-	RenderObject square("vs_2d.spv", "fs_2d.spv", 0x100);
-	App2DAction app(&powerMeter, &square);
+	RenderScene scene;
+	App2DAction app(&scene);
 
 	logfile.open("log.txt");
+
 	PRINT("***** 2D Action !!! *****");
 	PRINT("=========================");
 
 	app.run();
+
 	logfile.close();
 
 	return 0;

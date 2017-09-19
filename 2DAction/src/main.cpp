@@ -6,7 +6,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 #define VK_USE_PLATFORM_WIN32_KHR
-#define NOCONSOLE
+//#define NOCONSOLE
 
 #include <Windows.h>
 #include <ShellScalingApi.h> // notwendig für high dpi scaling
@@ -94,13 +94,22 @@ struct UniformBufferObject
 };
 
 const Vertex vertices[] = {
-	{ { -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, { -1.0f, -1.0f } },
-	{ {  1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }, {  1.0f, -1.0f } },
-	{ {  1.0f,  1.0f }, { 0.0f, 0.0f, 1.0f }, {  1.0f,  1.0f } },
-	{ { -1.0f,  1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f,  1.0f } }
+	{ {  -1.0f,  -1.0f }, { 1.0f, 0.0f, 0.0f }, { -1.0f, -1.0f } },  //0
+	{ {   1.0f,  -1.0f }, { 0.0f, 1.0f, 0.0f }, {  1.0f, -1.0f } },  //1
+	{ {   1.0f,   1.0f }, { 0.0f, 0.0f, 1.0f }, {  1.0f,  1.0f } },  //2
+	{ {  -1.0f,   1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f,  1.0f } },  //3
+	{ {   0.0f,  -1.0f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //4
+	{ {  0.25f, -0.25f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //5
+	{ { -0.25f, -0.25f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //6
+	{ {   1.0f,   0.0f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //7
+	{ {  0.25f,  0.25f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //8
+	{ {   0.0f,   1.0f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //9
+	{ {  -0.25,  0.25f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //10
+	{ {  -1.0f,   0.0f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } }   //11
 };
 
 const uint16_t indices[] = { 0, 1, 2, 2, 3, 0 };
+const uint16_t indices_star[] = { 4, 5, 6, 5, 7, 8, 8, 9, 10, 10, 11, 6, 6, 5, 8, 8, 10, 6 };
 
 struct ShaderCode
 {
@@ -142,8 +151,8 @@ public:
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	VkDescriptorSet descriptorSet;
-	uint16_t idicesLength;
-	VkDeviceSize indexOffset;
+	uint32_t indexCount;
+	uint32_t firstIndex;
 	UniformBufferObject ubo;
 	VkDeviceSize uboOffset;
 
@@ -162,11 +171,22 @@ public:
 	mat4 mView;
 	RenderObject *powerMeter;
 	RenderObject *square;
+	RenderObject *star;
+
 	RenderScene()
 	{
 		identity4(mView);
 		powerMeter = new RenderObject("vs_2d.spv", "fs_powermeter.spv", 0);
+		powerMeter->indexCount = sizeof(indices) / sizeof(uint16_t);
+		powerMeter->firstIndex = 0;
+
 		square = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x100);
+		square->indexCount = sizeof(indices) / sizeof(uint16_t);
+		square->firstIndex = 0;
+
+		star = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x200);
+		star->indexCount = sizeof(indices_star) / sizeof(uint16_t);
+		star->firstIndex = 6;
 	}
 };
 
@@ -177,6 +197,7 @@ public:
 	{
 		renderObject[0] = scene->powerMeter;
 		renderObject[1] = scene->square;
+		renderObject[2] = scene->star;
 	}
 	void run()
 	{
@@ -210,7 +231,10 @@ private:
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
 
-	RenderObject *renderObject[2];
+	VkDeviceSize indexBufferSize = sizeof(indices) + sizeof(indices_star);
+	VkDeviceSize uboBufferSize = 0x300;
+	static const uint16_t objectCount = 3;
+	RenderObject *renderObject[objectCount];
 
 	void initWindow(const char *windowName)
 	{
@@ -251,6 +275,8 @@ private:
 		createDescriptorSetLayout();
 		createGraphicsPipeline(renderObject[0]);
 		createGraphicsPipeline(renderObject[1]);
+		renderObject[2]->graphicsPipeline = renderObject[1]->graphicsPipeline;
+		renderObject[2]->pipelineLayout = renderObject[1]->pipelineLayout;
 		createFramebuffers();
 		createCommandPool();
 		createVertexBuffer();
@@ -259,6 +285,7 @@ private:
 		createDescriptorPool();
 		createDescriptorSet(renderObject[0]);
 		createDescriptorSet(renderObject[1]);
+		createDescriptorSet(renderObject[2]);
 		createCommandBuffers();
 		createSemaphores();
 	}
@@ -843,7 +870,7 @@ private:
 	}
 	void createIndexBuffer()
 	{
-		VkDeviceSize bufferSize = sizeof(indices);
+		VkDeviceSize bufferSize = indexBufferSize;
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
@@ -853,7 +880,8 @@ private:
 
 		void *data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, indices, bufferSize);
+		memcpy(data, indices, sizeof(indices));
+		memcpy((char*)data + sizeof(indices), indices_star, sizeof(indices_star));
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -866,7 +894,7 @@ private:
 	}
 	void createUniformBuffer()
 	{
-		VkDeviceSize bufferSize = 0x200;
+		VkDeviceSize bufferSize = uboBufferSize;
 		createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			&uniformBuffer, &uniformBufferMemory);
@@ -875,13 +903,13 @@ private:
 	{
 		VkDescriptorPoolSize poolSize = {};
 		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSize.descriptorCount = 2;
+		poolSize.descriptorCount = 3;
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = 1;
 		poolInfo.pPoolSizes = &poolSize;
-		poolInfo.maxSets = 2;
+		poolInfo.maxSets = 3;
 		
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{
@@ -1043,13 +1071,14 @@ private:
 					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &vertexBuffer, offsets);
 					vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-					for (uint32_t j = 0; j < 2; j++)
+					for (uint32_t j = 0; j < objectCount; j++)
 					{
 						vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
 							renderObject[j]->graphicsPipeline);
 						vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
 							renderObject[j]->pipelineLayout, 0, 1, &renderObject[j]->descriptorSet, 0, nullptr);
-						vkCmdDrawIndexed(commandBuffers[i], sizeof(indices) / sizeof(uint16_t), 1, 0, 0, 0);
+						vkCmdDrawIndexed(commandBuffers[i], renderObject[j]->indexCount, 1,
+							renderObject[j]->firstIndex, 0, 0);
 					}
 				
 				vkCmdEndRenderPass(commandBuffers[i]);
@@ -1076,18 +1105,20 @@ private:
 	void updateUniformBuffer()
 	{
 		static clock_t startTime = clock();
-		VkDeviceSize bufferSize = 0x200;
+		VkDeviceSize bufferSize = uboBufferSize;
 		mat4 R, S;
 
 		identity4(S);
 		scale4(S, 0.5f, 0.5f, 1.0f);
 		getRotZ4(R, (float)(clock() - startTime) / CLOCKS_PER_SEC / 2.0f);
 		mult4(renderObject[1]->ubo.mModel, S, R);
+		getRotZ4(renderObject[2]->ubo.mModel, -(float)(clock() - startTime) / CLOCKS_PER_SEC / 2.0f);
 
 		void* data;
 		vkMapMemory(device, uniformBufferMemory, 0, bufferSize, 0, &data);
 		memcpy(data, &renderObject[0]->ubo, sizeof(UniformBufferObject));
 		memcpy((char*)data+renderObject[1]->uboOffset, &renderObject[1]->ubo, sizeof(UniformBufferObject));
+		memcpy((char*)data + renderObject[2]->uboOffset, &renderObject[2]->ubo, sizeof(UniformBufferObject));
 		vkUnmapMemory(device, uniformBufferMemory);
 	}
 	void drawFrame()

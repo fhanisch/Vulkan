@@ -23,7 +23,7 @@ T1: build
 	del build\*.obj
 
 T2: build
-	cl /nologo /W3 /EHsc /I$(INC_VULKAN) /I$(INC_DEV) /Fo$(BuildPath)\ $(SrcPath2DAction)\main.cpp \
+	cl /nologo /W3 /EHsc /DNOCONSOLE /I$(INC_VULKAN) /I$(INC_DEV) /Fo$(BuildPath)\ $(SrcPath2DAction)\main.cpp \
 		/link $(LIBS_T2) /LIBPATH:$(LIB_VULKAN) /LIBPATH:$(LIB_DEV) /out:$(BuildPath)\2DAction.exe
 	del build\*.obj
 

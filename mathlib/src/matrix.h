@@ -17,7 +17,7 @@ extern "C"
 	void identity4(mat4 M);
 	void transpose4(mat4 M, mat4 N);
 	void dup4(mat4 dst, mat4 src);
-	void scale4(mat4 M, float sx, float sy, float sz);
+	void getScale4(mat4 S, float sx, float sy, float sz);
 	void getTrans4(mat4 T, float x, float y, float z);
 	void getRotX4(mat4 M, float phi);
 	void getRotY4(mat4 M, float phi);

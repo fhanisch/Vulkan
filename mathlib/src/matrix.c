@@ -53,11 +53,12 @@ void dup4(mat4 dst, mat4 src)
 		for (j = 0; j < 4; ++j) dst[i][j] = src[i][j];
 }
 
-void scale4(mat4 M, float sx, float sy, float sz)
+void getScale4(mat4 S, float sx, float sy, float sz)
 {
-	M[0][0] = M[0][0] * sx;
-	M[1][1] = M[1][1] * sy;
-	M[2][2] = M[2][2] * sz;
+	identity4(S);
+	S[0][0] = sx;
+	S[1][1] = sy;
+	S[2][2] = sz;
 }
 
 void getTrans4(mat4 T, float x, float y, float z)

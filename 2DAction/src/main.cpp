@@ -29,7 +29,7 @@
 
 #define PRINT(msg) OUTPUT << msg << std::endl
 
-static boolean	key[256];
+static bool	key[256];
 const char WINDOW_NAME[] = "2D Action";
 const char APP_NAME[] = "2D Action";
 const char ENGINE_NAME[] = "MyVulkanEngine";
@@ -86,11 +86,6 @@ struct Vertex
 
 		return attributeDescriptions;
 	}
-};
-
-struct UniformBufferObject
-{
-	mat4 mModel;
 };
 
 const Vertex vertices[] = {
@@ -153,15 +148,20 @@ public:
 	VkDescriptorSet descriptorSet;
 	uint32_t indexCount;
 	uint32_t firstIndex;
-	UniformBufferObject ubo;
 	VkDeviceSize uboOffset;
 
-	RenderObject(char *vertName, char *fragName, VkDeviceSize _uboOffset)
+	mat4 mModel;
+	mat4 *mView;
+	mat4 mProj;
+
+	RenderObject(char *vertName, char *fragName, VkDeviceSize _uboOffset, mat4 *_mView)
 	{
 		vertexShaderFileName = vertName;
 		fragmentShaderFileName = fragName;
 		uboOffset = _uboOffset;
-		identity4(ubo.mModel);
+		identity4(mModel);
+		mView = _mView;
+		identity4(mProj);
 	}
 };
 
@@ -176,15 +176,15 @@ public:
 	RenderScene()
 	{
 		identity4(mView);
-		powerMeter = new RenderObject("vs_2d.spv", "fs_powermeter.spv", 0);
+		powerMeter = new RenderObject("vs_2d.spv", "fs_powermeter.spv", 0, &mView);
 		powerMeter->indexCount = sizeof(indices) / sizeof(uint16_t);
 		powerMeter->firstIndex = 0;
 
-		square = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x100);
+		square = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x100, &mView);
 		square->indexCount = sizeof(indices) / sizeof(uint16_t);
 		square->firstIndex = 0;
 
-		star = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x200);
+		star = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x200, &mView);
 		star->indexCount = sizeof(indices_star) / sizeof(uint16_t);
 		star->firstIndex = 6;
 	}
@@ -198,6 +198,7 @@ public:
 		renderObject[0] = scene->powerMeter;
 		renderObject[1] = scene->square;
 		renderObject[2] = scene->star;
+		mView = &scene->mView;
 	}
 	void run()
 	{
@@ -235,6 +236,7 @@ private:
 	VkDeviceSize uboBufferSize = 0x300;
 	static const uint16_t objectCount = 3;
 	RenderObject *renderObject[objectCount];
+	mat4 *mView;
 
 	void initWindow(const char *windowName)
 	{
@@ -935,7 +937,7 @@ private:
 		VkDescriptorBufferInfo bufferInfo = {};
 		bufferInfo.buffer = uniformBuffer;
 		bufferInfo.offset = obj->uboOffset;
-		bufferInfo.range = sizeof(UniformBufferObject);
+		bufferInfo.range = 3 * sizeof(mat4);
 		
 		VkWriteDescriptorSet descriptorWrite = {};
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1106,19 +1108,50 @@ private:
 	{
 		static clock_t startTime = clock();
 		VkDeviceSize bufferSize = uboBufferSize;
-		mat4 R, S;
+		mat4 A, B;
 
-		identity4(S);
-		scale4(S, 0.5f, 0.5f, 1.0f);
-		getRotZ4(R, (float)(clock() - startTime) / CLOCKS_PER_SEC / 2.0f);
-		mult4(renderObject[1]->ubo.mModel, S, R);
-		getRotZ4(renderObject[2]->ubo.mModel, -(float)(clock() - startTime) / CLOCKS_PER_SEC / 2.0f);
+		getScale4(A, 0.5f, 0.5f, 0.0f);
+		getRotZ4(B, (float)(clock() - startTime) / CLOCKS_PER_SEC / 2.0f);
+		mult4(renderObject[1]->mModel, B, A);
+
+		getRotZ4(renderObject[2]->mModel, -(float)(clock() - startTime) / CLOCKS_PER_SEC / 2.0f);
+
+		if (key[VK_UP] == true)
+		{
+			dup4(A, *mView);
+			getTrans4(B, 0.0f, 0.1f, 0.0f);
+			mult4(*mView, B, A);
+		}
+
+		if (key[VK_DOWN] == true)
+		{
+			dup4(A, *mView);
+			getTrans4(B, 0.0f, -0.1f, 0.0f);
+			mult4(*mView, B, A);
+		}
+
+		if (key[VK_LEFT] == true)
+		{
+			dup4(A, *mView);
+			getTrans4(B, 0.1f, 0.0f, 0.0f);
+			mult4(*mView, B, A);
+		}
+
+		if (key[VK_RIGHT] == true)
+		{
+			dup4(A, *mView);
+			getTrans4(B, -0.1f, 0.0f, 0.0f);
+			mult4(*mView, B, A);
+		}
 
 		void* data;
 		vkMapMemory(device, uniformBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, &renderObject[0]->ubo, sizeof(UniformBufferObject));
-		memcpy((char*)data+renderObject[1]->uboOffset, &renderObject[1]->ubo, sizeof(UniformBufferObject));
-		memcpy((char*)data + renderObject[2]->uboOffset, &renderObject[2]->ubo, sizeof(UniformBufferObject));
+		for (uint32_t i = 0; i < objectCount; i++)
+		{
+			memcpy((char*)data + renderObject[i]->uboOffset, &renderObject[i]->mModel, sizeof(mat4));
+			memcpy((char*)data + sizeof(mat4) + renderObject[i]->uboOffset, renderObject[i]->mView, sizeof(mat4));
+			memcpy((char*)data + 2*sizeof(mat4) + renderObject[i]->uboOffset, &renderObject[i]->mProj, sizeof(mat4));
+		}
 		vkUnmapMemory(device, uniformBufferMemory);
 	}
 	void drawFrame()

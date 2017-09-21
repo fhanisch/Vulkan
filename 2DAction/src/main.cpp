@@ -54,38 +54,6 @@ struct Vertex
 	vec2 pos;
 	vec3 color;
 	vec2 texCoords;
-	
-	static VkVertexInputBindingDescription getBindingDescription()
-	{
-		VkVertexInputBindingDescription bindingDescription = {};
-		bindingDescription.binding = 0;
-		bindingDescription.stride = sizeof(Vertex);
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-		return bindingDescription;
-	}
-
-	static VkVertexInputAttributeDescription *getAttributeDescriptions()
-	{
-		VkVertexInputAttributeDescription *attributeDescriptions = new VkVertexInputAttributeDescription[3];
-
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-		attributeDescriptions[1].binding = 0;
-		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-		attributeDescriptions[2].binding = 0;
-		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[2].offset = offsetof(Vertex, texCoords);
-
-		return attributeDescriptions;
-	}
 };
 
 const Vertex vertices[] = {
@@ -103,8 +71,13 @@ const Vertex vertices[] = {
 	{ {  -1.0f,   0.0f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } }   //11
 };
 
+uint32_t uSize;
+float *u;
+
 const uint16_t indices[] = { 0, 1, 2, 2, 3, 0 };
 const uint16_t indices_star[] = { 4, 5, 6, 5, 7, 8, 8, 9, 10, 10, 11, 6, 6, 5, 8, 8, 10, 6 };
+uint32_t indices_circle_size;
+uint16_t *indices_circle;
 
 struct ShaderCode
 {
@@ -148,7 +121,12 @@ public:
 	VkDescriptorSet descriptorSet;
 	uint32_t indexCount;
 	uint32_t firstIndex;
+	int32_t vertexOffset;
 	VkDeviceSize uboOffset;
+	VkVertexInputBindingDescription bindingDescription;
+	uint32_t attributeDescriptionCount;
+	VkVertexInputAttributeDescription *attributeDescriptions;
+	VkPrimitiveTopology topology;
 
 	mat4 mModel;
 	mat4 *mView;
@@ -159,9 +137,40 @@ public:
 		vertexShaderFileName = vertName;
 		fragmentShaderFileName = fragName;
 		uboOffset = _uboOffset;
+		vertexOffset = 0;
+		bindingDescription = getBindingDescription(sizeof(Vertex));
+		attributeDescriptionCount = 3;
+		VkFormat formats[] = { VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
+		uint32_t offsets[] = { offsetof(Vertex, pos) ,offsetof(Vertex, color) ,offsetof(Vertex, texCoords) };
+		attributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
+		topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		identity4(mModel);
 		mView = _mView;
 		identity4(mProj);
+	}
+	VkVertexInputBindingDescription getBindingDescription(uint32_t stride)
+	{
+		VkVertexInputBindingDescription bindingDescription = {};
+		bindingDescription.binding = 0;
+		bindingDescription.stride = stride;
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		return bindingDescription;
+	}
+
+	VkVertexInputAttributeDescription *getAttributeDescriptions(uint32_t count, VkFormat *formats, uint32_t *offsets)
+	{
+		VkVertexInputAttributeDescription *attributeDescriptions = new VkVertexInputAttributeDescription[3];
+
+		for (uint32_t i = 0; i < count; i++)
+		{
+			attributeDescriptions[i].binding = 0;
+			attributeDescriptions[i].location = i;
+			attributeDescriptions[i].format = formats[i];
+			attributeDescriptions[i].offset = offsets[i];
+		}
+
+		return attributeDescriptions;
 	}
 };
 
@@ -172,10 +181,14 @@ public:
 	RenderObject *powerMeter;
 	RenderObject *square;
 	RenderObject *star;
+	RenderObject *circle;
 
 	RenderScene()
 	{
 		identity4(mView);
+		vecf(&u, &uSize, 0.0f, 0.01f, 101);
+		vecs(&indices_circle, &indices_circle_size, 0, 101);
+
 		powerMeter = new RenderObject("vs_2d.spv", "fs_powermeter.spv", 0, &mView);
 		powerMeter->indexCount = sizeof(indices) / sizeof(uint16_t);
 		powerMeter->firstIndex = 0;
@@ -187,6 +200,18 @@ public:
 		star = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x200, &mView);
 		star->indexCount = sizeof(indices_star) / sizeof(uint16_t);
 		star->firstIndex = 6;
+
+		circle = new RenderObject("vs_circle.spv", "fs_2d.spv", 0x300, &mView);
+		circle->indexCount = indices_circle_size / sizeof(uint16_t);
+		circle->firstIndex = powerMeter->indexCount + star->indexCount;
+		circle->vertexOffset = 0;
+		circle->bindingDescription = circle->getBindingDescription(sizeof(float));
+		circle->attributeDescriptionCount = 1;
+		VkFormat format[] = { VK_FORMAT_R32_SFLOAT };
+		uint32_t offset[] = { 0 };
+		circle->attributeDescriptions = circle->getAttributeDescriptions(1, format, offset);
+		circle->topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+		getScale4(circle->mModel, 1.5f, 1.5f, 1.0f);
 	}
 };
 
@@ -198,6 +223,7 @@ public:
 		renderObject[0] = scene->powerMeter;
 		renderObject[1] = scene->square;
 		renderObject[2] = scene->star;
+		renderObject[3] = scene->circle;
 		mView = &scene->mView;
 	}
 	void run()
@@ -232,9 +258,8 @@ private:
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
 
-	VkDeviceSize indexBufferSize = sizeof(indices) + sizeof(indices_star);
-	VkDeviceSize uboBufferSize = 0x300;
-	static const uint16_t objectCount = 3;
+	VkDeviceSize uboBufferSize = 0x400;
+	static const uint16_t objectCount = 4;
 	RenderObject *renderObject[objectCount];
 	mat4 *mView;
 
@@ -275,19 +300,27 @@ private:
 		createImageViews();
 		createRenderPass();
 		createDescriptorSetLayout();
+
+		//create pipeline
 		createGraphicsPipeline(renderObject[0]);
 		createGraphicsPipeline(renderObject[1]);
 		renderObject[2]->graphicsPipeline = renderObject[1]->graphicsPipeline;
 		renderObject[2]->pipelineLayout = renderObject[1]->pipelineLayout;
+		createGraphicsPipeline(renderObject[3]);
+
 		createFramebuffers();
 		createCommandPool();
 		createVertexBuffer();
 		createIndexBuffer();
 		createUniformBuffer();
 		createDescriptorPool();
+
+		//create uniform descriptors
 		createDescriptorSet(renderObject[0]);
 		createDescriptorSet(renderObject[1]);
 		createDescriptorSet(renderObject[2]);
+		createDescriptorSet(renderObject[3]);
+
 		createCommandBuffers();
 		createSemaphores();
 	}
@@ -340,11 +373,15 @@ private:
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
 			vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
 		vkFreeCommandBuffers(device, commandPool, swapChainImagesCount, commandBuffers);
-		for (uint32_t i = 0; i < 2; i++)
-		{
-			vkDestroyPipeline(device, renderObject[i]->graphicsPipeline, nullptr);
-			vkDestroyPipelineLayout(device, renderObject[i]->pipelineLayout, nullptr);
-		}
+		
+		//destroy pipelines + 
+		vkDestroyPipeline(device, renderObject[0]->graphicsPipeline, nullptr);
+		vkDestroyPipeline(device, renderObject[1]->graphicsPipeline, nullptr);
+		vkDestroyPipeline(device, renderObject[3]->graphicsPipeline, nullptr);
+		vkDestroyPipelineLayout(device, renderObject[0]->pipelineLayout, nullptr);
+		vkDestroyPipelineLayout(device, renderObject[1]->pipelineLayout, nullptr);
+		vkDestroyPipelineLayout(device, renderObject[3]->pipelineLayout, nullptr);
+		
 		vkDestroyRenderPass(device, renderPass, nullptr);
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
 			vkDestroyImageView(device, swapChainImageViews[i], nullptr);
@@ -676,23 +713,20 @@ private:
 
 		VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo,fragShaderStageInfo };
 
-		VkVertexInputBindingDescription bindingDescription = Vertex::getBindingDescription();
-		VkVertexInputAttributeDescription *attributeDescriptions = Vertex::getAttributeDescriptions();
-
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputInfo.pNext = nullptr;
 		vertexInputInfo.flags = 0;
 		vertexInputInfo.vertexBindingDescriptionCount = 1;
-		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-		vertexInputInfo.vertexAttributeDescriptionCount = 3;
-		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
+		vertexInputInfo.pVertexBindingDescriptions = &obj->bindingDescription;
+		vertexInputInfo.vertexAttributeDescriptionCount = obj->attributeDescriptionCount;
+		vertexInputInfo.pVertexAttributeDescriptions = obj->attributeDescriptions;
 
 		VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		inputAssembly.pNext = nullptr;
 		inputAssembly.flags = 0;
-		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssembly.topology = obj->topology;
 		inputAssembly.primitiveRestartEnable = VK_FALSE;
 
 		VkViewport viewport = {};
@@ -849,7 +883,7 @@ private:
 	}
 	void createVertexBuffer()
 	{
-		VkDeviceSize bufferSize = sizeof(vertices);
+		VkDeviceSize bufferSize = sizeof(vertices) + uSize;
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
@@ -859,7 +893,8 @@ private:
 
 		void *data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-			memcpy(data, vertices, bufferSize);
+			memcpy(data, vertices, sizeof(vertices));
+			memcpy((char*)data + sizeof(vertices), u, uSize);
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -872,7 +907,7 @@ private:
 	}
 	void createIndexBuffer()
 	{
-		VkDeviceSize bufferSize = indexBufferSize;
+		VkDeviceSize bufferSize = sizeof(indices) + sizeof(indices_star) + indices_circle_size;
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
@@ -882,8 +917,9 @@ private:
 
 		void *data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, indices, sizeof(indices));
-		memcpy((char*)data + sizeof(indices), indices_star, sizeof(indices_star));
+			memcpy(data, indices, sizeof(indices));
+			memcpy((char*)data + sizeof(indices), indices_star, sizeof(indices_star));
+			memcpy((char*)data + sizeof(indices) + sizeof(indices_star), indices_circle, indices_circle_size);
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -905,13 +941,13 @@ private:
 	{
 		VkDescriptorPoolSize poolSize = {};
 		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSize.descriptorCount = 3;
+		poolSize.descriptorCount = 4;
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = 1;
 		poolInfo.pPoolSizes = &poolSize;
-		poolInfo.maxSets = 3;
+		poolInfo.maxSets = 4;
 		
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{
@@ -1073,15 +1109,23 @@ private:
 					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &vertexBuffer, offsets);
 					vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-					for (uint32_t j = 0; j < objectCount; j++)
+					for (uint32_t j = 0; j < 3; j++)
 					{
 						vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
 							renderObject[j]->graphicsPipeline);
 						vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
 							renderObject[j]->pipelineLayout, 0, 1, &renderObject[j]->descriptorSet, 0, nullptr);
 						vkCmdDrawIndexed(commandBuffers[i], renderObject[j]->indexCount, 1,
-							renderObject[j]->firstIndex, 0, 0);
+							renderObject[j]->firstIndex, renderObject[j]->vertexOffset, 0);
 					}
+					VkDeviceSize offsets2[] = { sizeof(vertices) };
+					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &vertexBuffer, offsets2);
+					vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+						renderObject[3]->graphicsPipeline);
+					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+						renderObject[3]->pipelineLayout, 0, 1, &renderObject[3]->descriptorSet, 0, nullptr);
+					vkCmdDrawIndexed(commandBuffers[i], renderObject[3]->indexCount, 1,
+						renderObject[3]->firstIndex, renderObject[3]->vertexOffset, 0);
 				
 				vkCmdEndRenderPass(commandBuffers[i]);
 

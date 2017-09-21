@@ -198,3 +198,21 @@ void createMeshGridIndices(unsigned short **indices, unsigned int *indicesLen, u
 			(*indices)[6 * (i*(n - 1) + j) + 5] = (i + 1)*n + j + 1;
 		}
 }
+
+void vecf(float **v, unsigned int *size, float start, float step, unsigned int count)
+{
+	unsigned int i;
+
+	*size = count * sizeof(float);
+	*v = malloc(*size);
+	for (i = 0; i<count; i++) (*v)[i] = start + i*step;
+}
+
+void vecs(unsigned short **indices, unsigned int *size, unsigned int start, unsigned int count)
+{
+	unsigned int i;
+
+	*size = count * sizeof(unsigned short);
+	*indices = malloc(*size);
+	for (i = 0; i<count; i++) (*indices)[i] = start + i;
+}

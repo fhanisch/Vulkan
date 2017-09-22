@@ -41,6 +41,7 @@ Shader: build
 	glslangValidator -V shader\triangle.frag -o build\fs_triangle.spv
 	glslangValidator -V shader\2d.frag -o build\fs_2d.spv
 	glslangValidator -V shader\powermeter.frag -o build\fs_powermeter.spv
+	glslangValidator -V shader\circleFilled.frag -o build\fs_circleFilled.spv
 	copy build\*.spv x64\Debug
 
 build:

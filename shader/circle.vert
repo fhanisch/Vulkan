@@ -1,6 +1,8 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+const float PI = 3.14159;
+
 layout (binding = 0) uniform UniformBufferObject
 {
   mat4 mModel;
@@ -22,8 +24,8 @@ void main()
 {
     float x,y;
 
-    x = cos(u*2.0*3.14159);
-    y = -sin(u*2.0*3.14159);
+    x = cos(u*2.0*PI);
+    y = -sin(u*2.0*PI);
 
     fragColor = vec3(0.0, 1.0, 0.0);
     texCoords = vec2(0.0, 0.0);

@@ -146,6 +146,7 @@ public:
 		mView = _mView;
 		identity4(mProj);
 	}
+
 	VkVertexInputBindingDescription getBindingDescription(uint32_t stride)
 	{
 		VkVertexInputBindingDescription bindingDescription = {};
@@ -172,11 +173,54 @@ public:
 	}
 };
 
+class CircleFilled : public RenderObject
+{
+public:
+	CircleFilled(char *vertName, char *fragName, VkDeviceSize _uboOffset, mat4 *_mView)
+		: RenderObject(vertName, fragName, _uboOffset, _mView)
+	{
+		indexCount = sizeof(indices) / sizeof(uint16_t);
+		firstIndex = 0;
+		getTrans4(mModel, 5.0f, 5.0f, 0.0f);
+	}
+
+	void motion()
+	{
+		mat4 A, B;
+
+		if (key[0x41] == true)
+		{
+			dup4(A, mModel);
+			getTrans4(B, -0.1f, 0.0f, 0.0f);
+			mult4(mModel, B, A);
+		}
+		if (key[0x44] == true)
+		{
+			dup4(A, mModel);
+			getTrans4(B, 0.1f, 0.0f, 0.0f);
+			mult4(mModel, B, A);
+		}
+		if (key[0x53] == true)
+		{
+			dup4(A, mModel);
+			getTrans4(B, 0.0f, 0.1f, 0.0f);
+			mult4(mModel, B, A);
+		}
+		if (key[0x57] == true)
+		{
+			dup4(A, mModel);
+			getTrans4(B, 0.0f, -0.1f, 0.0f);
+			mult4(mModel, B, A);
+		}
+	}
+};
+
 class RenderScene
 {
 public:
 	mat4 mView;
-	RenderObject *powerMeter, *square, *star, *circle, *circleFilled;
+	RenderObject *powerMeter, *square, *star, *circle;
+	CircleFilled *circleFilled;
 
 	RenderScene()
 	{
@@ -207,10 +251,7 @@ public:
 		circle->topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
 		getScale4(circle->mModel, 1.5f, 1.5f, 1.0f);
 
-		circleFilled = new RenderObject("vs_2d.spv", "fs_circleFilled.spv", 0x400, &mView);
-		circleFilled->indexCount = sizeof(indices) / sizeof(uint16_t);
-		circleFilled->firstIndex = 0;
-		getTrans4(circleFilled->mModel, 5.0f, 5.0f, 0.0f);
+		circleFilled = new CircleFilled("vs_2d.spv", "fs_circleFilled.spv", 0x400, &mView);
 	}
 };
 
@@ -782,13 +823,13 @@ private:
 
 		VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
 		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		colorBlendAttachment.blendEnable = VK_FALSE;
-		colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-		colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
-		colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-		colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-		colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+		colorBlendAttachment.blendEnable = VK_TRUE;
+		colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+		colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+		colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+		colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
 		VkPipelineColorBlendStateCreateInfo colorBlending = {};
 		colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -1155,6 +1196,8 @@ private:
 		mult4(renderObject[1]->mModel, B, A);
 
 		getRotZ4(renderObject[2]->mModel, -(float)(clock() - startTime) / CLOCKS_PER_SEC / 2.0f);
+
+		((CircleFilled*)renderObject[4])->motion();
 
 		if (key[VK_UP] == true)
 		{

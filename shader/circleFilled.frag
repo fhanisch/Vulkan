@@ -15,11 +15,11 @@ void main()
 
 	if (R<=1.0)
 	{
-		farbe=vec4(0.0,1.0,0.0,1.0);
+		farbe=vec4(0.0,1.0,0.0,0.33);
 	}
 	else
 	{
-		farbe=vec4(0.0,0.0,0.0,1.0);
+		farbe=vec4(0.0,0.0,0.0,0.0);
 	}
 
 	outColor = farbe;

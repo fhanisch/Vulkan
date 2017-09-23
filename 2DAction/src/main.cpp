@@ -219,11 +219,12 @@ class RenderScene
 {
 public:
 	mat4 mView;
-	RenderObject *powerMeter, *square, *star, *circle;
+	RenderObject *powerMeter, *square, *star, *circle, *welle;
 	CircleFilled *circleFilled;
 
 	RenderScene()
 	{
+		mat4 A, B;
 		identity4(mView);
 		vecf(&u, &uSize, 0.0f, 0.01f, 101);
 		vecs(&indices_circle, &indices_circle_size, 7*12, 101);
@@ -252,6 +253,19 @@ public:
 		getScale4(circle->mModel, 1.5f, 1.5f, 1.0f);
 
 		circleFilled = new CircleFilled("vs_2d.spv", "fs_circleFilled.spv", 0x400, &mView);
+
+		welle = new RenderObject("vs_welle.spv", "fs_2d.spv", 0x500, &mView);
+		welle->indexCount = indices_circle_size / sizeof(uint16_t);
+		welle->firstIndex = powerMeter->indexCount + star->indexCount;
+		welle->bindingDescription = welle->getBindingDescription(sizeof(float));
+		welle->attributeDescriptionCount = 1;
+		format[0] = { VK_FORMAT_R32_SFLOAT };
+		offset[0] = { 0 };
+		welle->attributeDescriptions = welle->getAttributeDescriptions(1, format, offset);
+		welle->topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+		getScale4(A, 2.0f, 1.0f, 1.0f);
+		getTrans4(B, 0.0f, -2.0f, 0.0f);
+		mult4(welle->mModel, B, A);
 	}
 };
 
@@ -265,6 +279,7 @@ public:
 		renderObject[2] = scene->star;
 		renderObject[3] = scene->circle;
 		renderObject[4] = scene->circleFilled;
+		renderObject[5] = scene->welle;
 		mView = &scene->mView;
 	}
 	void run()
@@ -299,8 +314,8 @@ private:
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
 
-	VkDeviceSize uboBufferSize = 0x500;
-	static const uint16_t objectCount = 5;
+	VkDeviceSize uboBufferSize = 0x600;
+	static const uint16_t objectCount = 6;
 	RenderObject *renderObject[objectCount];
 	mat4 *mView;
 
@@ -349,6 +364,7 @@ private:
 		renderObject[2]->pipelineLayout = renderObject[1]->pipelineLayout;
 		createGraphicsPipeline(renderObject[3]);
 		createGraphicsPipeline(renderObject[4]);
+		createGraphicsPipeline(renderObject[5]);
 
 		createFramebuffers();
 		createCommandPool();
@@ -363,6 +379,7 @@ private:
 		createDescriptorSet(renderObject[2]);
 		createDescriptorSet(renderObject[3]);
 		createDescriptorSet(renderObject[4]);
+		createDescriptorSet(renderObject[5]);
 
 		createCommandBuffers();
 		createSemaphores();
@@ -422,10 +439,12 @@ private:
 		vkDestroyPipeline(device, renderObject[1]->graphicsPipeline, nullptr);
 		vkDestroyPipeline(device, renderObject[3]->graphicsPipeline, nullptr);
 		vkDestroyPipeline(device, renderObject[4]->graphicsPipeline, nullptr);
+		vkDestroyPipeline(device, renderObject[5]->graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[0]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[1]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[3]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[4]->pipelineLayout, nullptr);
+		vkDestroyPipelineLayout(device, renderObject[5]->pipelineLayout, nullptr);
 		
 		vkDestroyRenderPass(device, renderPass, nullptr);
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
@@ -986,13 +1005,13 @@ private:
 	{
 		VkDescriptorPoolSize poolSize = {};
 		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSize.descriptorCount = 5;
+		poolSize.descriptorCount = 6;
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = 1;
 		poolInfo.pPoolSizes = &poolSize;
-		poolInfo.maxSets = 5;
+		poolInfo.maxSets = 6;
 		
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{
@@ -1018,7 +1037,7 @@ private:
 		VkDescriptorBufferInfo bufferInfo = {};
 		bufferInfo.buffer = uniformBuffer;
 		bufferInfo.offset = obj->uboOffset;
-		bufferInfo.range = 3 * sizeof(mat4);
+		bufferInfo.range = 3 * sizeof(mat4) + sizeof(float);
 		
 		VkWriteDescriptorSet descriptorWrite = {};
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1191,11 +1210,13 @@ private:
 		VkDeviceSize bufferSize = uboBufferSize;
 		mat4 A, B;
 
+		float time = (float)(clock() - startTime) / CLOCKS_PER_SEC;
+
 		getScale4(A, 0.5f, 0.5f, 0.0f);
-		getRotZ4(B, (float)(clock() - startTime) / CLOCKS_PER_SEC / 2.0f);
+		getRotZ4(B, time / 2.0f);
 		mult4(renderObject[1]->mModel, B, A);
 
-		getRotZ4(renderObject[2]->mModel, -(float)(clock() - startTime) / CLOCKS_PER_SEC / 2.0f);
+		getRotZ4(renderObject[2]->mModel, -time / 2.0f);
 
 		((CircleFilled*)renderObject[4])->motion();
 
@@ -1234,6 +1255,7 @@ private:
 			memcpy((char*)data + renderObject[i]->uboOffset, &renderObject[i]->mModel, sizeof(mat4));
 			memcpy((char*)data + sizeof(mat4) + renderObject[i]->uboOffset, renderObject[i]->mView, sizeof(mat4));
 			memcpy((char*)data + 2*sizeof(mat4) + renderObject[i]->uboOffset, &renderObject[i]->mProj, sizeof(mat4));
+			memcpy((char*)data + 3*sizeof(mat4) + renderObject[i]->uboOffset, &time, sizeof(float));
 		}
 		vkUnmapMemory(device, uniformBufferMemory);
 	}

@@ -10,7 +10,7 @@ void main()
 {
 	vec4 farbe;
 	float x = texCoords.x;
-	float y = -texCoords.y;
+	float y = texCoords.y;
 	float R = sqrt(pow(abs(x),2.0)+pow(abs(y),2.0));
 
 	if (R<=1.0)

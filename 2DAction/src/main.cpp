@@ -219,7 +219,7 @@ class RenderScene
 {
 public:
 	mat4 mView;
-	RenderObject *powerMeter, *square, *star, *circle, *welle;
+	RenderObject *powerMeter, *square, *star, *circle, *welle, *perlin1d, *experiments;
 	CircleFilled *circleFilled;
 
 	RenderScene()
@@ -266,6 +266,24 @@ public:
 		getScale4(A, 2.0f, 1.0f, 1.0f);
 		getTrans4(B, 0.0f, -2.0f, 0.0f);
 		mult4(welle->mModel, B, A);
+
+		perlin1d = new RenderObject("vs_perlin1d.spv", "fs_2d.spv", 0x600, &mView);
+		perlin1d->indexCount = indices_circle_size / sizeof(uint16_t);
+		perlin1d->firstIndex = powerMeter->indexCount + star->indexCount;
+		perlin1d->bindingDescription = perlin1d->getBindingDescription(sizeof(float));
+		perlin1d->attributeDescriptionCount = 1;
+		format[0] = { VK_FORMAT_R32_SFLOAT };
+		offset[0] = { 0 };
+		perlin1d->attributeDescriptions = perlin1d->getAttributeDescriptions(1, format, offset);
+		perlin1d->topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+		getScale4(A, 2.0f, 0.5f, 1.0f);
+		getTrans4(B, -1.0f, 2.0f, 0.0f);
+		mult4(perlin1d->mModel, B, A);
+
+		experiments = new RenderObject("vs_2d.spv", "fs_experiments.spv", 0x700, &mView);
+		experiments->indexCount = sizeof(indices) / sizeof(uint16_t);
+		experiments->firstIndex = 0;
+		getTrans4(experiments->mModel, -5.0f, -5.0f, 0.0f);
 	}
 };
 
@@ -280,6 +298,8 @@ public:
 		renderObject[3] = scene->circle;
 		renderObject[4] = scene->circleFilled;
 		renderObject[5] = scene->welle;
+		renderObject[6] = scene->perlin1d;
+		renderObject[7] = scene->experiments;
 		mView = &scene->mView;
 	}
 	void run()
@@ -314,8 +334,8 @@ private:
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
 
-	VkDeviceSize uboBufferSize = 0x600;
-	static const uint16_t objectCount = 6;
+	VkDeviceSize uboBufferSize = 0x800;
+	static const uint16_t objectCount = 8;
 	RenderObject *renderObject[objectCount];
 	mat4 *mView;
 
@@ -365,6 +385,8 @@ private:
 		createGraphicsPipeline(renderObject[3]);
 		createGraphicsPipeline(renderObject[4]);
 		createGraphicsPipeline(renderObject[5]);
+		createGraphicsPipeline(renderObject[6]);
+		createGraphicsPipeline(renderObject[7]);
 
 		createFramebuffers();
 		createCommandPool();
@@ -380,6 +402,8 @@ private:
 		createDescriptorSet(renderObject[3]);
 		createDescriptorSet(renderObject[4]);
 		createDescriptorSet(renderObject[5]);
+		createDescriptorSet(renderObject[6]);
+		createDescriptorSet(renderObject[7]);
 
 		createCommandBuffers();
 		createSemaphores();
@@ -440,11 +464,15 @@ private:
 		vkDestroyPipeline(device, renderObject[3]->graphicsPipeline, nullptr);
 		vkDestroyPipeline(device, renderObject[4]->graphicsPipeline, nullptr);
 		vkDestroyPipeline(device, renderObject[5]->graphicsPipeline, nullptr);
+		vkDestroyPipeline(device, renderObject[6]->graphicsPipeline, nullptr);
+		vkDestroyPipeline(device, renderObject[7]->graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[0]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[1]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[3]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[4]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[5]->pipelineLayout, nullptr);
+		vkDestroyPipelineLayout(device, renderObject[6]->pipelineLayout, nullptr);
+		vkDestroyPipelineLayout(device, renderObject[7]->pipelineLayout, nullptr);
 		
 		vkDestroyRenderPass(device, renderPass, nullptr);
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
@@ -1005,13 +1033,13 @@ private:
 	{
 		VkDescriptorPoolSize poolSize = {};
 		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSize.descriptorCount = 6;
+		poolSize.descriptorCount = objectCount;
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = 1;
 		poolInfo.pPoolSizes = &poolSize;
-		poolInfo.maxSets = 6;
+		poolInfo.maxSets = objectCount;
 		
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{

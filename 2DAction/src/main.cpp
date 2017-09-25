@@ -57,18 +57,18 @@ struct Vertex
 };
 
 const Vertex vertices[] = {
-	{ {  -1.0f,  -1.0f }, { 1.0f, 0.0f, 0.0f }, { -1.0f, -1.0f } },  //0
-	{ {   1.0f,  -1.0f }, { 0.0f, 1.0f, 0.0f }, {  1.0f, -1.0f } },  //1
-	{ {   1.0f,   1.0f }, { 0.0f, 0.0f, 1.0f }, {  1.0f,  1.0f } },  //2
-	{ {  -1.0f,   1.0f }, { 1.0f, 1.0f, 1.0f }, { -1.0f,  1.0f } },  //3
-	{ {   0.0f,  -1.0f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //4
-	{ {  0.25f, -0.25f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //5
-	{ { -0.25f, -0.25f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //6
-	{ {   1.0f,   0.0f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //7
-	{ {  0.25f,  0.25f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //8
-	{ {   0.0f,   1.0f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //9
-	{ {  -0.25,  0.25f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } },  //10
-	{ {  -1.0f,   0.0f }, { 1.0f, 0.0f, 1.0f }, { -1.0f,  1.0f } }   //11
+	{ {  -1.0f,  -1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },  //0
+	{ {   1.0f,  -1.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f } },  //1
+	{ {   1.0f,   1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } },  //2
+	{ {  -1.0f,   1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },  //3
+	{ {   0.0f,  -1.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //4
+	{ {  0.25f, -0.25f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //5
+	{ { -0.25f, -0.25f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //6
+	{ {   1.0f,   0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //7
+	{ {  0.25f,  0.25f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //8
+	{ {   0.0f,   1.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //9
+	{ {  -0.25,  0.25f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //10
+	{ {  -1.0f,   0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } }   //11
 };
 
 uint32_t uSize;
@@ -116,6 +116,7 @@ class RenderObject
 public:
 	char *vertexShaderFileName;
 	char *fragmentShaderFileName;
+	bool hasGraphicsPipeline;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	VkDescriptorSet descriptorSet;
@@ -136,6 +137,7 @@ public:
 		vertexShaderFileName = vertName;
 		fragmentShaderFileName = fragName;
 		uboOffset = _uboOffset;
+		hasGraphicsPipeline = true;
 		bindingDescription = getBindingDescription(sizeof(Vertex));
 		attributeDescriptionCount = 3;
 		VkFormat formats[] = { VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
@@ -219,7 +221,7 @@ class RenderScene
 {
 public:
 	mat4 mView;
-	RenderObject *powerMeter, *square, *star, *circle, *welle, *perlin1d, *experiments;
+	RenderObject *powerMeter, *square, *star, *circle, *welle, *perlin1d, *perlin2d, *muster;
 	CircleFilled *circleFilled;
 
 	RenderScene()
@@ -280,10 +282,17 @@ public:
 		getTrans4(B, -1.0f, 2.0f, 0.0f);
 		mult4(perlin1d->mModel, B, A);
 
-		experiments = new RenderObject("vs_2d.spv", "fs_experiments.spv", 0x700, &mView);
-		experiments->indexCount = sizeof(indices) / sizeof(uint16_t);
-		experiments->firstIndex = 0;
-		getTrans4(experiments->mModel, -5.0f, -5.0f, 0.0f);
+		perlin2d = new RenderObject("vs_2d.spv", "fs_perlin2d.spv", 0x700, &mView);
+		perlin2d->indexCount = sizeof(indices) / sizeof(uint16_t);
+		perlin2d->firstIndex = 0;
+		getTrans4(perlin2d->mModel, -5.0f, -5.0f, 0.0f);
+
+		muster = new RenderObject("vs_2d.spv", "fs_muster.spv", 0x800, &mView);
+		muster->indexCount = sizeof(indices) / sizeof(uint16_t);
+		muster->firstIndex = 0;
+		getScale4(A, 2.0f, 2.0f, 1.0f);
+		getTrans4(B, -5.0f, 5.0f, 0.0f);
+		mult4(muster->mModel, B, A);
 	}
 };
 
@@ -292,14 +301,15 @@ class App2DAction
 public:
 	App2DAction(RenderScene *scene)
 	{
-		renderObject[0] = scene->powerMeter;
-		renderObject[1] = scene->square;
-		renderObject[2] = scene->star;
-		renderObject[3] = scene->circle;
-		renderObject[4] = scene->circleFilled;
-		renderObject[5] = scene->welle;
-		renderObject[6] = scene->perlin1d;
-		renderObject[7] = scene->experiments;
+		addObject(scene->powerMeter);
+		addObject(scene->square);
+		addObject(scene->star);
+		addObject(scene->circle);
+		addObject(scene->welle);
+		addObject(scene->perlin1d);
+		addObject(scene->perlin2d);
+		addObject(scene->muster);
+		addObject(scene->circleFilled);
 		mView = &scene->mView;
 	}
 	void run()
@@ -334,11 +344,18 @@ private:
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderFinishedSemaphore;
 
-	VkDeviceSize uboBufferSize = 0x800;
-	static const uint16_t objectCount = 8;
-	RenderObject *renderObject[objectCount];
+	VkDeviceSize uboBufferSize = 0x0;
+	uint16_t maxObjectCount = 20;
+	uint16_t objectCount = 0;
+	RenderObject **renderObject = new RenderObject*[maxObjectCount];
 	mat4 *mView;
 
+	void addObject(RenderObject *obj)
+	{
+		uboBufferSize += 0x100;
+		renderObject[objectCount] = obj;
+		objectCount++;
+	}
 	void initWindow(const char *windowName)
 	{
 		SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE); // notwendig für high dpi scaling
@@ -387,6 +404,7 @@ private:
 		createGraphicsPipeline(renderObject[5]);
 		createGraphicsPipeline(renderObject[6]);
 		createGraphicsPipeline(renderObject[7]);
+		createGraphicsPipeline(renderObject[8]);
 
 		createFramebuffers();
 		createCommandPool();
@@ -404,6 +422,7 @@ private:
 		createDescriptorSet(renderObject[5]);
 		createDescriptorSet(renderObject[6]);
 		createDescriptorSet(renderObject[7]);
+		createDescriptorSet(renderObject[8]);
 
 		createCommandBuffers();
 		createSemaphores();
@@ -466,6 +485,7 @@ private:
 		vkDestroyPipeline(device, renderObject[5]->graphicsPipeline, nullptr);
 		vkDestroyPipeline(device, renderObject[6]->graphicsPipeline, nullptr);
 		vkDestroyPipeline(device, renderObject[7]->graphicsPipeline, nullptr);
+		vkDestroyPipeline(device, renderObject[8]->graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[0]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[1]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[3]->pipelineLayout, nullptr);
@@ -473,6 +493,7 @@ private:
 		vkDestroyPipelineLayout(device, renderObject[5]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[6]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[7]->pipelineLayout, nullptr);
+		vkDestroyPipelineLayout(device, renderObject[8]->pipelineLayout, nullptr);
 		
 		vkDestroyRenderPass(device, renderPass, nullptr);
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
@@ -1246,7 +1267,7 @@ private:
 
 		getRotZ4(renderObject[2]->mModel, -time / 2.0f);
 
-		((CircleFilled*)renderObject[4])->motion();
+		((CircleFilled*)renderObject[8])->motion();
 
 		if (key[VK_UP] == true)
 		{

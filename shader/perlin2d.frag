@@ -3,6 +3,7 @@
 
 const float SEED_U = 1289.0;
 const float SEED_V = 587.0;
+const float scale = 10.0;
 
 layout (location = 0) in vec3 color;
 layout (location = 1) in vec2 texCoords;
@@ -40,7 +41,7 @@ void main()
 	float x = texCoords.x;
 	float y = texCoords.y;
 
-	float c = 2.0*perlin_interp2(5.0*x,5.0*y);
+	float c = 2.0*perlin_interp2(scale*x, scale*y);
 
 	if (c>=0.5)
 		farbe=vec4(0.5,0.25,0.0,1.0);

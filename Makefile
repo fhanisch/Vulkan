@@ -44,7 +44,8 @@ Shader: build
 	glslangValidator -V shader\2d.frag -o build\fs_2d.spv
 	glslangValidator -V shader\powermeter.frag -o build\fs_powermeter.spv
 	glslangValidator -V shader\circleFilled.frag -o build\fs_circleFilled.spv
-	glslangValidator -V shader\experiments.frag -o build\fs_experiments.spv
+	glslangValidator -V shader\perlin2d.frag -o build\fs_perlin2d.spv
+	glslangValidator -V shader\muster.frag -o build\fs_muster.spv
 	copy build\*.spv x64\Debug
 
 build:

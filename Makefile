@@ -46,6 +46,12 @@ Shader: build
 	glslangValidator -V shader\circleFilled.frag -o build\fs_circleFilled.spv
 	glslangValidator -V shader\perlin2d.frag -o build\fs_perlin2d.spv
 	glslangValidator -V shader\muster.frag -o build\fs_muster.spv
+	glslangValidator -V shader\curveTesselator.vert -o build\vs_curveTesselator.spv
+	glslangValidator -V shader\curveTesselator.tesc -o build\tcs_curveTesselator.spv
+	glslangValidator -V shader\curveTesselator.tese -o build\tes_curveTesselator.spv
+	glslangValidator -V shader\curveTesselator.frag -o build\fs_curveTesselator.spv
+	glslangValidator -V shader\perlin1dTesselator.tesc -o build\tcs_perlin1dTesselator.spv
+	glslangValidator -V shader\perlin1dTesselator.tese -o build\tes_perlin1dTesselator.spv
 	copy build\*.spv x64\Debug
 
 build:

@@ -68,7 +68,10 @@ const Vertex vertices[] = {
 	{ {  0.25f,  0.25f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //8
 	{ {   0.0f,   1.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //9
 	{ {  -0.25,  0.25f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //10
-	{ {  -1.0f,   0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } }   //11
+	{ {  -1.0f,   0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //11
+	{ {   0.0f,   0.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },  //12
+	{ {   1.0f,   0.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },  //13
+	{ {   2.0f,   0.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } }   //14
 };
 
 uint32_t uSize;
@@ -76,6 +79,7 @@ float *u;
 
 const uint16_t indices[] = { 0, 1, 2, 2, 3, 0 };
 const uint16_t indices_star[] = { 4, 5, 6, 5, 7, 8, 8, 9, 10, 10, 11, 6, 6, 5, 8, 8, 10, 6 };
+const uint16_t indices_patches[] = { 12, 13, 13, 14 };
 uint32_t indices_circle_size;
 uint16_t *indices_circle;
 
@@ -116,7 +120,10 @@ class RenderObject
 public:
 	char *vertexShaderFileName;
 	char *fragmentShaderFileName;
+	char *tesselationControllShaderName;
+	char *tesselationEvaluationShaderName;
 	bool hasGraphicsPipeline;
+	uint32_t stageCount;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	VkDescriptorSet descriptorSet;
@@ -127,6 +134,7 @@ public:
 	uint32_t attributeDescriptionCount;
 	VkVertexInputAttributeDescription *attributeDescriptions;
 	VkPrimitiveTopology topology;
+	VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo;
 
 	mat4 mModel;
 	mat4 *mView;
@@ -134,9 +142,23 @@ public:
 
 	RenderObject(char *vertName, char *fragName, VkDeviceSize _uboOffset, mat4 *_mView)
 	{
+		init(vertName, fragName, _uboOffset, _mView);
+	}
+	RenderObject(char *vertName, char *tcsName, char *tesName, char *fragName, VkDeviceSize _uboOffset, mat4 *_mView)
+	{
+		init(vertName, fragName, _uboOffset, _mView);
+		stageCount = 4;
+		tesselationControllShaderName = tcsName;
+		tesselationEvaluationShaderName = tesName;
+		topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+		tessellationStateCreateInfo = getTessellationStateCreateInfo(2);
+	}
+	void init(char *vertName, char *fragName, VkDeviceSize _uboOffset, mat4 *_mView)
+	{
 		vertexShaderFileName = vertName;
 		fragmentShaderFileName = fragName;
 		uboOffset = _uboOffset;
+		stageCount = 2;
 		hasGraphicsPipeline = true;
 		bindingDescription = getBindingDescription(sizeof(Vertex));
 		attributeDescriptionCount = 3;
@@ -148,8 +170,7 @@ public:
 		mView = _mView;
 		identity4(mProj);
 	}
-
-	VkVertexInputBindingDescription getBindingDescription(uint32_t stride)
+	static VkVertexInputBindingDescription getBindingDescription(uint32_t stride)
 	{
 		VkVertexInputBindingDescription bindingDescription = {};
 		bindingDescription.binding = 0;
@@ -158,8 +179,7 @@ public:
 
 		return bindingDescription;
 	}
-
-	VkVertexInputAttributeDescription *getAttributeDescriptions(uint32_t count, VkFormat *formats, uint32_t *offsets)
+	static VkVertexInputAttributeDescription *getAttributeDescriptions(uint32_t count, VkFormat *formats, uint32_t *offsets)
 	{
 		VkVertexInputAttributeDescription *attributeDescriptions = new VkVertexInputAttributeDescription[3];
 
@@ -172,6 +192,14 @@ public:
 		}
 
 		return attributeDescriptions;
+	}
+	static VkPipelineTessellationStateCreateInfo getTessellationStateCreateInfo(uint32_t patchControlPoints)
+	{
+		VkPipelineTessellationStateCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+		createInfo.patchControlPoints = patchControlPoints;
+
+		return createInfo;
 	}
 };
 
@@ -221,7 +249,8 @@ class RenderScene
 {
 public:
 	mat4 mView;
-	RenderObject *powerMeter, *square, *star, *circle, *welle, *perlin1d, *perlin2d, *muster;
+	RenderObject *powerMeter, *square, *star, *circle, *welle,
+		*perlin1d, *perlin2d, *muster, *curveTesselator, *perlin1dTesselator;
 	CircleFilled *circleFilled;
 
 	RenderScene()
@@ -229,7 +258,7 @@ public:
 		mat4 A, B;
 		identity4(mView);
 		vecf(&u, &uSize, 0.0f, 0.01f, 101);
-		vecs(&indices_circle, &indices_circle_size, 7*12, 101);
+		vecs(&indices_circle, &indices_circle_size, sizeof(vertices)/sizeof(float), 101);
 
 		powerMeter = new RenderObject("vs_2d.spv", "fs_powermeter.spv", 0, &mView);
 		powerMeter->indexCount = sizeof(indices) / sizeof(uint16_t);
@@ -241,58 +270,67 @@ public:
 
 		star = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x200, &mView);
 		star->indexCount = sizeof(indices_star) / sizeof(uint16_t);
-		star->firstIndex = 6;
+		star->firstIndex = square->indexCount;
 
-		circle = new RenderObject("vs_circle.spv", "fs_2d.spv", 0x300, &mView);
+		curveTesselator = new RenderObject("vs_curveTesselator.spv", "tcs_curveTesselator.spv", "tes_curveTesselator.spv", "fs_curveTesselator.spv", 0x300, &mView);
+		curveTesselator->indexCount = sizeof(indices_patches) / sizeof(uint16_t);
+		curveTesselator->firstIndex = powerMeter->indexCount + star->indexCount;
+
+		circle = new RenderObject("vs_circle.spv", "fs_2d.spv", 0x400, &mView);
 		circle->indexCount = indices_circle_size / sizeof(uint16_t);
-		circle->firstIndex = powerMeter->indexCount + star->indexCount;
-		circle->bindingDescription = circle->getBindingDescription(sizeof(float));
+		circle->firstIndex = powerMeter->indexCount + star->indexCount + curveTesselator->indexCount;
+		circle->bindingDescription = RenderObject::getBindingDescription(sizeof(float));
 		circle->attributeDescriptionCount = 1;
 		VkFormat format[] = { VK_FORMAT_R32_SFLOAT };
 		uint32_t offset[] = { 0 };
-		circle->attributeDescriptions = circle->getAttributeDescriptions(1, format, offset);
+		circle->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
 		circle->topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
 		getScale4(circle->mModel, 1.5f, 1.5f, 1.0f);
 
-		circleFilled = new CircleFilled("vs_2d.spv", "fs_circleFilled.spv", 0x400, &mView);
+		circleFilled = new CircleFilled("vs_2d.spv", "fs_circleFilled.spv", 0x500, &mView);
 
-		welle = new RenderObject("vs_welle.spv", "fs_2d.spv", 0x500, &mView);
+		welle = new RenderObject("vs_welle.spv", "fs_2d.spv", 0x600, &mView);
 		welle->indexCount = indices_circle_size / sizeof(uint16_t);
-		welle->firstIndex = powerMeter->indexCount + star->indexCount;
-		welle->bindingDescription = welle->getBindingDescription(sizeof(float));
+		welle->firstIndex = circle->firstIndex;
+		welle->bindingDescription = RenderObject::getBindingDescription(sizeof(float));
 		welle->attributeDescriptionCount = 1;
 		format[0] = { VK_FORMAT_R32_SFLOAT };
 		offset[0] = { 0 };
-		welle->attributeDescriptions = welle->getAttributeDescriptions(1, format, offset);
+		welle->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
 		welle->topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
 		getScale4(A, 2.0f, 1.0f, 1.0f);
 		getTrans4(B, 0.0f, -2.0f, 0.0f);
 		mult4(welle->mModel, B, A);
 
-		perlin1d = new RenderObject("vs_perlin1d.spv", "fs_2d.spv", 0x600, &mView);
+		perlin1d = new RenderObject("vs_perlin1d.spv", "fs_2d.spv", 0x700, &mView);
 		perlin1d->indexCount = indices_circle_size / sizeof(uint16_t);
-		perlin1d->firstIndex = powerMeter->indexCount + star->indexCount;
-		perlin1d->bindingDescription = perlin1d->getBindingDescription(sizeof(float));
+		perlin1d->firstIndex = circle->firstIndex;
+		perlin1d->bindingDescription = RenderObject::getBindingDescription(sizeof(float));
 		perlin1d->attributeDescriptionCount = 1;
 		format[0] = { VK_FORMAT_R32_SFLOAT };
 		offset[0] = { 0 };
-		perlin1d->attributeDescriptions = perlin1d->getAttributeDescriptions(1, format, offset);
+		perlin1d->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
 		perlin1d->topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
 		getScale4(A, 2.0f, 0.5f, 1.0f);
 		getTrans4(B, -1.0f, 2.0f, 0.0f);
 		mult4(perlin1d->mModel, B, A);
 
-		perlin2d = new RenderObject("vs_2d.spv", "fs_perlin2d.spv", 0x700, &mView);
+		perlin2d = new RenderObject("vs_2d.spv", "fs_perlin2d.spv", 0x800, &mView);
 		perlin2d->indexCount = sizeof(indices) / sizeof(uint16_t);
 		perlin2d->firstIndex = 0;
 		getTrans4(perlin2d->mModel, -5.0f, -5.0f, 0.0f);
 
-		muster = new RenderObject("vs_2d.spv", "fs_muster.spv", 0x800, &mView);
+		muster = new RenderObject("vs_2d.spv", "fs_muster.spv", 0x900, &mView);
 		muster->indexCount = sizeof(indices) / sizeof(uint16_t);
 		muster->firstIndex = 0;
 		getScale4(A, 2.0f, 2.0f, 1.0f);
 		getTrans4(B, -5.0f, 5.0f, 0.0f);
 		mult4(muster->mModel, B, A);
+
+		perlin1dTesselator = new RenderObject("vs_curveTesselator.spv", "tcs_perlin1dTesselator.spv", "tes_perlin1dTesselator.spv", "fs_curveTesselator.spv", 0xa00, &mView);
+		perlin1dTesselator->indexCount = sizeof(indices_patches) / sizeof(uint16_t);
+		perlin1dTesselator->firstIndex = powerMeter->indexCount + star->indexCount;
+		getTrans4(perlin1dTesselator->mModel, 2.0f, -2.0f, 0.0f);
 	}
 };
 
@@ -304,12 +342,14 @@ public:
 		addObject(scene->powerMeter);
 		addObject(scene->square);
 		addObject(scene->star);
+		addObject(scene->curveTesselator);
 		addObject(scene->circle);
 		addObject(scene->welle);
 		addObject(scene->perlin1d);
 		addObject(scene->perlin2d);
 		addObject(scene->muster);
 		addObject(scene->circleFilled);
+		addObject(scene->perlin1dTesselator);
 		mView = &scene->mView;
 	}
 	void run()
@@ -405,6 +445,8 @@ private:
 		createGraphicsPipeline(renderObject[6]);
 		createGraphicsPipeline(renderObject[7]);
 		createGraphicsPipeline(renderObject[8]);
+		createGraphicsPipeline(renderObject[9]);
+		createGraphicsPipeline(renderObject[10]);
 
 		createFramebuffers();
 		createCommandPool();
@@ -423,6 +465,8 @@ private:
 		createDescriptorSet(renderObject[6]);
 		createDescriptorSet(renderObject[7]);
 		createDescriptorSet(renderObject[8]);
+		createDescriptorSet(renderObject[9]);
+		createDescriptorSet(renderObject[10]);
 
 		createCommandBuffers();
 		createSemaphores();
@@ -486,6 +530,8 @@ private:
 		vkDestroyPipeline(device, renderObject[6]->graphicsPipeline, nullptr);
 		vkDestroyPipeline(device, renderObject[7]->graphicsPipeline, nullptr);
 		vkDestroyPipeline(device, renderObject[8]->graphicsPipeline, nullptr);
+		vkDestroyPipeline(device, renderObject[9]->graphicsPipeline, nullptr);
+		vkDestroyPipeline(device, renderObject[10]->graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[0]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[1]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[3]->pipelineLayout, nullptr);
@@ -494,6 +540,8 @@ private:
 		vkDestroyPipelineLayout(device, renderObject[6]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[7]->pipelineLayout, nullptr);
 		vkDestroyPipelineLayout(device, renderObject[8]->pipelineLayout, nullptr);
+		vkDestroyPipelineLayout(device, renderObject[9]->pipelineLayout, nullptr);
+		vkDestroyPipelineLayout(device, renderObject[10]->pipelineLayout, nullptr);
 		
 		vkDestroyRenderPass(device, renderPass, nullptr);
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
@@ -636,6 +684,7 @@ private:
 		queueCreateInfo.pQueuePriorities = &queuePriority;
 
 		VkPhysicalDeviceFeatures deviceFeatures = {};
+		deviceFeatures.tessellationShader = VK_TRUE;
 
 		VkDeviceCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -784,7 +833,7 @@ private:
 		uboLayoutBinding.binding = 0;
 		uboLayoutBinding.descriptorCount = 1;
 		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
 		uboLayoutBinding.pImmutableSamplers = nullptr;
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
@@ -802,29 +851,30 @@ private:
 	{
 		ShaderCode vertShaderCode = loadShader(obj->vertexShaderFileName);
 		ShaderCode fragShaderCode = loadShader(obj->fragmentShaderFileName);
+		ShaderCode tcShaderCode;
+		ShaderCode teShaderCode;
+		if (obj->stageCount > 2)
+		{
+			tcShaderCode = loadShader(obj->tesselationControllShaderName);
+			teShaderCode = loadShader(obj->tesselationEvaluationShaderName);
+		}
 
 		VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
 		VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+		VkShaderModule tcShaderModule = VK_NULL_HANDLE;
+		VkShaderModule teShaderModule = VK_NULL_HANDLE;
+		if (obj->stageCount > 2)
+		{
+			tcShaderModule = createShaderModule(tcShaderCode);
+			teShaderModule = createShaderModule(teShaderCode);
+		}
 
-		VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		vertShaderStageInfo.pNext = nullptr;
-		vertShaderStageInfo.flags = 0;
-		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vertShaderStageInfo.module = vertShaderModule;
-		vertShaderStageInfo.pName = "main";
-		vertShaderStageInfo.pSpecializationInfo = nullptr;
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo = getShaderStageInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo = getShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule);
+		VkPipelineShaderStageCreateInfo tcShaderStageInfo = getShaderStageInfo(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, tcShaderModule);
+		VkPipelineShaderStageCreateInfo teShaderStageInfo = getShaderStageInfo(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, teShaderModule);
 
-		VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		fragShaderStageInfo.pNext = nullptr;
-		fragShaderStageInfo.flags = 0;
-		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		fragShaderStageInfo.module = fragShaderModule;
-		fragShaderStageInfo.pName = "main";
-		fragShaderStageInfo.pSpecializationInfo = nullptr;
-
-		VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo,fragShaderStageInfo };
+		VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo, tcShaderStageInfo, teShaderStageInfo };
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -929,10 +979,11 @@ private:
 
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineInfo.stageCount = 2;
+		pipelineInfo.stageCount = obj->stageCount;
 		pipelineInfo.pStages = shaderStages;
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &inputAssembly;
+		pipelineInfo.pTessellationState = &obj->tessellationStateCreateInfo;
 		pipelineInfo.pViewportState = &viewportState;
 		pipelineInfo.pRasterizationState = &rasterizer;
 		pipelineInfo.pMultisampleState = &multisampling;
@@ -955,6 +1006,8 @@ private:
 
 		vkDestroyShaderModule(device, fragShaderModule, nullptr);
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
+		vkDestroyShaderModule(device, tcShaderModule, nullptr);
+		vkDestroyShaderModule(device, teShaderModule, nullptr);
 	}
 	void createFramebuffers()
 	{
@@ -1020,7 +1073,8 @@ private:
 	}
 	void createIndexBuffer()
 	{
-		VkDeviceSize bufferSize = sizeof(indices) + sizeof(indices_star) + indices_circle_size;
+		VkDeviceSize bufferSize = sizeof(indices) + sizeof(indices_star)
+			+ sizeof(indices_patches) + indices_circle_size;
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
@@ -1032,7 +1086,9 @@ private:
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
 			memcpy(data, indices, sizeof(indices));
 			memcpy((char*)data + sizeof(indices), indices_star, sizeof(indices_star));
-			memcpy((char*)data + sizeof(indices) + sizeof(indices_star), indices_circle, indices_circle_size);
+			memcpy((char*)data + sizeof(indices) + sizeof(indices_star), indices_patches, sizeof(indices_patches));
+			memcpy((char*)data + sizeof(indices) + sizeof(indices_star)
+				+ sizeof(indices_patches), indices_circle, indices_circle_size);
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -1267,7 +1323,7 @@ private:
 
 		getRotZ4(renderObject[2]->mModel, -time / 2.0f);
 
-		((CircleFilled*)renderObject[8])->motion();
+		((CircleFilled*)renderObject[9])->motion();
 
 		if (key[VK_UP] == true)
 		{
@@ -1583,6 +1639,19 @@ private:
 		}
 
 		return shaderModule;
+	}
+	VkPipelineShaderStageCreateInfo getShaderStageInfo(VkShaderStageFlagBits stage, VkShaderModule module)
+	{
+		VkPipelineShaderStageCreateInfo shaderStageInfo = {};
+		shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderStageInfo.pNext = nullptr;
+		shaderStageInfo.flags = 0;
+		shaderStageInfo.stage = stage;
+		shaderStageInfo.module = module;
+		shaderStageInfo.pName = "main";
+		shaderStageInfo.pSpecializationInfo = nullptr;
+
+		return shaderStageInfo;
 	}
 };
 

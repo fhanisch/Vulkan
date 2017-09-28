@@ -14,9 +14,8 @@ void main()
 	float x = texCoords.x;
 	float y = texCoords.y;
 
-	if (mod(floor(s*y),2.0)==1 && mod(floor(s*x),2.0)==1)
-		farbe=vec4(0.0,0.0,1.0,1.0);
-	else if (mod(floor(s*y),2.0)==0 && mod(floor(s*x),2.0)==0)
+	if ( (mod(floor(s*y),2.0)==1 && mod(floor(s*x),2.0)==1)
+				|| (mod(floor(s*y),2.0)==0 && mod(floor(s*x),2.0)==0) )
 		farbe=vec4(0.0,0.0,1.0,1.0);
 	else
 		farbe=vec4(1.0,1.0,0.0,1.0);

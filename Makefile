@@ -50,6 +50,7 @@ Shader: build
 	glslangValidator -V shader\curveTesselator.tesc -o build\tcs_curveTesselator.spv
 	glslangValidator -V shader\curveTesselator.tese -o build\tes_curveTesselator.spv
 	glslangValidator -V shader\curveTesselator.frag -o build\fs_curveTesselator.spv
+	glslangValidator -V shader\perlin1dTesselator.vert -o build\vs_perlin1dTesselator.spv
 	glslangValidator -V shader\perlin1dTesselator.tesc -o build\tcs_perlin1dTesselator.spv
 	glslangValidator -V shader\perlin1dTesselator.tese -o build\tes_perlin1dTesselator.spv
 	copy build\*.spv x64\Debug

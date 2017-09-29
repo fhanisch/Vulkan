@@ -25,7 +25,7 @@ void main()
 		vec4 p = ubo.mView * ubo.mModel * gl_in[0].gl_Position;
 		float distance = length(vec2(p.xy));
 
-		if (distance < 1.0)
+		if (distance < 2.0)
 			d = 100.0;
 		else
 			d = 1.0;

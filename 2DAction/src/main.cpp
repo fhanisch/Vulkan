@@ -56,6 +56,14 @@ struct Vertex
 	vec2 texCoords;
 };
 
+struct VertexData
+{
+	char *data;
+	uint32_t size;
+};
+
+VertexData vertexData[3];
+
 const Vertex vertices[] = {
 	{ {  -1.0f,  -1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },  //0
 	{ {   1.0f,  -1.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f } },  //1
@@ -76,12 +84,16 @@ const Vertex vertices[] = {
 
 uint32_t uSize;
 float *u;
+uint32_t patchesSize;
+float *patches;
 
 const uint16_t indices[] = { 0, 1, 2, 2, 3, 0 };
 const uint16_t indices_star[] = { 4, 5, 6, 5, 7, 8, 8, 9, 10, 10, 11, 6, 6, 5, 8, 8, 10, 6 };
-const uint16_t indices_patches[] = { 12, 13, 13, 14 };
+const uint16_t indices_patches[] = { 12,13, 13,14 };
 uint32_t indices_circle_size;
 uint16_t *indices_circle;
+uint32_t indicesPatchesSize;
+uint16_t *indicesPatches2;
 
 struct ShaderCode
 {
@@ -259,6 +271,23 @@ public:
 		identity4(mView);
 		vecf(&u, &uSize, 0.0f, 0.01f, 101);
 		vecs(&indices_circle, &indices_circle_size, sizeof(vertices)/sizeof(float), 101);
+		
+		uint32_t patchesCount = 100;
+		vecf(&patches, &patchesSize, 0.0f, 1.0f, patchesCount);
+		indicesPatchesSize = 2 * (patchesCount - 1) * sizeof(uint16_t);
+		indicesPatches2 = new uint16_t[2 * (patchesCount - 1)];
+		for (uint32_t i = 0; i < (patchesCount - 1); i++)
+		{
+			indicesPatches2[2*i] = 206 + i;
+			indicesPatches2[2*i+1] = 207 + i;
+		}
+
+		vertexData[0].data = (char*)vertices;
+		vertexData[0].size = sizeof(vertices);
+		vertexData[1].data = (char*)u;
+		vertexData[1].size = uSize;
+		vertexData[2].data = (char*)patches;
+		vertexData[2].size = patchesSize;
 
 		powerMeter = new RenderObject("vs_2d.spv", "fs_powermeter.spv", 0, &mView);
 		powerMeter->indexCount = sizeof(indices) / sizeof(uint16_t);
@@ -326,10 +355,15 @@ public:
 		getScale4(A, 2.0f, 2.0f, 1.0f);
 		getTrans4(B, -5.0f, 5.0f, 0.0f);
 		mult4(muster->mModel, B, A);
-
-		perlin1dTesselator = new RenderObject("vs_curveTesselator.spv", "tcs_perlin1dTesselator.spv", "tes_perlin1dTesselator.spv", "fs_curveTesselator.spv", 0xa00, &mView);
-		perlin1dTesselator->indexCount = sizeof(indices_patches) / sizeof(uint16_t);
-		perlin1dTesselator->firstIndex = powerMeter->indexCount + star->indexCount;
+		
+		perlin1dTesselator = new RenderObject("vs_perlin1dTesselator.spv", "tcs_perlin1dTesselator.spv", "tes_perlin1dTesselator.spv", "fs_curveTesselator.spv", 0xa00, &mView);
+		perlin1dTesselator->indexCount = indicesPatchesSize / sizeof(uint16_t);
+		perlin1dTesselator->firstIndex = powerMeter->indexCount + star->indexCount + curveTesselator->indexCount + circle->indexCount;
+		perlin1dTesselator->bindingDescription = RenderObject::getBindingDescription(sizeof(float));
+		perlin1dTesselator->attributeDescriptionCount = 1;
+		format[0] = { VK_FORMAT_R32_SFLOAT };
+		offset[0] = { 0 };
+		perlin1dTesselator->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
 		getTrans4(perlin1dTesselator->mModel, 2.0f, -2.0f, 0.0f);
 	}
 };
@@ -433,7 +467,7 @@ private:
 		createImageViews();
 		createRenderPass();
 		createDescriptorSetLayout();
-
+		
 		//create pipeline
 		createGraphicsPipeline(renderObject[0]);
 		createGraphicsPipeline(renderObject[1]);
@@ -1049,7 +1083,7 @@ private:
 	}
 	void createVertexBuffer()
 	{
-		VkDeviceSize bufferSize = sizeof(vertices) + uSize;
+		VkDeviceSize bufferSize = sizeof(vertices) + uSize + patchesSize;
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
@@ -1059,8 +1093,11 @@ private:
 
 		void *data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-			memcpy(data, vertices, sizeof(vertices));
-			memcpy((char*)data + sizeof(vertices), u, uSize);
+			for (uint32_t i = 0; i < 3; i++)
+			{
+				memcpy(data, vertexData[i].data, vertexData[i].size);
+				data = ((char*)data + vertexData[i].size);
+			}
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -1074,7 +1111,7 @@ private:
 	void createIndexBuffer()
 	{
 		VkDeviceSize bufferSize = sizeof(indices) + sizeof(indices_star)
-			+ sizeof(indices_patches) + indices_circle_size;
+			+ sizeof(indices_patches) + indices_circle_size + indicesPatchesSize;
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
@@ -1089,6 +1126,8 @@ private:
 			memcpy((char*)data + sizeof(indices) + sizeof(indices_star), indices_patches, sizeof(indices_patches));
 			memcpy((char*)data + sizeof(indices) + sizeof(indices_star)
 				+ sizeof(indices_patches), indices_circle, indices_circle_size);
+			memcpy((char*)data + sizeof(indices) + sizeof(indices_star)
+				+ sizeof(indices_patches) + indices_circle_size, indicesPatches2, indicesPatchesSize );
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -1663,12 +1702,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 {
 	RenderScene scene;
 	App2DAction app(&scene);
-
+	
 	logfile.open("log.txt");
 
 	PRINT("***** 2D Action !!! *****");
 	PRINT("=========================");
-
+	
 	app.run();
 
 	logfile.close();

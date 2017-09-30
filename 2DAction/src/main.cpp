@@ -58,11 +58,37 @@ struct Vertex
 
 struct VertexData
 {
-	char *data;
+	float *data;
 	uint32_t size;
 };
 
-VertexData vertexData[3];
+struct IndexData
+{
+	float *data;
+	uint32_t size;
+};
+
+class VertexHandler
+{
+public:
+	uint32_t vertexDataCount;
+	VertexData *vertexData;
+
+	VertexHandler(uint32_t _vertexDataCount)
+	{
+		vertexDataCount = _vertexDataCount;
+		vertexData = new VertexData[vertexDataCount];
+	}
+	uint32_t getSize()
+	{
+		uint32_t size = 0;
+		for (uint32_t i = 0; i < vertexDataCount; i++)
+		{
+			size += vertexData[i].size;
+		}
+		return size;
+	}
+};
 
 const Vertex vertices[] = {
 	{ {  -1.0f,  -1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },  //0
@@ -81,11 +107,6 @@ const Vertex vertices[] = {
 	{ {   1.0f,   0.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },  //13
 	{ {   2.0f,   0.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } }   //14
 };
-
-uint32_t uSize;
-float *u;
-uint32_t patchesSize;
-float *patches;
 
 const uint16_t indices[] = { 0, 1, 2, 2, 3, 0 };
 const uint16_t indices_star[] = { 4, 5, 6, 5, 7, 8, 8, 9, 10, 10, 11, 6, 6, 5, 8, 8, 10, 6 };
@@ -264,16 +285,22 @@ public:
 	RenderObject *powerMeter, *square, *star, *circle, *welle,
 		*perlin1d, *perlin2d, *muster, *curveTesselator, *perlin1dTesselator;
 	CircleFilled *circleFilled;
+	VertexHandler *hVertices;
 
 	RenderScene()
 	{
 		mat4 A, B;
 		identity4(mView);
-		vecf(&u, &uSize, 0.0f, 0.01f, 101);
+		hVertices = new VertexHandler(3);
+
+		hVertices->vertexData[0].data = (float*)vertices;
+		hVertices->vertexData[0].size = sizeof(vertices);
+
+		vecf(&hVertices->vertexData[1].data, &hVertices->vertexData[1].size, 0.0f, 0.01f, 101);
 		vecs(&indices_circle, &indices_circle_size, sizeof(vertices)/sizeof(float), 101);
 		
 		uint32_t patchesCount = 100;
-		vecf(&patches, &patchesSize, 0.0f, 1.0f, patchesCount);
+		vecf(&hVertices->vertexData[2].data, &hVertices->vertexData[2].size, 0.0f, 1.0f, patchesCount);
 		indicesPatchesSize = 2 * (patchesCount - 1) * sizeof(uint16_t);
 		indicesPatches2 = new uint16_t[2 * (patchesCount - 1)];
 		for (uint32_t i = 0; i < (patchesCount - 1); i++)
@@ -281,13 +308,6 @@ public:
 			indicesPatches2[2*i] = 206 + i;
 			indicesPatches2[2*i+1] = 207 + i;
 		}
-
-		vertexData[0].data = (char*)vertices;
-		vertexData[0].size = sizeof(vertices);
-		vertexData[1].data = (char*)u;
-		vertexData[1].size = uSize;
-		vertexData[2].data = (char*)patches;
-		vertexData[2].size = patchesSize;
 
 		powerMeter = new RenderObject("vs_2d.spv", "fs_powermeter.spv", 0, &mView);
 		powerMeter->indexCount = sizeof(indices) / sizeof(uint16_t);
@@ -364,7 +384,9 @@ public:
 		format[0] = { VK_FORMAT_R32_SFLOAT };
 		offset[0] = { 0 };
 		perlin1dTesselator->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
-		getTrans4(perlin1dTesselator->mModel, 2.0f, -2.0f, 0.0f);
+		getScale4(A, 2.0f, 1.0f, 1.0f);
+		getTrans4(B, 2.0f, -2.0f, 0.0f);
+		mult4(perlin1dTesselator->mModel, B, A);
 	}
 };
 
@@ -385,6 +407,7 @@ public:
 		addObject(scene->circleFilled);
 		addObject(scene->perlin1dTesselator);
 		mView = &scene->mView;
+		hVertices = scene->hVertices;
 	}
 	void run()
 	{
@@ -423,6 +446,7 @@ private:
 	uint16_t objectCount = 0;
 	RenderObject **renderObject = new RenderObject*[maxObjectCount];
 	mat4 *mView;
+	VertexHandler *hVertices;
 
 	void addObject(RenderObject *obj)
 	{
@@ -490,17 +514,10 @@ private:
 		createDescriptorPool();
 
 		//create uniform descriptors
-		createDescriptorSet(renderObject[0]);
-		createDescriptorSet(renderObject[1]);
-		createDescriptorSet(renderObject[2]);
-		createDescriptorSet(renderObject[3]);
-		createDescriptorSet(renderObject[4]);
-		createDescriptorSet(renderObject[5]);
-		createDescriptorSet(renderObject[6]);
-		createDescriptorSet(renderObject[7]);
-		createDescriptorSet(renderObject[8]);
-		createDescriptorSet(renderObject[9]);
-		createDescriptorSet(renderObject[10]);
+		for (uint32_t i = 0; i < objectCount; i++)
+		{
+			createDescriptorSet(renderObject[i]);
+		}
 
 		createCommandBuffers();
 		createSemaphores();
@@ -1083,7 +1100,7 @@ private:
 	}
 	void createVertexBuffer()
 	{
-		VkDeviceSize bufferSize = sizeof(vertices) + uSize + patchesSize;
+		VkDeviceSize bufferSize = hVertices->getSize();
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
@@ -1093,10 +1110,10 @@ private:
 
 		void *data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-			for (uint32_t i = 0; i < 3; i++)
+			for (uint32_t i = 0; i < hVertices->vertexDataCount; i++)
 			{
-				memcpy(data, vertexData[i].data, vertexData[i].size);
-				data = ((char*)data + vertexData[i].size);
+				memcpy(data, hVertices->vertexData[i].data, hVertices->vertexData[i].size);
+				data = ((char*)data + hVertices->vertexData[i].size);
 			}
 		vkUnmapMemory(device, stagingBufferMemory);
 

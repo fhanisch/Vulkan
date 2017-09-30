@@ -64,7 +64,7 @@ struct VertexData
 
 struct IndexData
 {
-	float *data;
+	uint16_t *data;
 	uint32_t size;
 };
 
@@ -85,6 +85,37 @@ public:
 		for (uint32_t i = 0; i < vertexDataCount; i++)
 		{
 			size += vertexData[i].size;
+		}
+		return size;
+	}
+};
+
+class IndexHandler
+{
+public:
+	uint32_t indexDataCount;
+	IndexData *indexData;
+
+	IndexHandler(uint32_t _indexDataCount)
+	{
+		indexDataCount = _indexDataCount;
+		indexData = new IndexData[indexDataCount];
+	}
+	uint32_t getSize()
+	{
+		uint32_t size = 0;
+		for (uint32_t i = 0; i < indexDataCount; i++)
+		{
+			size += indexData[i].size;
+		}
+		return size;
+	}
+	uint32_t getOffset(uint32_t index)
+	{
+		uint32_t size = 0;
+		for (uint32_t i = 0; i < index; i++)
+		{
+			size += indexData[i].size;
 		}
 		return size;
 	}
@@ -111,10 +142,6 @@ const Vertex vertices[] = {
 const uint16_t indices[] = { 0, 1, 2, 2, 3, 0 };
 const uint16_t indices_star[] = { 4, 5, 6, 5, 7, 8, 8, 9, 10, 10, 11, 6, 6, 5, 8, 8, 10, 6 };
 const uint16_t indices_patches[] = { 12,13, 13,14 };
-uint32_t indices_circle_size;
-uint16_t *indices_circle;
-uint32_t indicesPatchesSize;
-uint16_t *indicesPatches2;
 
 struct ShaderCode
 {
@@ -240,12 +267,7 @@ class CircleFilled : public RenderObject
 {
 public:
 	CircleFilled(char *vertName, char *fragName, VkDeviceSize _uboOffset, mat4 *_mView)
-		: RenderObject(vertName, fragName, _uboOffset, _mView)
-	{
-		indexCount = sizeof(indices) / sizeof(uint16_t);
-		firstIndex = 0;
-		getTrans4(mModel, 5.0f, 5.0f, 0.0f);
-	}
+		: RenderObject(vertName, fragName, _uboOffset, _mView){}
 
 	void motion()
 	{
@@ -286,48 +308,57 @@ public:
 		*perlin1d, *perlin2d, *muster, *curveTesselator, *perlin1dTesselator;
 	CircleFilled *circleFilled;
 	VertexHandler *hVertices;
+	IndexHandler *hIndices;
 
 	RenderScene()
 	{
 		mat4 A, B;
 		identity4(mView);
 		hVertices = new VertexHandler(3);
+		hIndices = new IndexHandler(5);
 
 		hVertices->vertexData[0].data = (float*)vertices;
 		hVertices->vertexData[0].size = sizeof(vertices);
 
+		hIndices->indexData[0].data = (uint16_t*)indices;
+		hIndices->indexData[0].size = sizeof(indices);
+		hIndices->indexData[1].data = (uint16_t*)indices_star;
+		hIndices->indexData[1].size = sizeof(indices_star);
+		hIndices->indexData[2].data = (uint16_t*)indices_patches;
+		hIndices->indexData[2].size = sizeof(indices_patches);
+
 		vecf(&hVertices->vertexData[1].data, &hVertices->vertexData[1].size, 0.0f, 0.01f, 101);
-		vecs(&indices_circle, &indices_circle_size, sizeof(vertices)/sizeof(float), 101);
+		vecs(&hIndices->indexData[3].data, &hIndices->indexData[3].size, sizeof(vertices)/sizeof(float), 101);
 		
 		uint32_t patchesCount = 100;
 		vecf(&hVertices->vertexData[2].data, &hVertices->vertexData[2].size, 0.0f, 1.0f, patchesCount);
-		indicesPatchesSize = 2 * (patchesCount - 1) * sizeof(uint16_t);
-		indicesPatches2 = new uint16_t[2 * (patchesCount - 1)];
+		hIndices->indexData[4].size = 2 * (patchesCount - 1) * sizeof(uint16_t);
+		hIndices->indexData[4].data = new uint16_t[2 * (patchesCount - 1)];
 		for (uint32_t i = 0; i < (patchesCount - 1); i++)
 		{
-			indicesPatches2[2*i] = 206 + i;
-			indicesPatches2[2*i+1] = 207 + i;
+			hIndices->indexData[4].data[2*i] = 206 + i;
+			hIndices->indexData[4].data[2*i+1] = 207 + i;
 		}
 
 		powerMeter = new RenderObject("vs_2d.spv", "fs_powermeter.spv", 0, &mView);
-		powerMeter->indexCount = sizeof(indices) / sizeof(uint16_t);
+		powerMeter->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
 		powerMeter->firstIndex = 0;
 
 		square = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x100, &mView);
-		square->indexCount = sizeof(indices) / sizeof(uint16_t);
+		square->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
 		square->firstIndex = 0;
 
 		star = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x200, &mView);
-		star->indexCount = sizeof(indices_star) / sizeof(uint16_t);
-		star->firstIndex = square->indexCount;
+		star->indexCount = hIndices->indexData[1].size / sizeof(uint16_t);
+		star->firstIndex = hIndices->getOffset(1) / sizeof(uint16_t);
 
 		curveTesselator = new RenderObject("vs_curveTesselator.spv", "tcs_curveTesselator.spv", "tes_curveTesselator.spv", "fs_curveTesselator.spv", 0x300, &mView);
-		curveTesselator->indexCount = sizeof(indices_patches) / sizeof(uint16_t);
-		curveTesselator->firstIndex = powerMeter->indexCount + star->indexCount;
+		curveTesselator->indexCount = hIndices->indexData[2].size / sizeof(uint16_t);
+		curveTesselator->firstIndex = hIndices->getOffset(2) / sizeof(uint16_t);
 
 		circle = new RenderObject("vs_circle.spv", "fs_2d.spv", 0x400, &mView);
-		circle->indexCount = indices_circle_size / sizeof(uint16_t);
-		circle->firstIndex = powerMeter->indexCount + star->indexCount + curveTesselator->indexCount;
+		circle->indexCount = hIndices->indexData[3].size / sizeof(uint16_t);
+		circle->firstIndex = hIndices->getOffset(3) / sizeof(uint16_t);
 		circle->bindingDescription = RenderObject::getBindingDescription(sizeof(float));
 		circle->attributeDescriptionCount = 1;
 		VkFormat format[] = { VK_FORMAT_R32_SFLOAT };
@@ -337,10 +368,13 @@ public:
 		getScale4(circle->mModel, 1.5f, 1.5f, 1.0f);
 
 		circleFilled = new CircleFilled("vs_2d.spv", "fs_circleFilled.spv", 0x500, &mView);
+		circleFilled->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
+		circleFilled->firstIndex = 0;
+		getTrans4(circleFilled->mModel, 5.0f, 5.0f, 0.0f);
 
 		welle = new RenderObject("vs_welle.spv", "fs_2d.spv", 0x600, &mView);
-		welle->indexCount = indices_circle_size / sizeof(uint16_t);
-		welle->firstIndex = circle->firstIndex;
+		welle->indexCount = hIndices->indexData[3].size / sizeof(uint16_t);
+		welle->firstIndex = hIndices->getOffset(3) / sizeof(uint16_t);
 		welle->bindingDescription = RenderObject::getBindingDescription(sizeof(float));
 		welle->attributeDescriptionCount = 1;
 		format[0] = { VK_FORMAT_R32_SFLOAT };
@@ -352,8 +386,8 @@ public:
 		mult4(welle->mModel, B, A);
 
 		perlin1d = new RenderObject("vs_perlin1d.spv", "fs_2d.spv", 0x700, &mView);
-		perlin1d->indexCount = indices_circle_size / sizeof(uint16_t);
-		perlin1d->firstIndex = circle->firstIndex;
+		perlin1d->indexCount = hIndices->indexData[3].size / sizeof(uint16_t);
+		perlin1d->firstIndex = hIndices->getOffset(3) / sizeof(uint16_t);
 		perlin1d->bindingDescription = RenderObject::getBindingDescription(sizeof(float));
 		perlin1d->attributeDescriptionCount = 1;
 		format[0] = { VK_FORMAT_R32_SFLOAT };
@@ -365,20 +399,20 @@ public:
 		mult4(perlin1d->mModel, B, A);
 
 		perlin2d = new RenderObject("vs_2d.spv", "fs_perlin2d.spv", 0x800, &mView);
-		perlin2d->indexCount = sizeof(indices) / sizeof(uint16_t);
+		perlin2d->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
 		perlin2d->firstIndex = 0;
 		getTrans4(perlin2d->mModel, -5.0f, -5.0f, 0.0f);
 
 		muster = new RenderObject("vs_2d.spv", "fs_muster.spv", 0x900, &mView);
-		muster->indexCount = sizeof(indices) / sizeof(uint16_t);
+		muster->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
 		muster->firstIndex = 0;
 		getScale4(A, 2.0f, 2.0f, 1.0f);
 		getTrans4(B, -5.0f, 5.0f, 0.0f);
 		mult4(muster->mModel, B, A);
 		
 		perlin1dTesselator = new RenderObject("vs_perlin1dTesselator.spv", "tcs_perlin1dTesselator.spv", "tes_perlin1dTesselator.spv", "fs_curveTesselator.spv", 0xa00, &mView);
-		perlin1dTesselator->indexCount = indicesPatchesSize / sizeof(uint16_t);
-		perlin1dTesselator->firstIndex = powerMeter->indexCount + star->indexCount + curveTesselator->indexCount + circle->indexCount;
+		perlin1dTesselator->indexCount = hIndices->indexData[4].size / sizeof(uint16_t);
+		perlin1dTesselator->firstIndex = hIndices->getOffset(4) / sizeof(uint16_t);
 		perlin1dTesselator->bindingDescription = RenderObject::getBindingDescription(sizeof(float));
 		perlin1dTesselator->attributeDescriptionCount = 1;
 		format[0] = { VK_FORMAT_R32_SFLOAT };
@@ -408,6 +442,7 @@ public:
 		addObject(scene->perlin1dTesselator);
 		mView = &scene->mView;
 		hVertices = scene->hVertices;
+		hIndices = scene->hIndices;
 	}
 	void run()
 	{
@@ -447,6 +482,7 @@ private:
 	RenderObject **renderObject = new RenderObject*[maxObjectCount];
 	mat4 *mView;
 	VertexHandler *hVertices;
+	IndexHandler *hIndices;
 
 	void addObject(RenderObject *obj)
 	{
@@ -1127,8 +1163,7 @@ private:
 	}
 	void createIndexBuffer()
 	{
-		VkDeviceSize bufferSize = sizeof(indices) + sizeof(indices_star)
-			+ sizeof(indices_patches) + indices_circle_size + indicesPatchesSize;
+		VkDeviceSize bufferSize = hIndices->getSize();
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
@@ -1138,13 +1173,11 @@ private:
 
 		void *data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-			memcpy(data, indices, sizeof(indices));
-			memcpy((char*)data + sizeof(indices), indices_star, sizeof(indices_star));
-			memcpy((char*)data + sizeof(indices) + sizeof(indices_star), indices_patches, sizeof(indices_patches));
-			memcpy((char*)data + sizeof(indices) + sizeof(indices_star)
-				+ sizeof(indices_patches), indices_circle, indices_circle_size);
-			memcpy((char*)data + sizeof(indices) + sizeof(indices_star)
-				+ sizeof(indices_patches) + indices_circle_size, indicesPatches2, indicesPatchesSize );
+			for (uint32_t i = 0; i < hIndices->indexDataCount; i++)
+			{
+				memcpy(data, hIndices->indexData[i].data, hIndices->indexData[i].size);
+				data = ((char*)data + hIndices->indexData[i].size);
+			}
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,

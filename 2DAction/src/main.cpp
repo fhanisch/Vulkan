@@ -18,6 +18,9 @@
 #include <algorithm>
 #include <time.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #undef min
 #undef max
 
@@ -349,6 +352,7 @@ public:
 		square->firstIndex = 0;
 
 		star = new RenderObject("vs_2d.spv", "fs_2d.spv", 0x200, &mView);
+		star->hasGraphicsPipeline = false;
 		star->indexCount = hIndices->indexData[1].size / sizeof(uint16_t);
 		star->firstIndex = hIndices->getOffset(1) / sizeof(uint16_t);
 
@@ -529,21 +533,17 @@ private:
 		createDescriptorSetLayout();
 		
 		//create pipeline
-		createGraphicsPipeline(renderObject[0]);
-		createGraphicsPipeline(renderObject[1]);
+		for (uint32_t i = 0; i < objectCount; i++)
+		{
+			if (renderObject[i]->hasGraphicsPipeline)
+				createGraphicsPipeline(renderObject[i]);
+		}
 		renderObject[2]->graphicsPipeline = renderObject[1]->graphicsPipeline;
 		renderObject[2]->pipelineLayout = renderObject[1]->pipelineLayout;
-		createGraphicsPipeline(renderObject[3]);
-		createGraphicsPipeline(renderObject[4]);
-		createGraphicsPipeline(renderObject[5]);
-		createGraphicsPipeline(renderObject[6]);
-		createGraphicsPipeline(renderObject[7]);
-		createGraphicsPipeline(renderObject[8]);
-		createGraphicsPipeline(renderObject[9]);
-		createGraphicsPipeline(renderObject[10]);
 
 		createFramebuffers();
 		createCommandPool();
+		createTextureImage();
 		createVertexBuffer();
 		createIndexBuffer();
 		createUniformBuffer();
@@ -609,26 +609,14 @@ private:
 		vkFreeCommandBuffers(device, commandPool, swapChainImagesCount, commandBuffers);
 		
 		//destroy pipelines + layouts
-		vkDestroyPipeline(device, renderObject[0]->graphicsPipeline, nullptr);
-		vkDestroyPipeline(device, renderObject[1]->graphicsPipeline, nullptr);
-		vkDestroyPipeline(device, renderObject[3]->graphicsPipeline, nullptr);
-		vkDestroyPipeline(device, renderObject[4]->graphicsPipeline, nullptr);
-		vkDestroyPipeline(device, renderObject[5]->graphicsPipeline, nullptr);
-		vkDestroyPipeline(device, renderObject[6]->graphicsPipeline, nullptr);
-		vkDestroyPipeline(device, renderObject[7]->graphicsPipeline, nullptr);
-		vkDestroyPipeline(device, renderObject[8]->graphicsPipeline, nullptr);
-		vkDestroyPipeline(device, renderObject[9]->graphicsPipeline, nullptr);
-		vkDestroyPipeline(device, renderObject[10]->graphicsPipeline, nullptr);
-		vkDestroyPipelineLayout(device, renderObject[0]->pipelineLayout, nullptr);
-		vkDestroyPipelineLayout(device, renderObject[1]->pipelineLayout, nullptr);
-		vkDestroyPipelineLayout(device, renderObject[3]->pipelineLayout, nullptr);
-		vkDestroyPipelineLayout(device, renderObject[4]->pipelineLayout, nullptr);
-		vkDestroyPipelineLayout(device, renderObject[5]->pipelineLayout, nullptr);
-		vkDestroyPipelineLayout(device, renderObject[6]->pipelineLayout, nullptr);
-		vkDestroyPipelineLayout(device, renderObject[7]->pipelineLayout, nullptr);
-		vkDestroyPipelineLayout(device, renderObject[8]->pipelineLayout, nullptr);
-		vkDestroyPipelineLayout(device, renderObject[9]->pipelineLayout, nullptr);
-		vkDestroyPipelineLayout(device, renderObject[10]->pipelineLayout, nullptr);
+		for (uint32_t i = 0; i < objectCount; i++)
+		{
+			if (renderObject[i]->hasGraphicsPipeline)
+			{
+				vkDestroyPipeline(device, renderObject[i]->graphicsPipeline, nullptr);
+				vkDestroyPipelineLayout(device, renderObject[i]->pipelineLayout, nullptr);
+			}
+		}
 		
 		vkDestroyRenderPass(device, renderPass, nullptr);
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
@@ -1133,6 +1121,33 @@ private:
 			PRINT("failed to create command pool!");
 			exit(1);
 		}
+	}
+	void createTextureImage()
+	{
+		int texWidth, texHeight, texChannels;
+		stbi_uc *pixels = stbi_load("texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+		VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+		if (!pixels)
+		{
+			PRINT("Failed to load texture image!");
+			exit(1);
+		}
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+
+		createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			&stagingBuffer, &stagingBufferMemory);
+
+		void* data;
+		vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+			memcpy(data, pixels, imageSize);
+		vkUnmapMemory(device, stagingBufferMemory);
+
+		stbi_image_free(pixels);
 	}
 	void createVertexBuffer()
 	{

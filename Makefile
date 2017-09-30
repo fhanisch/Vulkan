@@ -12,7 +12,7 @@ LIB_DEV = C:\Home\Entwicklung\lib
 LIBS_T1 = vulkan-1.lib glfw3.lib user32.lib gdi32.lib shell32.lib
 LIBS_T2 = vulkan-1.lib mathlib.lib user32.lib Shcore.lib
 
-all: App T1 T2 ML Shader
+all: App T1 T2 ML Shader Tex
 
 App: build
 	cl /nologo /EHsc /I$(INC_VULKAN) /Fo$(BuildPath)\ $(SrcPath)\main.cpp /link /out:$(BuildPath)\app.exe
@@ -57,6 +57,10 @@ Shader: build
 
 build:
 	mkdir build
+
+Tex:
+	copy textures\texture.jpg x64\Debug
+	copy textures\texture.jpg build
 
 clean:
 	del build\*.exe build\*.obj build\*.spv build\*.lib build\*.txt

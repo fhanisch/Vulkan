@@ -6,6 +6,7 @@ SrcPathMathLib = mathlib\src
 INC_VULKAN = C:\VulkanSDK\1.0.57.0\Include
 INC_GLFW = C:\Home\Entwicklung\glfw-3.2.1.bin.WIN64\include
 INC_DEV = C:\Home\Entwicklung\inc
+INC_STB = C:\Home\Entwicklung\stb
 LIB_VULKAN = C:\VulkanSDK\1.0.57.0\Lib
 LIB_GLFW = C:\Home\Entwicklung\glfw-3.2.1.bin.WIN64\lib-vc2015
 LIB_DEV = C:\Home\Entwicklung\lib
@@ -23,7 +24,7 @@ T1: build
 	del build\*.obj
 
 T2: build
-	cl /nologo /W3 /EHsc /DNOCONSOLE /I$(INC_VULKAN) /I$(INC_DEV) /Fo$(BuildPath)\ $(SrcPath2DAction)\main.cpp \
+	cl /nologo /W3 /EHsc /DNOCONSOLE /I$(INC_VULKAN) /I$(INC_DEV) /I$(INC_STB) /Fo$(BuildPath)\ $(SrcPath2DAction)\main.cpp \
 		/link $(LIBS_T2) /LIBPATH:$(LIB_VULKAN) /LIBPATH:$(LIB_DEV) /out:$(BuildPath)\2DAction.exe
 	del build\*.obj
 

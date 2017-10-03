@@ -43,6 +43,7 @@ Shader: build
 	glslangValidator -V shader\perlin1d.vert -o build\vs_perlin1d.spv
 	glslangValidator -V shader\triangle.frag -o build\fs_triangle.spv
 	glslangValidator -V shader\2d.frag -o build\fs_2d.spv
+	glslangValidator -V shader\2d_tex.frag -o build\fs_2d_tex.spv
 	glslangValidator -V shader\powermeter.frag -o build\fs_powermeter.spv
 	glslangValidator -V shader\circleFilled.frag -o build\fs_circleFilled.spv
 	glslangValidator -V shader\perlin2d.frag -o build\fs_perlin2d.spv

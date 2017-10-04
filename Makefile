@@ -13,7 +13,7 @@ LIB_DEV = C:\Home\Entwicklung\lib
 LIBS_T1 = vulkan-1.lib glfw3.lib user32.lib gdi32.lib shell32.lib
 LIBS_T2 = vulkan-1.lib mathlib.lib user32.lib Shcore.lib
 
-all: App T1 T2 ML Shader Tex
+all: App T1 T2 ML Shader1 Shader2 Tex
 
 App: build
 	cl /nologo /EHsc /I$(INC_VULKAN) /Fo$(BuildPath)\ $(SrcPath)\main.cpp /link /out:$(BuildPath)\app.exe
@@ -35,7 +35,7 @@ ML: build
 	copy mathlib\src\matrix.h ..\inc
 	del build\*.obj
 
-Shader: build
+Shader1: build
 	glslangValidator -V shader\triangle.vert -o build\vs_triangle.spv
 	glslangValidator -V shader\2d.vert -o build\vs_2d.spv
 	glslangValidator -V shader\circle.vert -o build\vs_circle.spv
@@ -55,6 +55,11 @@ Shader: build
 	glslangValidator -V shader\perlin1dTesselator.vert -o build\vs_perlin1dTesselator.spv
 	glslangValidator -V shader\perlin1dTesselator.tesc -o build\tcs_perlin1dTesselator.spv
 	glslangValidator -V shader\perlin1dTesselator.tese -o build\tes_perlin1dTesselator.spv
+	copy build\*.spv x64\Debug
+
+Shader2: build
+	glslangValidator -V shader\3d.vert -o build\vs_3d.spv
+	glslangValidator -V shader\3d.frag -o build\fs_3d.spv
 	copy build\*.spv x64\Debug
 
 build:

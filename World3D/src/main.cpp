@@ -33,8 +33,8 @@
 #define PRINT(msg) OUTPUT << msg << std::endl
 
 static bool	key[256];
-const char WINDOW_NAME[] = "2D Action";
-const char APP_NAME[] = "2D Action";
+const char WINDOW_NAME[] = "World 3D";
+const char APP_NAME[] = "World 3D";
 const char ENGINE_NAME[] = "MyVulkanEngine";
 const int WIDTH = 1800;
 const int HEIGHT = 1800;
@@ -125,26 +125,45 @@ public:
 };
 
 const Vertex vertices[] = {
-	{ {  -1.0f,  -1.0f,  0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },  //0
-	{ {   1.0f,  -1.0f,  0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f } },  //1
-	{ {   1.0f,   1.0f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } },  //2
-	{ {  -1.0f,   1.0f,  0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },  //3
-	{ {   0.0f,  -1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //4
-	{ {  0.25f, -0.25f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //5
-	{ { -0.25f, -0.25f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //6
-	{ {   1.0f,   0.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //7
-	{ {  0.25f,  0.25f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //8
-	{ {   0.0f,   1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //9
-	{ {  -0.25,  0.25f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //10
-	{ {  -1.0f,   0.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },  //11
-	{ {   0.0f,   0.0f,  0.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },  //12
-	{ {   1.0f,   0.0f,  0.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },  //13
-	{ {   2.0f,   0.0f,  0.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } }   //14
+	{ { -1.0f,  1.0f,  1.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+	{ {  1.0f,  1.0f,  1.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
+	{ {  1.0f, -1.0f,  1.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f } },
+	{ { -1.0f, -1.0f,  1.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f } },
+
+	{ {  1.0f, -1.0f,  1.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+	{ {  1.0f,  1.0f,  1.0f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
+	{ {  1.0f,  1.0f, -1.0f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f } },
+	{ {  1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f } },
+
+	{ { -1.0f,  1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+	{ {  1.0f,  1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+	{ {  1.0f, -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } },
+	{ { -1.0f, -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+
+	{ { -1.0f, -1.0f,  1.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
+	{ { -1.0f,  1.0f,  1.0f }, { 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } },
+	{ { -1.0f,  1.0f, -1.0f }, { 1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
+	{ { -1.0f, -1.0f, -1.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+
+	{ { -1.0f,  1.0f,  1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
+	{ {  1.0f,  1.0f,  1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } },
+	{ {  1.0f,  1.0f, -1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
+	{ { -1.0f,  1.0f, -1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+
+	{ { -1.0f, -1.0f,  1.0f }, { 0.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },
+	{ {  1.0f, -1.0f,  1.0f }, { 0.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
+	{ {  1.0f, -1.0f, -1.0f }, { 0.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
+	{ { -1.0f, -1.0f, -1.0f }, { 0.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
+
+	{ { -1.0f,  0.0f,  1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },
+	{ {  1.0f,  0.0f,  1.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
+	{ {  1.0f,  0.0f, -1.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
+	{ { -1.0f,  0.0f, -1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } }
 };
 
-const uint16_t indices[] = { 0, 1, 2, 2, 3, 0 };
-const uint16_t indices_star[] = { 4, 5, 6, 5, 7, 8, 8, 9, 10, 10, 11, 6, 6, 5, 8, 8, 10, 6 };
-const uint16_t indices_patches[] = { 12,13, 13,14 };
+const uint16_t indices[] = { 0,1,2,2,3,0 , 8,9,10,10,11,8 , 4,5,6,6,7,4 , 12,13,14,14,15,12 ,
+							16,17,18,18,19,16 , 20,21,22,22,23,20};
+const uint16_t indicesFloor[] = { 24,25,26,26,27,24 };
 
 struct ShaderCode
 {
@@ -231,7 +250,7 @@ public:
 		topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		identity4(mModel);
 		mView = _mView;
-		getFrustum(mProj, 0.25f, 0.25f, 0.5f, 50.0f);
+		getFrustum(mProj, 0.25f, 0.25f, 0.5f, 100.0f);
 	}
 	static VkVertexInputBindingDescription getBindingDescription(uint32_t stride)
 	{
@@ -307,7 +326,7 @@ class RenderScene
 {
 public:
 	mat4 mView;
-	RenderObject *quad;
+	RenderObject *cube, *plane;
 	VertexHandler *hVertices;
 	IndexHandler *hIndices;
 
@@ -316,18 +335,26 @@ public:
 		//mat4 A, B;
 		identity4(mView);
 		hVertices = new VertexHandler(1);
-		hIndices = new IndexHandler(1);
+		hIndices = new IndexHandler(2);
 
 		hVertices->vertexData[0].data = (float*)vertices;
 		hVertices->vertexData[0].size = sizeof(vertices);
 
 		hIndices->indexData[0].data = (uint16_t*)indices;
 		hIndices->indexData[0].size = sizeof(indices);
+		hIndices->indexData[1].data = (uint16_t*)indicesFloor;
+		hIndices->indexData[1].size = sizeof(indicesFloor);
 
-		quad = new RenderObject("vs_3d.spv", "fs_3d.spv", 0, &mView);
-		quad->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
-		quad->firstIndex = 0;
-		getTrans4(quad->mModel, 0.0f, 0.0f, -0.5f);
+		cube = new RenderObject("vs_3d.spv", "fs_muster3.spv", 0, &mView);
+		cube->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
+		cube->firstIndex = 0;
+		getTrans4(cube->mModel, 0.0f, 2.0f, 0.0f);
+
+		plane = new RenderObject("vs_3d.spv", "fs_muster3.spv", 0x100, &mView);
+		plane->indexCount = hIndices->indexData[1].size / sizeof(uint16_t);
+		plane->firstIndex = hIndices->getOffset(1) / sizeof(uint16_t);
+		getFrustum(plane->mProj, 0.25f, 0.25f, 0.5f, 100.0f);
+		getScale4(plane->mModel, 20.0f, 0.0f, 20.0f);
 	}
 };
 
@@ -336,7 +363,8 @@ class VulkanSetup
 public:
 	VulkanSetup(RenderScene *scene)
 	{
-		addObject(scene->quad);
+		addObject(scene->cube);
+		addObject(scene->plane);
 		mView = &scene->mView;
 		hVertices = scene->hVertices;
 		hIndices = scene->hIndices;
@@ -358,17 +386,17 @@ private:
 	VkQueue queue;
 	VkSwapchainKHR swapChain;
 	uint32_t swapChainImagesCount;
-	VkImage *swapChainImages, textureImage;
+	VkImage *swapChainImages, textureImage, depthImage;
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
-	VkImageView *swapChainImageViews, textureImageView;
+	VkImageView *swapChainImageViews, textureImageView, depthImageView;
 	VkSampler textureSampler;
 	VkFramebuffer *swapChainFramebuffers;
 	VkRenderPass renderPass;
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkCommandPool commandPool;
 	VkBuffer vertexBuffer, indexBuffer, uniformBuffer;
-	VkDeviceMemory vertexBufferMemory, indexBufferMemory, uniformBufferMemory, textureImageMemory;
+	VkDeviceMemory vertexBufferMemory, indexBufferMemory, uniformBufferMemory, textureImageMemory, depthImageMemory;
 	VkDescriptorPool descriptorPool;
 	VkCommandBuffer *commandBuffers;
 	VkSemaphore imageAvailableSemaphore;
@@ -435,8 +463,9 @@ private:
 		//renderObject[2]->graphicsPipeline = renderObject[1]->graphicsPipeline;
 		//renderObject[2]->pipelineLayout = renderObject[1]->pipelineLayout;
 
-		createFramebuffers();
 		createCommandPool();
+		createDepthResources();
+		createFramebuffers();
 		createTextureImage();
 		createTextureImageView();
 		createTextureSampler();
@@ -500,6 +529,10 @@ private:
 	}
 	void cleanupSwapChain()
 	{
+		vkDestroyImageView(device, depthImageView, nullptr);
+		vkDestroyImage(device, depthImage, nullptr);
+		vkFreeMemory(device, depthImageMemory, nullptr);
+
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
 			vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
 		vkFreeCommandBuffers(device, commandPool, swapChainImagesCount, commandBuffers);
@@ -732,7 +765,7 @@ private:
 
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
 		{
-			swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat);
+			swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 		}
 		PRINT("\n" << swapChainImagesCount << " image views created.");
 	}
@@ -749,15 +782,30 @@ private:
 		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+		VkAttachmentDescription depthAttachment = {};
+		depthAttachment.format = VK_FORMAT_D32_SFLOAT;
+		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
 		VkAttachmentReference colorAttachmentRef = {};
 		colorAttachmentRef.attachment = 0;
 		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkAttachmentReference depthAttachmentRef = {};
+		depthAttachmentRef.attachment = 1;
+		depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		VkSubpassDescription subpass = {};
 		subpass.flags = 0;
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &colorAttachmentRef;
+		subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
 		VkSubpassDependency dependency = {};
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -767,10 +815,12 @@ private:
 		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
+		VkAttachmentDescription attachments[] = { colorAttachment, depthAttachment };
+
 		VkRenderPassCreateInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = 1;
-		renderPassInfo.pAttachments = &colorAttachment;
+		renderPassInfo.attachmentCount = 2;
+		renderPassInfo.pAttachments = attachments;
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
 		renderPassInfo.dependencyCount = 1;
@@ -903,6 +953,18 @@ private:
 		multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
 		multisampling.alphaToOneEnable = VK_FALSE; // Optional
 
+		VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencil.depthTestEnable = VK_TRUE;
+		depthStencil.depthWriteEnable = VK_TRUE;
+		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+		depthStencil.depthBoundsTestEnable = VK_FALSE;
+		depthStencil.minDepthBounds = 0.0f; // Optional
+		depthStencil.maxDepthBounds = 1.0f; // Optional
+		depthStencil.stencilTestEnable = VK_FALSE;
+		depthStencil.front = {}; // Optional
+		depthStencil.back = {}; // Optional
+
 		VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
 		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		colorBlendAttachment.blendEnable = VK_TRUE;
@@ -951,7 +1013,7 @@ private:
 		pipelineInfo.pViewportState = &viewportState;
 		pipelineInfo.pRasterizationState = &rasterizer;
 		pipelineInfo.pMultisampleState = &multisampling;
-		pipelineInfo.pDepthStencilState = nullptr; // Optional
+		pipelineInfo.pDepthStencilState = &depthStencil;
 		pipelineInfo.pColorBlendState = &colorBlending;
 		pipelineInfo.pDynamicState = nullptr; // Optional
 		pipelineInfo.layout = obj->pipelineLayout;
@@ -970,8 +1032,11 @@ private:
 
 		vkDestroyShaderModule(device, fragShaderModule, nullptr);
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
-		vkDestroyShaderModule(device, tcShaderModule, nullptr);
-		vkDestroyShaderModule(device, teShaderModule, nullptr);
+		if (obj->stageCount > 2)
+		{
+			vkDestroyShaderModule(device, tcShaderModule, nullptr);
+			vkDestroyShaderModule(device, teShaderModule, nullptr);
+		}
 	}
 	void createFramebuffers()
 	{
@@ -979,11 +1044,11 @@ private:
 
 		for (uint32_t i = 0; i < swapChainImagesCount; i++)
 		{
-			VkImageView attachments[] = { swapChainImageViews[i] };
+			VkImageView attachments[] = { swapChainImageViews[i], depthImageView };
 			VkFramebufferCreateInfo framebufferInfo = {};
 			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			framebufferInfo.renderPass = renderPass;
-			framebufferInfo.attachmentCount = 1;
+			framebufferInfo.attachmentCount = 2;
 			framebufferInfo.pAttachments = attachments;
 			framebufferInfo.width = swapChainExtent.width;
 			framebufferInfo.height = swapChainExtent.height;
@@ -1010,6 +1075,14 @@ private:
 			PRINT("failed to create command pool!");
 			exit(1);
 		}
+	}
+	void createDepthResources()
+	{
+		VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
+		createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthImage, &depthImageMemory);
+		depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
 	}
 	void createTextureImage()
 	{
@@ -1051,7 +1124,7 @@ private:
 	}
 	void createTextureImageView()
 	{
-		textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM);
+		textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 	void createTextureSampler()
 	{
@@ -1079,7 +1152,7 @@ private:
 			exit(1);
 		}
 	}
-	VkImageView createImageView(VkImage image, VkFormat format)
+	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
 	{
 		VkImageViewCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1092,7 +1165,7 @@ private:
 		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
 		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.aspectMask = aspectFlags;
 		createInfo.subresourceRange.baseMipLevel = 0;
 		createInfo.subresourceRange.levelCount = 1;
 		createInfo.subresourceRange.baseArrayLayer = 0;
@@ -1462,9 +1535,11 @@ private:
 				renderPassInfo.framebuffer = swapChainFramebuffers[i];
 				renderPassInfo.renderArea.offset = { 0, 0 };
 				renderPassInfo.renderArea.extent = swapChainExtent;
-				VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-				renderPassInfo.clearValueCount = 1;
-				renderPassInfo.pClearValues = &clearColor;
+				VkClearValue clearValues[2] = {};
+				clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+				clearValues[1].depthStencil = { 1.0f, 0 };
+				renderPassInfo.clearValueCount = 2;
+				renderPassInfo.pClearValues = clearValues;
 
 				vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 				
@@ -1508,7 +1583,7 @@ private:
 		static clock_t startTime = clock();
 		VkDeviceSize bufferSize = uboBufferSize;
 		mat4 A, B;
-		float dx=0.0f, dz=0.0f, dphi=0.0f;
+		float dx=0.0f, dy=0.0f, dz=0.0f, dphi=0.0f;
 
 		float time = (float)(clock() - startTime) / CLOCKS_PER_SEC;
 
@@ -1524,6 +1599,12 @@ private:
 		if (key[0x44] == true)
 			dx = -0.1f;
 
+		if (key[0x58] == true)
+			dy = 0.1f;
+
+		if (key[0x59] == true)
+			dy = -0.1f;
+
 		if (key[VK_LEFT] == true)
 			dphi = 0.1f;
 
@@ -1534,7 +1615,7 @@ private:
 		getRotY4(B, dphi);
 		mult4(*mView, B, A);
 		dup4(A, *mView);
-		getTrans4(B, dx, 0.0f, dz);
+		getTrans4(B, dx, dy, dz);
 		mult4(*mView, B, A);
 
 		void* data;
@@ -1850,8 +1931,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	
 	logfile.open("log.txt");
 
-	PRINT("***** 2D Action !!! *****");
-	PRINT("=========================");
+	PRINT("***** World 3D !!! *****");
+	PRINT("========================");
 	
 	app.run();
 

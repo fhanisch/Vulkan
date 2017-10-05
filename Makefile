@@ -2,6 +2,7 @@ BuildPath = build
 SrcPath = BaseTemplate\src
 SrcPathTriangle = Triangle\src
 SrcPath2DAction = 2DAction\src
+SrcPathWorld = World3D\src
 SrcPathMathLib = mathlib\src
 INC_VULKAN = C:\VulkanSDK\1.0.57.0\Include
 INC_GLFW = C:\Home\Entwicklung\glfw-3.2.1.bin.WIN64\include
@@ -26,6 +27,11 @@ T1: build
 T2: build
 	cl /nologo /W3 /EHsc /DNOCONSOLE /I$(INC_VULKAN) /I$(INC_DEV) /I$(INC_STB) /Fo$(BuildPath)\ $(SrcPath2DAction)\main.cpp \
 		/link $(LIBS_T2) /LIBPATH:$(LIB_VULKAN) /LIBPATH:$(LIB_DEV) /out:$(BuildPath)\2DAction.exe
+	del build\*.obj
+
+World: build
+	cl /nologo /W3 /EHsc /DNOCONSOLE /I$(INC_VULKAN) /I$(INC_DEV) /I$(INC_STB) /Fo$(BuildPath)\ $(SrcPathWorld)\main.cpp \
+		/link $(LIBS_T2) /LIBPATH:$(LIB_VULKAN) /LIBPATH:$(LIB_DEV) /out:$(BuildPath)\World.exe
 	del build\*.obj
 
 ML: build
@@ -60,6 +66,7 @@ Shader1: build
 Shader2: build
 	glslangValidator -V shader\3d.vert -o build\vs_3d.spv
 	glslangValidator -V shader\3d.frag -o build\fs_3d.spv
+	glslangValidator -V shader\muster3.frag -o build\fs_muster3.spv
 	copy build\*.spv x64\Debug
 
 build:

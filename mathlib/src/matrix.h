@@ -26,7 +26,7 @@ extern "C"
 	void invert4(mat4 T, mat4 M);
 	void getFrustum(mat4 M, float r, float t, float n, float f);
 	void createMeshGrid(float **mesh, unsigned int *size, unsigned int m, unsigned int n);
-	void createMeshGridIndices(unsigned short **indices, unsigned int *indicesLen, unsigned int *indicesSize, unsigned int m, unsigned int n);
+	void createMeshGridIndices(unsigned short **indices, unsigned int *indicesSize, unsigned int m, unsigned int n, unsigned int offset);
 	void vecf(float **v, unsigned int *size, float start, float step, unsigned int count);
 	void vecs(unsigned short **indices, unsigned int *size, unsigned int start, unsigned int count);
 #ifdef __cplusplus

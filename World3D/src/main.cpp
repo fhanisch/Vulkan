@@ -513,6 +513,7 @@ private:
 			{
 #ifndef NOCONSOLE
 				PRINT("FPS = " << framecount);
+				printMatrix4(*mView, "mView");
 #endif
 				start_t = clock();
 				framecount = 0;
@@ -1097,6 +1098,10 @@ private:
 		depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 	}
+	VkFormat findSupportedFormat(char **candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+	{
+
+	}
 	void createTextureImage()
 	{
 		int texWidth, texHeight, texChannels;
@@ -1595,37 +1600,50 @@ private:
 	{
 		static clock_t startTime = clock();
 		VkDeviceSize bufferSize = uboBufferSize;
-		mat4 A, B;
-		float dx=0.0f, dy=0.0f, dz=0.0f, dphi=0.0f;
+		mat4 A, B, C;
+		float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, v = 0.1f, w = 0.1f;
 
 		float time = (float)(clock() - startTime) / CLOCKS_PER_SEC;
 
 		if (key[0x57] == true)
-			dz = 0.1f;
+			dz = v;
 
 		if (key[0x53] == true)
-			dz = -0.1f;
+			dz = -v;
 
 		if (key[0x41] == true)
-			dx = 0.1f;
+			dx = v;
 
 		if (key[0x44] == true)
-			dx = -0.1f;
+			dx = -v;
 
 		if (key[0x58] == true)
-			dy = 0.1f;
+			dy = v;
 
 		if (key[0x59] == true)
-			dy = -0.1f;
+			dy = -v;
 
 		if (key[VK_LEFT] == true)
-			dphi = 0.1f;
+			dphi = w;
 
 		if (key[VK_RIGHT] == true)
-			dphi = -0.1f;
+			dphi = -w;
+
+		if (key[VK_UP] == true)
+			dtheta = w;
+
+		if (key[VK_DOWN] == true)
+			dtheta = -w;
 
 		dup4(A, *mView);
-		getRotY4(B, dphi);
+		dup4(C, *mView);
+		getRotX4(B, dtheta);
+		mult4(*mView, B, A);
+		dup4(A, *mView);
+		getRotY4(B, C[1][1]*dphi);
+		mult4(*mView, B, A);
+		dup4(A, *mView);
+		getRotZ4(B, -C[1][2]*dphi);
 		mult4(*mView, B, A);
 		dup4(A, *mView);
 		getTrans4(B, dx, dy, dz);
@@ -1941,12 +1959,17 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 {
 	RenderScene scene;
 	VulkanSetup app(&scene);
-	
+
 	logfile.open("log.txt");
 
 	PRINT("***** World 3D !!! *****");
 	PRINT("========================");
 	
+	mat4 A;
+	zero4(A);
+	A[1][0] = 1.0f; A[1][1] = 2.0f; A[1][2] = 3.0f; A[1][3] = 4.0f;
+	printMatrix4(A, "Test Matrix");
+
 	app.run();
 
 	logfile.close();

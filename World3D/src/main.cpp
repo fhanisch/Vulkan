@@ -4,6 +4,7 @@
 	Erstellt: 04.10.2017
 */
 
+#pragma warning(disable : 4200)
 #define _CRT_SECURE_NO_WARNINGS
 #define VK_USE_PLATFORM_WIN32_KHR
 //#define NOCONSOLE
@@ -12,6 +13,7 @@
 #include <ShellScalingApi.h> // notwendig für high dpi scaling
 #include <vulkan\vulkan.h>
 #include <matrix.h>
+#include <libusb-1.0\libusb.h>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -32,6 +34,11 @@
 
 #define PRINT(msg) OUTPUT << msg << std::endl
 
+#define GAMECONTROLLER_VENDOR_ID 0x046d
+#define GAMECONTROLLER_PRODUCT_ID 0xc218
+#define HID_INTERFACE 0
+#define ENDPOINT_ADDRESS 0x81
+
 static bool	key[256];
 const char WINDOW_NAME[] = "World 3D";
 const char APP_NAME[] = "World 3D";
@@ -45,12 +52,20 @@ const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_S
 const unsigned int deviceExtensionCount = 1;
 const char *deviceExtensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 std::ofstream logfile;
+libusb_device_handle *hid_gamecontroller = NULL;
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else
 const bool enableValidationLayers = true;
 #endif
+
+typedef struct {
+	float lStickX;
+	float lStickY;
+	float rStickX;
+	float rStickY;
+} CtrlValues;
 
 struct Vertex
 {
@@ -179,6 +194,38 @@ struct SwapChainSupportDetails
 	uint32_t presentModeCount;
 	VkPresentModeKHR *presentModes;
 };
+
+int getCtrlValuesThread(CtrlValues *pCtrlValues)
+{
+	int result;
+	boolean quit = FALSE;
+	int transferred;
+	unsigned char gamectrlbuf[8];
+
+	printf("Thread started.\n");
+
+	memset(gamectrlbuf, 127, 4);
+
+	while (!quit)
+	{
+		result = libusb_bulk_transfer(hid_gamecontroller, ENDPOINT_ADDRESS, gamectrlbuf, 8, &transferred, 1);
+		if (result == 0 || result == -7)
+		{
+			pCtrlValues->lStickX = -((float)gamectrlbuf[0] / 255.0f * 2.0f - 1.0f) / 10.0f;
+			pCtrlValues->lStickY = -((float)gamectrlbuf[1] / 255.0f * 2.0f - 1.0f) / 10.0f;
+			pCtrlValues->rStickX = -((float)gamectrlbuf[2] / 255.0f * 2.0f - 1.0f) / 10.0f;
+			pCtrlValues->rStickY = -((float)gamectrlbuf[3] / 255.0f * 2.0f - 1.0f) / 10.0f;
+		}
+		else
+		{
+			printf("Transfer Error: %d\n", result);
+			quit = TRUE;
+		}
+	}
+	printf("Thread terminated!\n");
+
+	return 0;
+}
 
 LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -502,8 +549,16 @@ private:
 		MSG msg;
 		clock_t start_t, delta_t;
 		uint32_t framecount = 0;
+		DWORD threadID;
+		DWORD threadExitCode;
+		HANDLE hThread = 0;
+		CtrlValues ctrlValues;
 
 		ShowWindow(window, SW_SHOW);
+
+		memset(&ctrlValues, 0, sizeof(ctrlValues));
+		if (hid_gamecontroller)
+			hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getCtrlValuesThread, &ctrlValues, 0, &threadID);
 
 		start_t = clock(); //FPS
 		while (!quit)
@@ -534,12 +589,17 @@ private:
 			{
 				if (key[27]) quit = TRUE;
 			}
-			updateUniformBuffer();
+			updateUniformBuffer(&ctrlValues);
 			drawFrame();
 			framecount++;
 		}
 
 		vkDeviceWaitIdle(device);
+		if (hid_gamecontroller)
+		{
+			GetExitCodeThread(hThread, &threadExitCode);
+			TerminateThread(hThread, threadExitCode);
+		}
 	}
 	void cleanupSwapChain()
 	{
@@ -1596,7 +1656,7 @@ private:
 			exit(1);
 		}
 	}
-	void updateUniformBuffer()
+	void updateUniformBuffer(CtrlValues *ctrlValues)
 	{
 		static clock_t startTime = clock();
 		VkDeviceSize bufferSize = uboBufferSize;
@@ -1604,6 +1664,11 @@ private:
 		float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, v = 0.1f, w = 0.1f;
 
 		float time = (float)(clock() - startTime) / CLOCKS_PER_SEC;
+
+		dx = ctrlValues->lStickX;
+		dz = ctrlValues->lStickY;
+		dphi = ctrlValues->rStickX;
+		dtheta = ctrlValues->rStickY;
 
 		if (key[0x57] == true)
 			dz = v;
@@ -1951,6 +2016,43 @@ private:
 	}
 };
 
+int init_hid(libusb_device_handle **hid_dev, unsigned int vendor_id, unsigned int product_id, char *deviceName)
+{
+	int ret;
+
+	*hid_dev = libusb_open_device_with_vid_pid(NULL, vendor_id, product_id);
+	if (!*hid_dev)
+	{
+		printf("USB %s wurde nicht gefunden!\n", deviceName);
+		return -1;
+	}
+	printf("USB %s erkannt!\n", deviceName);
+
+	//libusb_detach_kernel_driver(*hid_dev, HID_INTERFACE);
+
+	ret = libusb_claim_interface(*hid_dev, HID_INTERFACE);
+	if (ret < 0)
+	{
+		printf("Claim %s Interface fehlgeschlagen: %d!\n", deviceName, ret);
+		return -1;
+	}
+	printf("USB %s interface claimed!\n", deviceName);
+
+	return 0;
+}
+
+void close_hid(libusb_device_handle *hid_dev)
+
+{
+
+	libusb_release_interface(hid_dev, HID_INTERFACE);
+
+	//libusb_attach_kernel_driver(hid_dev, HID_INTERFACE);
+
+	libusb_close(hid_dev);
+
+}
+
 #ifndef NOCONSOLE
 int main(int argc, char *argv[])
 #else
@@ -1964,6 +2066,15 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 	PRINT("***** World 3D !!! *****");
 	PRINT("========================");
+
+	if (libusb_init(NULL) != 0)
+	{
+		PRINT("Failed to initialize usb!");
+	}
+	if (init_hid(&hid_gamecontroller, GAMECONTROLLER_VENDOR_ID, GAMECONTROLLER_PRODUCT_ID, "Game Controller") != 0)
+	{
+		PRINT("Failed to initialize hid!");
+	}
 	
 	mat4 A;
 	zero4(A);
@@ -1972,7 +2083,11 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 	app.run();
 
+	if (hid_gamecontroller) close_hid(hid_gamecontroller);
+	libusb_exit(NULL);
+
 	logfile.close();
 
+	Sleep(100);
 	return 0;
 }

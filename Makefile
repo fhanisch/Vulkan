@@ -8,11 +8,14 @@ INC_VULKAN = C:\VulkanSDK\1.0.57.0\Include
 INC_GLFW = C:\Home\Entwicklung\glfw-3.2.1.bin.WIN64\include
 INC_DEV = C:\Home\Entwicklung\inc
 INC_STB = C:\Home\Entwicklung\stb
+INC_USB = C:\Home\Entwicklung\libusb-1.0.21\include
 LIB_VULKAN = C:\VulkanSDK\1.0.57.0\Lib
 LIB_GLFW = C:\Home\Entwicklung\glfw-3.2.1.bin.WIN64\lib-vc2015
 LIB_DEV = C:\Home\Entwicklung\lib
+LIB_USB = C:\Home\Entwicklung\libusb-1.0.21\MS64\dll
 LIBS_T1 = vulkan-1.lib glfw3.lib user32.lib gdi32.lib shell32.lib
 LIBS_T2 = vulkan-1.lib mathlib.lib user32.lib Shcore.lib
+LIBS_WORLD = vulkan-1.lib mathlib.lib user32.lib Shcore.lib libusb-1.0.lib
 
 all: App T1 T2 ML Shader1 Shader2 Tex
 
@@ -30,8 +33,8 @@ T2: build
 	del build\*.obj
 
 World: build
-	cl /nologo /W3 /EHsc /DNOCONSOLE /I$(INC_VULKAN) /I$(INC_DEV) /I$(INC_STB) /Fo$(BuildPath)\ $(SrcPathWorld)\main.cpp \
-		/link $(LIBS_T2) /LIBPATH:$(LIB_VULKAN) /LIBPATH:$(LIB_DEV) /out:$(BuildPath)\World.exe
+	cl /nologo /W3 /EHsc /DNOCONSOLE /I$(INC_VULKAN) /I$(INC_DEV) /I$(INC_STB) /I$(INC_USB) /Fo$(BuildPath)\ $(SrcPathWorld)\main.cpp \
+		/link $(LIBS_WORLD) /LIBPATH:$(LIB_VULKAN) /LIBPATH:$(LIB_DEV) /LIBPATH:$(LIB_USB) /out:$(BuildPath)\World.exe
 	del build\*.obj
 
 ML: build

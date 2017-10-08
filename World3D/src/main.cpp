@@ -372,15 +372,31 @@ public:
 class RenderScene
 {
 public:
-	mat4 mView;
+	mat4 mView, cam;
+	CtrlValues ctrlValues;
+	float phi, theta;
 	RenderObject *cube, *plane, *sphere;
 	VertexHandler *hVertices;
 	IndexHandler *hIndices;
 
 	RenderScene()
 	{
-		//mat4 A, B;
+		mat4 A, B, C;
+		
+		phi = 3.0f / 4.0f*PI;
+		theta = PI / 4.0f;
+		identity4(cam);
+		cam[3][0] = -20.0f; cam[3][1] = -20.0f; cam[3][2] = 20.0f;
+
 		identity4(mView);
+		getRotX4(A, theta);
+		getRotY4(B, phi);
+		mult4(C, A, B);
+		getTrans4(A, cam[3][0], cam[3][1], cam[3][2]);
+		mult4(mView, C, A);
+		invert4(cam, mView);
+		printMatrix4(mView, "Test");
+
 		hVertices = new VertexHandler(2);
 		hIndices = new IndexHandler(3);
 
@@ -415,17 +431,86 @@ public:
 		sphere->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
 		getTrans4(sphere->mModel, 5.0f, 2.0f, 5.0f);
 	}
+	void camMotion()
+	{
+		mat4 A, B, Rx, Ry, R, T;
+		float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, v = 0.05f, w = 0.05f;
+
+		dx = ctrlValues.lStickX;
+		dz = ctrlValues.lStickY;
+		phi += ctrlValues.rStickX;
+		theta += ctrlValues.rStickY;
+
+		if (key[0x57] == true)
+			dz = v;
+
+		if (key[0x53] == true)
+			dz = -v;
+
+		if (key[0x41] == true)
+			dx = v;
+
+		if (key[0x44] == true)
+			dx = -v;
+
+		if (key[0x58] == true)
+			dy = v;
+
+		if (key[0x59] == true)
+			dy = -v;
+
+		if (key[VK_LEFT] == true)
+		{
+			dphi = w;
+			phi += dphi;
+		}
+		if (key[VK_RIGHT] == true)
+		{
+			dphi = -w;
+			phi += dphi;
+		}
+		if (key[VK_UP] == true)
+		{
+			dtheta = w;
+			theta += dtheta;
+		}
+		if (key[VK_DOWN] == true)
+		{
+			dtheta = -w;
+			theta += dtheta;
+		}
+
+		getRotX4(Rx, theta);
+		getRotY4(Ry, phi);
+		mult4(R, Rx, Ry);
+		getTrans4(T, -cam[3][0], -cam[3][1], -cam[3][2]);
+		mult4(mView, R, T);
+		dup4(A, mView);
+		getTrans4(B, dx, dy, dz);
+		mult4(mView, B, A);
+		invert4(cam, mView);
+
+		//getRotX4(Rx, dtheta);
+		//getRotY4(Ry, dphi);
+		//mult4(R, Rx, Ry);
+		//getTrans4(T, dx, dy, dz);
+		//dup4(A, *mView);
+		//mult4(B, R, T);
+		//mult4(*mView, B, A);
+	}
 };
 
 class VulkanSetup
 {
 public:
-	VulkanSetup(RenderScene *scene)
+	VulkanSetup(RenderScene *_scene)
 	{
+		scene = _scene;
 		addObject(scene->cube);
 		addObject(scene->plane);
 		addObject(scene->sphere);
 		mView = &scene->mView;
+		ctrlValues = &scene->ctrlValues;
 		hVertices = scene->hVertices;
 		hIndices = scene->hIndices;
 	}
@@ -465,8 +550,10 @@ private:
 	VkDeviceSize uboBufferSize = 0x0;
 	uint16_t maxObjectCount = 20;
 	uint16_t objectCount = 0;
+	RenderScene *scene;
 	RenderObject **renderObject = new RenderObject*[maxObjectCount];
 	mat4 *mView;
+	CtrlValues *ctrlValues;
 	VertexHandler *hVertices;
 	IndexHandler *hIndices;
 
@@ -552,13 +639,12 @@ private:
 		DWORD threadID;
 		DWORD threadExitCode;
 		HANDLE hThread = 0;
-		CtrlValues ctrlValues;
 
 		ShowWindow(window, SW_SHOW);
 
-		memset(&ctrlValues, 0, sizeof(ctrlValues));
+		memset(ctrlValues, 0, sizeof(CtrlValues));
 		if (hid_gamecontroller)
-			hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getCtrlValuesThread, &ctrlValues, 0, &threadID);
+			hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)getCtrlValuesThread, ctrlValues, 0, &threadID);
 
 		start_t = clock(); //FPS
 		while (!quit)
@@ -569,6 +655,7 @@ private:
 #ifndef NOCONSOLE
 				PRINT("FPS = " << framecount);
 				printMatrix4(*mView, "mView");
+				printMatrix4(scene->cam, "Camera");
 #endif
 				start_t = clock();
 				framecount = 0;
@@ -589,7 +676,8 @@ private:
 			{
 				if (key[27]) quit = TRUE;
 			}
-			updateUniformBuffer(&ctrlValues);
+			scene->camMotion();
+			updateUniformBuffer();
 			drawFrame();
 			framecount++;
 		}
@@ -1656,63 +1744,12 @@ private:
 			exit(1);
 		}
 	}
-	void updateUniformBuffer(CtrlValues *ctrlValues)
+	void updateUniformBuffer()
 	{
 		static clock_t startTime = clock();
 		VkDeviceSize bufferSize = uboBufferSize;
-		mat4 A, B, C;
-		float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, v = 0.1f, w = 0.1f;
-
+		
 		float time = (float)(clock() - startTime) / CLOCKS_PER_SEC;
-
-		dx = ctrlValues->lStickX;
-		dz = ctrlValues->lStickY;
-		dphi = ctrlValues->rStickX;
-		dtheta = ctrlValues->rStickY;
-
-		if (key[0x57] == true)
-			dz = v;
-
-		if (key[0x53] == true)
-			dz = -v;
-
-		if (key[0x41] == true)
-			dx = v;
-
-		if (key[0x44] == true)
-			dx = -v;
-
-		if (key[0x58] == true)
-			dy = v;
-
-		if (key[0x59] == true)
-			dy = -v;
-
-		if (key[VK_LEFT] == true)
-			dphi = w;
-
-		if (key[VK_RIGHT] == true)
-			dphi = -w;
-
-		if (key[VK_UP] == true)
-			dtheta = w;
-
-		if (key[VK_DOWN] == true)
-			dtheta = -w;
-
-		dup4(A, *mView);
-		dup4(C, *mView);
-		getRotX4(B, dtheta);
-		mult4(*mView, B, A);
-		dup4(A, *mView);
-		getRotY4(B, C[1][1]*dphi);
-		mult4(*mView, B, A);
-		dup4(A, *mView);
-		getRotZ4(B, -C[1][2]*dphi);
-		mult4(*mView, B, A);
-		dup4(A, *mView);
-		getTrans4(B, dx, dy, dz);
-		mult4(*mView, B, A);
 
 		void* data;
 		vkMapMemory(device, uniformBufferMemory, 0, bufferSize, 0, &data);

@@ -13,7 +13,7 @@ void printMatrix4(mat4 M, char *name)
 	for (i = 0; i < 4; i++)
 	{		
 		for (j = 0; j < 4; j++)
-			printf("\t%0.1f", M[j][i]);
+			printf("\t%0.3f", M[j][i]);
 		printf("\n");
 	}
 }

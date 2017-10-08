@@ -2,6 +2,9 @@
 	World 3D
 
 	Erstellt: 04.10.2017
+
+	Links:	https://vulkan-tutorial.com
+			http://www.songho.ca
 */
 
 #pragma warning(disable : 4200)
@@ -173,12 +176,18 @@ const Vertex vertices[] = {
 	{ { -1.0f,  0.0f,  1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },
 	{ {  1.0f,  0.0f,  1.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
 	{ {  1.0f,  0.0f, -1.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
-	{ { -1.0f,  0.0f, -1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } }
+	{ { -1.0f,  0.0f, -1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
+
+	{ {  0.0f,  0.0f,  0.0f }, { 1.0f, 0.5f, 0.0f }, { 0.0f, 0.0f } },
+	{ {  1.0f,  0.0f,  0.0f }, { 1.0f, 0.5f, 0.0f }, { 1.0f, 0.0f } },
+	{ {  0.0f,  0.0f,  1.0f }, { 1.0f, 0.5f, 0.0f }, { 1.0f, 1.0f } },
+	{ {  1.0f,  0.0f,  1.0f }, { 1.0f, 0.5f, 0.0f }, { 0.0f, 1.0f } }
 };
 
 const uint16_t indicesCube[] = { 0,1,2,2,3,0 , 8,9,10,10,11,8 , 4,5,6,6,7,4 , 12,13,14,14,15,12 ,
 							16,17,18,18,19,16 , 20,21,22,22,23,20};
 const uint16_t indicesFloor[] = { 24,25,26,26,27,24 };
+const uint16_t indicesPatches[] = { 28,29,30,31 };
 
 struct ShaderCode
 {
@@ -280,7 +289,7 @@ public:
 		tesselationControllShaderName = tcsName;
 		tesselationEvaluationShaderName = tesName;
 		topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-		tessellationStateCreateInfo = getTessellationStateCreateInfo(2);
+		tessellationStateCreateInfo = getTessellationStateCreateInfo(4);
 	}
 	void init(char *vertName, char *fragName, VkDeviceSize _uboOffset, mat4 *_mView)
 	{
@@ -375,7 +384,7 @@ public:
 	mat4 mView, cam;
 	CtrlValues ctrlValues;
 	float phi, theta;
-	RenderObject *cube, *plane, *sphere;
+	RenderObject *cube, *plane, *sphere, *terrain, *skybox;
 	VertexHandler *hVertices;
 	IndexHandler *hIndices;
 
@@ -398,7 +407,7 @@ public:
 		printMatrix4(mView, "Test");
 
 		hVertices = new VertexHandler(2);
-		hIndices = new IndexHandler(3);
+		hIndices = new IndexHandler(4);
 
 		hVertices->vertexData[0].data = (float*)vertices;
 		hVertices->vertexData[0].size = sizeof(vertices);
@@ -408,28 +417,43 @@ public:
 		hIndices->indexData[0].size = sizeof(indicesCube);
 		hIndices->indexData[1].data = (uint16_t*)indicesFloor;
 		hIndices->indexData[1].size = sizeof(indicesFloor);
-		createMeshGridIndices(&hIndices->indexData[2].data, &hIndices->indexData[2].size, 100, 100, sizeof(vertices) / sizeof(float) / 2);
+		hIndices->indexData[2].data = (uint16_t*)indicesPatches;
+		hIndices->indexData[2].size = sizeof(indicesPatches);
+		createMeshGridIndices(&hIndices->indexData[3].data, &hIndices->indexData[3].size, 100, 100, sizeof(vertices) / sizeof(float) / 2);
 
 		cube = new RenderObject("vs_3d.spv", "fs_muster3.spv", 0, &mView);
 		cube->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
 		cube->firstIndex = 0;
-		getTrans4(cube->mModel, 0.0f, 2.0f, 0.0f);
+		getTrans4(cube->mModel, 10.0f, 2.0f, 15.0f);
 
 		plane = new RenderObject("vs_3d.spv", "fs_muster3.spv", 0x100, &mView);
 		plane->indexCount = hIndices->indexData[1].size / sizeof(uint16_t);
 		plane->firstIndex = hIndices->getOffset(1) / sizeof(uint16_t);
 		getFrustum(plane->mProj, 0.25f, 0.25f, 0.5f, 100.0f);
-		getScale4(plane->mModel, 20.0f, 0.0f, 20.0f);
+		getScale4(plane->mModel, 20.0f, 1.0f, 20.0f);
 
-		sphere = new RenderObject("vs_sphere.spv", "fs_muster3.spv", 0x200, &mView);
-		sphere->indexCount = hIndices->indexData[2].size / sizeof(uint16_t);
-		sphere->firstIndex = hIndices->getOffset(2) / sizeof(uint16_t);
+		terrain = new RenderObject("vs_terrainTesselator.spv", "tcs_terrainTesselator.spv", "tes_terrainTesselator.spv", "fs_muster3.spv", 0x200, &mView);
+		terrain->indexCount = hIndices->indexData[2].size / sizeof(uint16_t);
+		terrain->firstIndex = hIndices->getOffset(2) / sizeof(uint16_t);
+		getScale4(A, 100.0f, 1.0f, 100.0f);
+		getTrans4(B, -50.0f, 0.0f, -50.0f);
+		mult4(terrain->mModel, B, A);
+
+		sphere = new RenderObject("vs_sphere.spv", "fs_muster3.spv", 0x300, &mView);
+		sphere->indexCount = hIndices->indexData[3].size / sizeof(uint16_t);
+		sphere->firstIndex = hIndices->getOffset(3) / sizeof(uint16_t);
 		sphere->bindingDescription = RenderObject::getBindingDescription(2*sizeof(float));
 		sphere->attributeDescriptionCount = 1;
 		VkFormat format[] = { VK_FORMAT_R32G32_SFLOAT };
 		uint32_t offset[] = { 0 };
 		sphere->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
-		getTrans4(sphere->mModel, 5.0f, 2.0f, 5.0f);
+		getTrans4(sphere->mModel, 5.0f, 2.0f, -10.0f);
+
+		skybox = new RenderObject("vs_3d.spv", "fs_3d_tex.spv", 0x400, &mView);
+		skybox->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
+		skybox->firstIndex = 0;
+		getFrustum(skybox->mProj, 0.25f, 0.25f, 0.5f, 200.0f);
+		getScale4(skybox->mModel, 100.0f, 100.0f, 100.0f);
 	}
 	void camMotion()
 	{
@@ -508,7 +532,9 @@ public:
 		scene = _scene;
 		addObject(scene->cube);
 		addObject(scene->plane);
+		addObject(scene->terrain);
 		addObject(scene->sphere);
+		addObject(scene->skybox);
 		mView = &scene->mView;
 		ctrlValues = &scene->ctrlValues;
 		hVertices = scene->hVertices;
@@ -1253,7 +1279,7 @@ private:
 	void createTextureImage()
 	{
 		int texWidth, texHeight, texChannels;
-		stbi_uc *pixels = stbi_load("texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		stbi_uc *pixels = stbi_load("sky.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 

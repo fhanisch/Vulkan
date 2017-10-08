@@ -17,7 +17,7 @@ LIBS_T1 = vulkan-1.lib glfw3.lib user32.lib gdi32.lib shell32.lib
 LIBS_T2 = vulkan-1.lib mathlib.lib user32.lib Shcore.lib
 LIBS_WORLD = vulkan-1.lib mathlib.lib user32.lib Shcore.lib libusb-1.0.lib
 
-all: App T1 T2 ML Shader1 Shader2 Tex
+all: App T1 T2 World ML Shader1 Shader2 Tex
 
 App: build
 	cl /nologo /EHsc /I$(INC_VULKAN) /Fo$(BuildPath)\ $(SrcPath)\main.cpp /link /out:$(BuildPath)\app.exe
@@ -70,7 +70,11 @@ Shader2: build
 	glslangValidator -V shader\3d.vert -o build\vs_3d.spv
 	glslangValidator -V shader\sphere.vert -o build\vs_sphere.spv
 	glslangValidator -V shader\3d.frag -o build\fs_3d.spv
+	glslangValidator -V shader\3d_tex.frag -o build\fs_3d_tex.spv
 	glslangValidator -V shader\muster3.frag -o build\fs_muster3.spv
+	glslangValidator -V shader\terrainTesselator.vert -o build\vs_terrainTesselator.spv
+	glslangValidator -V shader\terrainTesselator.tesc -o build\tcs_terrainTesselator.spv
+	glslangValidator -V shader\terrainTesselator.tese -o build\tes_terrainTesselator.spv
 	copy build\*.spv x64\Debug
 
 build:
@@ -79,6 +83,8 @@ build:
 Tex:
 	copy textures\texture.jpg x64\Debug
 	copy textures\texture.jpg build
+	copy textures\sky.png x64\Debug
+	copy textures\sky.png build
 
 clean:
 	del build\*.exe build\*.obj build\*.spv build\*.lib build\*.txt

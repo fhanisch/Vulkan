@@ -186,7 +186,7 @@ const Vertex vertices[] = {
 
 const uint16_t indicesCube[] = { 0,1,2,2,3,0 , 8,9,10,10,11,8 , 4,5,6,6,7,4 , 12,13,14,14,15,12 ,
 							16,17,18,18,19,16 , 20,21,22,22,23,20};
-const uint16_t indicesFloor[] = { 24,25,26,26,27,24 };
+const uint16_t indicesPlane[] = { 24,25,26,26,27,24 };
 const uint16_t indicesPatches[] = { 28,29,30,31 };
 
 struct ShaderCode
@@ -381,7 +381,7 @@ public:
 class RenderScene
 {
 public:
-	mat4 mView, cam;
+	mat4 mView, cam, mViewSkybox;
 	CtrlValues ctrlValues;
 	float phi, theta;
 	RenderObject *cube, *plane, *sphere, *terrain, *skybox;
@@ -396,8 +396,8 @@ public:
 		theta = PI / 4.0f;
 		identity4(cam);
 		cam[3][0] = -20.0f; cam[3][1] = -20.0f; cam[3][2] = 20.0f;
+		identity4(mViewSkybox);
 
-		identity4(mView);
 		getRotX4(A, theta);
 		getRotY4(B, phi);
 		mult4(C, A, B);
@@ -415,8 +415,8 @@ public:
 
 		hIndices->indexData[0].data = (uint16_t*)indicesCube;
 		hIndices->indexData[0].size = sizeof(indicesCube);
-		hIndices->indexData[1].data = (uint16_t*)indicesFloor;
-		hIndices->indexData[1].size = sizeof(indicesFloor);
+		hIndices->indexData[1].data = (uint16_t*)indicesPlane;
+		hIndices->indexData[1].size = sizeof(indicesPlane);
 		hIndices->indexData[2].data = (uint16_t*)indicesPatches;
 		hIndices->indexData[2].size = sizeof(indicesPatches);
 		createMeshGridIndices(&hIndices->indexData[3].data, &hIndices->indexData[3].size, 100, 100, sizeof(vertices) / sizeof(float) / 2);
@@ -449,7 +449,7 @@ public:
 		sphere->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
 		getTrans4(sphere->mModel, 5.0f, 2.0f, -10.0f);
 
-		skybox = new RenderObject("vs_3d.spv", "fs_3d_tex.spv", 0x400, &mView);
+		skybox = new RenderObject("vs_3d.spv", "fs_3d_tex.spv", 0x400, &mViewSkybox);
 		skybox->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
 		skybox->firstIndex = 0;
 		getFrustum(skybox->mProj, 0.25f, 0.25f, 0.5f, 200.0f);
@@ -514,6 +514,8 @@ public:
 		mult4(mView, B, A);
 		invert4(cam, mView);
 
+		dup4(*skybox->mView,R);
+
 		//getRotX4(Rx, dtheta);
 		//getRotY4(Ry, dphi);
 		//mult4(R, Rx, Ry);
@@ -535,7 +537,6 @@ public:
 		addObject(scene->terrain);
 		addObject(scene->sphere);
 		addObject(scene->skybox);
-		mView = &scene->mView;
 		ctrlValues = &scene->ctrlValues;
 		hVertices = scene->hVertices;
 		hIndices = scene->hIndices;
@@ -578,7 +579,6 @@ private:
 	uint16_t objectCount = 0;
 	RenderScene *scene;
 	RenderObject **renderObject = new RenderObject*[maxObjectCount];
-	mat4 *mView;
 	CtrlValues *ctrlValues;
 	VertexHandler *hVertices;
 	IndexHandler *hIndices;
@@ -680,7 +680,7 @@ private:
 			{
 #ifndef NOCONSOLE
 				PRINT("FPS = " << framecount);
-				printMatrix4(*mView, "mView");
+				printMatrix4(scene->mView, "mView");
 				printMatrix4(scene->cam, "Camera");
 #endif
 				start_t = clock();

@@ -186,8 +186,8 @@ void createMeshGridIndices(unsigned short **indices, unsigned int *indicesSize, 
 	*indicesSize = len * sizeof(unsigned short);
 	*indices = malloc(*indicesSize);
 
-	for (i = 0; i<m - 1; i++)
-		for (j = 0; j<n - 1; j++)
+	for (i = 0; i < (m - 1); i++)
+		for (j = 0; j < (n - 1); j++)
 		{
 			(*indices)[6 * (i*(n - 1) + j) + 0] = i*n + j + offset;
 			(*indices)[6 * (i*(n - 1) + j) + 1] = i*n + j + 1 + offset;
@@ -196,6 +196,24 @@ void createMeshGridIndices(unsigned short **indices, unsigned int *indicesSize, 
 			(*indices)[6 * (i*(n - 1) + j) + 3] = i*n + j + 1 + offset;
 			(*indices)[6 * (i*(n - 1) + j) + 4] = (i + 1)*n + j + offset;
 			(*indices)[6 * (i*(n - 1) + j) + 5] = (i + 1)*n + j + 1 + offset;
+		}
+}
+
+void createMeshGridPatchIndices(unsigned short **indices, unsigned int *indicesSize, unsigned int m, unsigned int n, unsigned int offset)
+{
+	unsigned int i, j, len;
+
+	len = 4 * (m - 1)*(n - 1);
+	*indicesSize = len * sizeof(unsigned short);
+	*indices = malloc(*indicesSize);
+
+	for (i = 0; i < (m - 1); i++)
+		for (j = 0; j < (n - 1); j++)
+		{
+			(*indices)[4 * (i*(n - 1) + j) + 0] = i*n + j + offset;
+			(*indices)[4 * (i*(n - 1) + j) + 1] = i*n + j + 1 + offset;
+			(*indices)[4 * (i*(n - 1) + j) + 2] = (i + 1)*n + j + offset;
+			(*indices)[4 * (i*(n - 1) + j) + 3] = (i + 1)*n + j + 1 + offset;
 		}
 }
 

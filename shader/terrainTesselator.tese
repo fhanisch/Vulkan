@@ -2,8 +2,8 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 const float PI = 3.14159;
-const float SEED_U = 1289.0;
-const float SEED_V = 587.0;
+const float SEED_U = 9289.0;
+const float SEED_V = 287.0;
 const float scale = 10.0;
 
 layout (binding = 0) uniform UniformBufferObject
@@ -57,7 +57,8 @@ void main()
 
 	float u = gl_TessCoord.x + P[0].x;
   float v = gl_TessCoord.y + P[0].z;
-  float w = 2.0*perlin_interp2(scale*u, scale*v) + 10.0*perlin_interp2(0.5*scale*u, 0.5*scale*v) + P[0].y;
+  float w = 2.0*perlin_interp2(scale*u, scale*v) + 10.0*perlin_interp2(0.5*scale*u, 0.5*scale*v) +
+          50.0*perlin_interp2(0.1*scale*u, 0.1*scale*v) + P[0].y;
 
   vec3 vertex = vec3(u,w,v);
 

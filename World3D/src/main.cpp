@@ -176,12 +176,7 @@ const Vertex vertices[] = {
 	{ { -1.0f,  0.0f,  1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },
 	{ {  1.0f,  0.0f,  1.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
 	{ {  1.0f,  0.0f, -1.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
-	{ { -1.0f,  0.0f, -1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
-
-	{ {  0.0f,  0.0f,  0.0f }, { 1.0f, 0.5f, 0.0f }, { 0.0f, 0.0f } },
-	{ {  1.0f,  0.0f,  0.0f }, { 1.0f, 0.5f, 0.0f }, { 1.0f, 0.0f } },
-	{ {  0.0f,  0.0f,  1.0f }, { 1.0f, 0.5f, 0.0f }, { 1.0f, 1.0f } },
-	{ {  1.0f,  0.0f,  1.0f }, { 1.0f, 0.5f, 0.0f }, { 0.0f, 1.0f } }
+	{ { -1.0f,  0.0f, -1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } }
 };
 
 const uint16_t indicesCube[] = { 0,1,2,2,3,0 , 8,9,10,10,11,8 , 4,5,6,6,7,4 , 12,13,14,14,15,12 ,
@@ -305,7 +300,7 @@ public:
 		topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		identity4(mModel);
 		mView = _mView;
-		getFrustum(mProj, 0.25f, 0.25f, 0.5f, 100.0f);
+		getFrustum(mProj, 0.25f, 0.25f, 0.5f, 200.0f);
 	}
 	static VkVertexInputBindingDescription getBindingDescription(uint32_t stride)
 	{
@@ -337,43 +332,6 @@ public:
 		createInfo.patchControlPoints = patchControlPoints;
 
 		return createInfo;
-	}
-};
-
-class CircleFilled : public RenderObject
-{
-public:
-	CircleFilled(char *vertName, char *fragName, VkDeviceSize _uboOffset, mat4 *_mView)
-		: RenderObject(vertName, fragName, _uboOffset, _mView){}
-
-	void motion()
-	{
-		mat4 A, B;
-
-		if (key[0x41] == true)
-		{
-			dup4(A, mModel);
-			getTrans4(B, -0.1f, 0.0f, 0.0f);
-			mult4(mModel, B, A);
-		}
-		if (key[0x44] == true)
-		{
-			dup4(A, mModel);
-			getTrans4(B, 0.1f, 0.0f, 0.0f);
-			mult4(mModel, B, A);
-		}
-		if (key[0x53] == true)
-		{
-			dup4(A, mModel);
-			getTrans4(B, 0.0f, 0.1f, 0.0f);
-			mult4(mModel, B, A);
-		}
-		if (key[0x57] == true)
-		{
-			dup4(A, mModel);
-			getTrans4(B, 0.0f, -0.1f, 0.0f);
-			mult4(mModel, B, A);
-		}
 	}
 };
 
@@ -423,12 +381,11 @@ public:
 		cube = new RenderObject("vs_3d.spv", "fs_muster3.spv", 0, &mView);
 		cube->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
 		cube->firstIndex = 0;
-		getTrans4(cube->mModel, 10.0f, 2.0f, 15.0f);
+		getTrans4(cube->mModel, -14.0f, 2.0f, 12.0f);
 
 		plane = new RenderObject("vs_3d.spv", "fs_muster3.spv", 0x100, &mView);
 		plane->indexCount = hIndices->indexData[1].size / sizeof(uint16_t);
 		plane->firstIndex = hIndices->getOffset(1) / sizeof(uint16_t);
-		getFrustum(plane->mProj, 0.25f, 0.25f, 0.5f, 100.0f);
 		getScale4(plane->mModel, 20.0f, 1.0f, 20.0f);
 
 		terrain = new RenderObject("vs_terrainTesselator.spv", "tcs_terrainTesselator.spv", "tes_terrainTesselator.spv", "fs_muster3.spv", 0x200, &mView);
@@ -451,7 +408,7 @@ public:
 		format[0] = { VK_FORMAT_R32G32_SFLOAT };
 		offset[0] = { 0 };
 		sphere->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
-		getTrans4(sphere->mModel, 5.0f, 2.0f, -10.0f);
+		getTrans4(sphere->mModel, -3.0f, 2.0f, -6.0f);
 
 		skybox = new RenderObject("vs_3d.spv", "fs_3d_tex.spv", 0x400, &mViewSkybox);
 		skybox->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);

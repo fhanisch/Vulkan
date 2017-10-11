@@ -22,10 +22,10 @@ void main()
 
 	if (gl_InvocationID==0) // wird nur beim ersten Durchlauf gesetzt
 	{
-		vec4 p = ubo.mView * ubo.mModel * gl_in[0].gl_Position;
+		vec4 p = ubo.mView * ubo.mModel * (gl_in[0].gl_Position + vec4(0.5, 0.0, 0.5, 0.0));
 		float distance = length(vec3(p.xyz));
 
-		if (distance < 150.0)
+		if (distance < 200.0)
 			grid = 100.0;
 		else
 			grid = 1.0;

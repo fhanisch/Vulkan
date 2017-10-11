@@ -21,6 +21,6 @@ out gl_PerVertex
 void main()
 {
   fragColor = vec3(1.0, 0.5, 0.0);
-  texCoords = vec2(2.0*mesh.x, mesh.y); //aus Sphere übernommen
+  texCoords = vec2(mesh.x, mesh.y);
   gl_Position = vec4(100.0*mesh.x, 0.0, 100.0*mesh.y, 1.0);
 }

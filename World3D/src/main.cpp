@@ -413,8 +413,8 @@ public:
 		skybox = new RenderObject("vs_3d.spv", "fs_3d_tex.spv", 0x400, &mViewSkybox);
 		skybox->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
 		skybox->firstIndex = 0;
-		getFrustum(skybox->mProj, 0.25f, 0.25f, 0.5f, 200.0f);
-		getScale4(skybox->mModel, 100.0f, 100.0f, 100.0f);
+		getFrustum(skybox->mProj, 0.25f, 0.25f, 0.5f, 300.0f);
+		getScale4(skybox->mModel, 150.0f, 150.0f, 150.0f);
 	}
 	void camMotion()
 	{

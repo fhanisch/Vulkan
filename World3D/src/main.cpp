@@ -1227,15 +1227,32 @@ private:
 	}
 	void createDepthResources()
 	{
-		VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
+		VkFormat depthFormat = findDepthFormat();
 		createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthImage, &depthImageMemory);
 		depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 	}
-	VkFormat findSupportedFormat(char **candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+	VkFormat findSupportedFormat(uint32_t candidatesCount, VkFormat *candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 	{
-
+		for (uint32_t i = 0; i < candidatesCount; i++)
+		{
+			VkFormatProperties properties;
+			vkGetPhysicalDeviceFormatProperties(physicalDevice, candidates[i], &properties);
+			if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & features) == features) {
+				return candidates[i];
+			}
+			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & features) == features) {
+				return candidates[i];
+			}
+		}
+		PRINT("Failed to find supported format!");
+		exit(1);
+	}
+	VkFormat findDepthFormat()
+	{
+		VkFormat formats[] = { VK_FORMAT_D32_SFLOAT };
+		return findSupportedFormat(1, formats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	}
 	void createTextureImage()
 	{

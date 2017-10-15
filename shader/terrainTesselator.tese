@@ -2,8 +2,8 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 const float PI = 3.14159;
-const float SEED_U = 9289.0;
-const float SEED_V = 287.0;
+const float SEED_U = 5289.0;
+const float SEED_V = 987.0;
 const float scale = 10.0;
 
 layout (binding = 0) uniform UniformBufferObject

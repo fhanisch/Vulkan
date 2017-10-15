@@ -353,6 +353,7 @@ public:
 		theta = PI / 4.0f;
 		identity4(cam);
 		cam[3][0] = -20.0f; cam[3][1] = -20.0f; cam[3][2] = 20.0f;
+		//cam[3][0] = 150000.0f; cam[3][1] = -20.0f; cam[3][2] = 150000.0f;
 		identity4(mViewSkybox);
 
 		getRotX4(A, theta);
@@ -381,7 +382,7 @@ public:
 		cube = new RenderObject("vs_3d.spv", "fs_muster3.spv", 0, &mView);
 		cube->indexCount = hIndices->indexData[0].size / sizeof(uint16_t);
 		cube->firstIndex = 0;
-		getTrans4(cube->mModel, -14.0f, 2.0f, 12.0f);
+		getTrans4(cube->mModel, -14.0f, 2.0f, -12.0f);
 
 		plane = new RenderObject("vs_3d.spv", "fs_muster3.spv", 0x100, &mView);
 		plane->indexCount = hIndices->indexData[1].size / sizeof(uint16_t);
@@ -396,9 +397,7 @@ public:
 		VkFormat format[] = { VK_FORMAT_R32G32_SFLOAT };
 		uint32_t offset[] = { 0 };
 		terrain->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
-		getScale4(A, 100.0f, 1.0f, 100.0f);
-		getTrans4(B, -5000.0f, 0.0f, -5000.0f);
-		mult4(terrain->mModel, B, A);
+		getScale4(terrain->mModel, 100.0f, 1.0f, 100.0f);
 
 		sphere = new RenderObject("vs_sphere.spv", "fs_muster3.spv", 0x300, &mView);
 		sphere->indexCount = hIndices->indexData[3].size / sizeof(uint16_t);

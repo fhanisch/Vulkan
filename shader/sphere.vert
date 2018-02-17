@@ -11,6 +11,8 @@ layout(location = 0) in vec2 mesh;
 
 layout (location = 0) out vec3 fragColor;
 layout (location = 1) out vec2 texCoords;
+layout(location = 2) out vec3 vertexPosition;
+layout(location = 3) out vec3 normalPosition;
 
 out gl_PerVertex
 {
@@ -25,13 +27,17 @@ void main()
 
 	float u = 2.0*pi*mesh.x;
 	float v = pi*mesh.y;
-	vec3 f;
+	vec3 f,n;
 
-	f.x = R*sin(v)*cos(u);
-	f.y = R*sin(v)*sin(u);
-	f.z = R*cos(v);
+	n.x = sin(v)*cos(u);
+	n.y = sin(v)*sin(u);
+	n.z = cos(v);
+
+  f = R*n;
 
   fragColor = vec3(0.0, 1.0, 0.0);
   texCoords = vec2(2.0*mesh.x, mesh.y);
-  gl_Position = ubo.mProj * ubo.mView * ubo.mModel * vec4(f, 1.0);
+  vertexPosition = vec3(ubo.mView * ubo.mModel * vec4(f, 1.0));
+  normalPosition = vec3(transpose(inverse(ubo.mView * ubo.mModel)) * vec4(n, 1.0));
+	gl_Position = ubo.mProj * vec4(vertexPosition, 1.0);
 }

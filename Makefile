@@ -73,6 +73,7 @@ Shader2: build
 	glslangValidator -V shader\3d.frag -o build\fs_3d.spv
 	glslangValidator -V shader\3d_tex.frag -o build\fs_3d_tex.spv
 	glslangValidator -V shader\muster3.frag -o build\fs_muster3.spv
+	glslangValidator -V shader\muster3_ADSperFrag.frag -o build\fs_muster3_ADSperFrag.spv
 	glslangValidator -V shader\terrainTesselator.vert -o build\vs_terrainTesselator.spv
 	glslangValidator -V shader\terrainTesselator.tesc -o build\tcs_terrainTesselator.spv
 	glslangValidator -V shader\terrainTesselator.tese -o build\tes_terrainTesselator.spv

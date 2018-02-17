@@ -399,7 +399,7 @@ public:
 		terrain->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
 		getScale4(terrain->mModel, 100.0f, 1.0f, 100.0f);
 
-		sphere = new RenderObject("vs_sphere.spv", "fs_muster3.spv", 0x300, &mView);
+		sphere = new RenderObject("vs_sphere.spv", "fs_muster3_ADSperFrag.spv", 0x300, &mView);
 		sphere->indexCount = hIndices->indexData[3].size / sizeof(uint16_t);
 		sphere->firstIndex = hIndices->getOffset(3) / sizeof(uint16_t);
 		sphere->bindingDescription = RenderObject::getBindingDescription(2*sizeof(float));

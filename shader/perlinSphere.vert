@@ -51,9 +51,10 @@ float perlin_interp3(float u, float v, float w)
     float w_011 = dot(g_011, vec3(x,y-1.0,z-1.0));
     float w_111 = dot(g_111, vec3(x-1.0,y-1.0,z-1.0));
 
-    float s_x = 10.0*pow(x,3.0)-15.0*pow(x,4.0)+6.0*pow(x,5.0);
-    float s_y = 10.0*pow(y,3.0)-15.0*pow(y,4.0)+6.0*pow(y,5.0);
-    float s_z = 10.0*pow(z,3.0)-15.0*pow(z,4.0)+6.0*pow(z,5.0);
+    // Überblendungsfunktion: s(x) = 10x^3-15x^4+6x^5
+    float s_x = pow(x,3.0)*(x*(x*6-15)+10);
+    float s_y = pow(y,3.0)*(y*(y*6-15)+10);
+    float s_z = pow(z,3.0)*(z*(z*6-15)+10);
 
     float w_00 = (1.0-s_x)*w_000 + s_x*w_100;
     float w_10 = (1.0-s_x)*w_010 + s_x*w_110;

@@ -69,6 +69,7 @@ Shader1: build
 Shader2: build
 	glslangValidator -V shader\3d.vert -o build\vs_3d.spv
 	glslangValidator -V shader\sphere.vert -o build\vs_sphere.spv
+	glslangValidator -V shader\perlinSphere.vert -o build\vs_perlinSphere.spv
 	glslangValidator -V shader\3d.frag -o build\fs_3d.spv
 	glslangValidator -V shader\3d_tex.frag -o build\fs_3d_tex.spv
 	glslangValidator -V shader\muster3.frag -o build\fs_muster3.spv

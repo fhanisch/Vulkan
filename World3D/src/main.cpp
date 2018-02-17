@@ -341,7 +341,7 @@ public:
 	mat4 mView, cam, mViewSkybox;
 	CtrlValues ctrlValues;
 	float phi, theta;
-	RenderObject *cube, *plane, *sphere, *terrain, *skybox;
+	RenderObject *cube, *plane, *sphere, *terrain, *skybox, *perlinSphere;
 	VertexHandler *hVertices;
 	IndexHandler *hIndices;
 
@@ -414,6 +414,16 @@ public:
 		skybox->firstIndex = 0;
 		getFrustum(skybox->mProj, 0.25f, 0.25f, 0.5f, 300.0f);
 		getScale4(skybox->mModel, 150.0f, 150.0f, 150.0f);
+
+		perlinSphere = new RenderObject("vs_perlinSphere.spv", "fs_muster3.spv", 0x500, &mView);
+		perlinSphere->indexCount = hIndices->indexData[3].size / sizeof(uint16_t);
+		perlinSphere->firstIndex = hIndices->getOffset(3) / sizeof(uint16_t);
+		perlinSphere->bindingDescription = RenderObject::getBindingDescription(2 * sizeof(float));
+		perlinSphere->attributeDescriptionCount = 1;
+		format[0] = { VK_FORMAT_R32G32_SFLOAT };
+		offset[0] = { 0 };
+		perlinSphere->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
+		getTrans4(perlinSphere->mModel, -3.0f, 20.0f, -6.0f);
 	}
 	void camMotion()
 	{
@@ -497,6 +507,7 @@ public:
 		addObject(scene->terrain);
 		addObject(scene->sphere);
 		addObject(scene->skybox);
+		addObject(scene->perlinSphere);
 		ctrlValues = &scene->ctrlValues;
 		hVertices = scene->hVertices;
 		hIndices = scene->hIndices;

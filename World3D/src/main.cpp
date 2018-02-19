@@ -389,7 +389,7 @@ public:
 		plane->firstIndex = hIndices->getOffset(1) / sizeof(uint16_t);
 		getScale4(plane->mModel, 20.0f, 1.0f, 20.0f);
 
-		terrain = new RenderObject("vs_terrainTesselator.spv", "tcs_terrainTesselator.spv", "tes_terrainTesselator.spv", "fs_muster3.spv", 0x200, &mView);
+		terrain = new RenderObject("vs_terrainTesselator.spv", "tcs_terrainTesselator.spv", "tes_terrainTesselator.spv", "fs_muster3_ADSperFrag.spv", 0x200, &mView);
 		terrain->indexCount = hIndices->indexData[2].size / sizeof(uint16_t);
 		terrain->firstIndex = hIndices->getOffset(2) / sizeof(uint16_t);
 		terrain->bindingDescription = RenderObject::getBindingDescription(2 * sizeof(float));

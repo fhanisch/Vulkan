@@ -20,13 +20,15 @@ layout (location = 1) in vec2 inTexCoords[];
 
 layout (location = 0) out vec3 fragColor;
 layout (location = 1) out vec2 texCoords;
+layout(location = 2) out vec3 vertexPosition;
+layout(location = 3) out vec3 normalPosition;
 
 float random2d(vec2 pos, float seed)
 {
   return fract( sin( dot(pos, vec2(12.9898,78.233)) + seed) * 43758.5453123 );
 }
 
-float perlin_interp2(float u, float v)
+float perlin_interp2(out vec3 n, float u, float v)
 {
     float x = fract(u);
     float y = fract(v);
@@ -38,17 +40,30 @@ float perlin_interp2(float u, float v)
     float w_10 = dot(g_10, vec2(x-1.0,y));
     float w_01 = dot(g_01, vec2(x,y-1.0));
     float w_11 = dot(g_11, vec2(x-1.0,y-1.0));
-    float s_x = 10.0*pow(x,3.0)-15.0*pow(x,4.0)+6.0*pow(x,5.0);
-    float s_y = 10.0*pow(y,3.0)-15.0*pow(y,4.0)+6.0*pow(y,5.0);
+    // Überblendungsfunktion: s(x) = 10x^3-15x^4+6x^5
+    float s_x = pow(x,3.0)*(x*(x*6-15)+10);
+    float s_y = pow(y,3.0)*(y*(y*6-15)+10);
+    float derx_s_x = pow(x,2.0)*(x*(x*30-60)+30);
+    float dery_s_y = pow(y,2.0)*(y*(y*30-60)+30);
     float w_0 = (1.0-s_x)*w_00 + s_x*w_10;
+    float derx_w_0 = (1.0-s_x)*g_00.x - derx_s_x*w_00 + s_x*g_10.x + derx_s_x*w_10;
+    //float derx_w_0 = g_00.x + derx_s_x*(w_10-w_00) + s_x*(g_10.x-g_00.x);
+    float dery_w_0 = (1.0-s_x)*g_00.y + s_x*g_10.y;
     float w_1 = (1.0-s_x)*w_01 + s_x*w_11;
+    float derx_w_1 = (1.0-s_x)*g_01.x - derx_s_x*w_01 + s_x*g_11.x + derx_s_x*w_11;
+    //float derx_w_1 = g_01.x + derx_s_y*(w_11-w_01) + s_y*(g_11.x-g_01.x);
+    float dery_w_1 = (1.0-s_x)*g_01.y + s_x*g_11.y;
     float w = (1.0-s_y)*w_0 + s_y*w_1;
+    float derx_w = (1.0-s_y)*derx_w_0 + s_y*derx_w_1;
+    float dery_w = (1.0-s_y)*dery_w_0 - dery_s_y*w_0 + s_y*dery_w_1 + dery_s_y*w_1;
+    n = normalize(-cross(vec3(1.0,50*derx_w,0.0),vec3(0.0,50*dery_w,1.0)));
 		return w;
 }
 
 void main()
 {
 	vec3 P[4];
+  vec3 n,n_1,n_2,n_3;
 
   P[0]=gl_in[0].gl_Position.xyz;
 	P[1]=gl_in[1].gl_Position.xyz;
@@ -57,13 +72,15 @@ void main()
 
 	float u = gl_TessCoord.x + P[0].x;
   float v = gl_TessCoord.y + P[0].z;
-  float w = 2.0*perlin_interp2(scale*u, scale*v) + 10.0*perlin_interp2(0.5*scale*u, 0.5*scale*v) +
-          50.0*perlin_interp2(0.1*scale*u, 0.1*scale*v) + P[0].y;
-
+  //float w = 2.0*perlin_interp2(n_1,scale*u, scale*v) + 10.0*perlin_interp2(n_2,0.5*scale*u, 0.5*scale*v) +
+  //        50.0*perlin_interp2(n_3,0.1*scale*u, 0.1*scale*v) + P[0].y;
+  float w = 50*perlin_interp2(n, 2*u, 2*v);
   vec3 vertex = vec3(u,w,v);
-
+  //n = n_1 + n_2 + n_3;
   fragColor = inColor[0];
   texCoords.x = scale*u;
   texCoords.y = scale*v;
-	gl_Position = ubo.mProj * ubo.mView * ubo.mModel * vec4(vertex,1.0);
+  vertexPosition = vec3(ubo.mView * ubo.mModel * vec4(vertex, 1.0));
+  normalPosition = vec3(transpose(inverse(ubo.mView * ubo.mModel)) * vec4(n, 1.0));
+	gl_Position = ubo.mProj * vec4(vertexPosition, 1.0);
 }

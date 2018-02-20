@@ -4,7 +4,6 @@
 const float PI = 3.14159;
 const float SEED_U = 5289.0;
 const float SEED_V = 987.0;
-const float scale = 10.0;
 
 layout (binding = 0) uniform UniformBufferObject
 {
@@ -56,7 +55,7 @@ float perlin_interp2(out vec3 n, float u, float v)
     float w = (1.0-s_y)*w_0 + s_y*w_1;
     float derx_w = (1.0-s_y)*derx_w_0 + s_y*derx_w_1;
     float dery_w = (1.0-s_y)*dery_w_0 - dery_s_y*w_0 + s_y*dery_w_1 + dery_s_y*w_1;
-    n = normalize(-cross(vec3(1.0,50*derx_w,0.0),vec3(0.0,50*dery_w,1.0)));
+    n = -cross(vec3(1.0,derx_w,0.0),vec3(0.0,dery_w,1.0));
 		return w;
 }
 
@@ -72,15 +71,19 @@ void main()
 
 	float u = gl_TessCoord.x + P[0].x;
   float v = gl_TessCoord.y + P[0].z;
-  //float w = 2.0*perlin_interp2(n_1,scale*u, scale*v) + 10.0*perlin_interp2(n_2,0.5*scale*u, 0.5*scale*v) +
-  //        50.0*perlin_interp2(n_3,0.1*scale*u, 0.1*scale*v) + P[0].y;
-  float w = 50*perlin_interp2(n, 2*u, 2*v);
+  float w = 50.0*perlin_interp2(n_1, u, v) + 10.0*perlin_interp2(n_2, 5.0*u, 5.0*v) + 2.0*perlin_interp2(n_3, 10.0*u, 10.0*v);
   vec3 vertex = vec3(u,w,v);
-  //n = n_1 + n_2 + n_3;
+  n_1.x*=8*50.0;
+  n_1.z*=8*50.0;
+  n_2.x*=8*10.0;
+  n_2.z*=8*10.0;
+  n_3.x*=8*2.0;
+  n_3.z*=8*2.0;
+  n = n_1 + n_2 + n_3;
   fragColor = inColor[0];
-  texCoords.x = scale*u;
-  texCoords.y = scale*v;
+  texCoords.x = 10.0*u;
+  texCoords.y = 10.0*v;
   vertexPosition = vec3(ubo.mView * ubo.mModel * vec4(vertex, 1.0));
-  normalPosition = vec3(transpose(inverse(ubo.mView * ubo.mModel)) * vec4(n, 1.0));
+  normalPosition = vec3(transpose(inverse(ubo.mView * ubo.mModel)) * vec4(normalize(n), 1.0));
 	gl_Position = ubo.mProj * vec4(vertexPosition, 1.0);
 }

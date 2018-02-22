@@ -88,11 +88,11 @@ float perlin_interp3(out vec3 n, float u, float v, float w)
 
 void main()
 {
-	float R=2.0;
+	float R=10.0;
 
 	float u = 2.0*pi*mesh.x;
 	float v = pi*mesh.y;
-	vec3 f,n,n_1;
+	vec3 f,n,n_1,n_2;
 
   f.x = R*sin(v)*cos(u);
 	f.y = R*sin(v)*sin(u);
@@ -101,11 +101,13 @@ void main()
 	n = f;
 
   //float dr = 0.1*perlin_interp3(2.0*(f.x+1.0),2.0*(f.y+1.0),2.0*(f.z+1.0)) + 0.05*perlin_interp3(4.0*(f.x+1.0),4.0*(f.y+1.0),4.0*(f.z+1.0));
-  float dr = 0.2*perlin_interp3(n_1,(f.x+1.0),(f.y+1.0),(f.z+1.0));
+  float dr = 0.4*perlin_interp3(n_1,0.1*(f.x+1.0),0.1*(f.y+1.0),0.1*(f.z+1.0)) + 0.2*perlin_interp3(n_2,0.25*(f.x+1.0),0.25*(f.y+1.0),0.25*(f.z+1.0));
 
-  n_1.x*=1;
-  n_1.z*=1;
-  n+=n_1;
+  n_1.x*=4;
+  n_1.z*=4;
+  n_2.x*=4;
+  n_2.z*=4;
+  n+=n_1+n_2;
 
   f*=1.0+dr;
 

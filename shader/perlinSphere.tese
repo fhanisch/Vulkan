@@ -94,15 +94,15 @@ float perlin_interp3(out vec3 n, float u, float v, float w)
 void main()
 {
     vec3 P[4];
-	float R=1.0;
+	float R=20.0;
 
     P[0]=gl_in[0].gl_Position.xyz;
 	P[1]=gl_in[1].gl_Position.xyz;
     P[2]=gl_in[2].gl_Position.xyz;
     P[3]=gl_in[3].gl_Position.xyz;
 
-    float pu = P[0].x + gl_TessCoord.x/100.0;
-    float pv = P[0].z + gl_TessCoord.y/100.0;
+    float pu = P[0].x + gl_TessCoord.x*(P[1].x-P[0].x);
+    float pv = P[0].z + gl_TessCoord.y*(P[2].z-P[0].z);
 	float u = 2.0*pi*pu;
 	float v = pi*pv;
 	vec3 f,n,n_1,n_2;
@@ -113,19 +113,19 @@ void main()
 
 	n = f;
 
-  //float dr = 0.1*perlin_interp3(2.0*(f.x+1.0),2.0*(f.y+1.0),2.0*(f.z+1.0)) + 0.05*perlin_interp3(4.0*(f.x+1.0),4.0*(f.y+1.0),4.0*(f.z+1.0));
-  float dr = 0.25*perlin_interp3(n_1,0.05*(f.x+1.0),0.05*(f.y+1.0),0.05*(f.z+1.0)) + 0.2*perlin_interp3(n_2,0.125*(f.x+1.0),0.125*(f.y+1.0),0.125*(f.z+1.0));
+    //float dr = 0.1*perlin_interp3(2.0*(f.x+1.0),2.0*(f.y+1.0),2.0*(f.z+1.0)) + 0.05*perlin_interp3(4.0*(f.x+1.0),4.0*(f.y+1.0),4.0*(f.z+1.0));
+    float dr = 0.4*perlin_interp3(n_1,0.1*(f.x+1.0),0.1*(f.y+1.0),0.1*(f.z+1.0)) + 0.2*perlin_interp3(n_2,0.25*(f.x+1.0),0.25*(f.y+1.0),0.25*(f.z+1.0));
 
-  n_1.x*=32;
-  n_1.z*=32;
-  n_2.x*=32;
-  n_2.z*=32;
+  n_1.x*=20;
+  n_1.z*=20;
+  n_2.x*=20;
+  n_2.z*=20;
   n+=n_1+n_2;
 
   f*=1.0+dr;
 
   fragColor = vec3(1.0, 1.0, 0.0);
-  texCoords = vec2(32.0*pu, 16.0*pv);
+  texCoords = vec2(16.0*pu, 8.0*pv);
   vertexPosition = vec3(ubo.mView * ubo.mModel * vec4(f, 1.0));
   normalPosition = vec3(transpose(inverse(ubo.mView * ubo.mModel)) * vec4(normalize(n), 1.0));
 	gl_Position = ubo.mProj * vec4(vertexPosition, 1.0);

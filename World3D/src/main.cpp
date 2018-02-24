@@ -415,10 +415,9 @@ public:
 		getFrustum(skybox->mProj, 0.25f, 0.25f, 0.5f, 300.0f);
 		getScale4(skybox->mModel, 150.0f, 150.0f, 150.0f);
 
-		//perlinSphere = new RenderObject("vs_uvMesh.spv", "tcs_terrainTesselator.spv", "tes_perlinSphere.spv", "fs_muster3_ADSperFrag.spv", 0x500, &mView);
-		perlinSphere = new RenderObject("vs_perlinSphere.spv", "fs_muster3_ADSperFrag.spv", 0x500, &mView);
-		perlinSphere->indexCount = hIndices->indexData[3].size / sizeof(uint16_t);
-		perlinSphere->firstIndex = hIndices->getOffset(3) / sizeof(uint16_t);
+		perlinSphere = new RenderObject("vs_uvMesh.spv", "tcs_terrainTesselator.spv", "tes_perlinSphere.spv", "fs_muster3_ADSperFrag.spv", 0x500, &mView);
+		perlinSphere->indexCount = hIndices->indexData[2].size / sizeof(uint16_t);
+		perlinSphere->firstIndex = hIndices->getOffset(2) / sizeof(uint16_t);
 		perlinSphere->bindingDescription = RenderObject::getBindingDescription(2 * sizeof(float));
 		perlinSphere->attributeDescriptionCount = 1;
 		format[0] = { VK_FORMAT_R32G32_SFLOAT };

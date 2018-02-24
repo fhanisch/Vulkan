@@ -20,11 +20,7 @@ out gl_PerVertex
 
 void main()
 {
-  mat4 cam = inverse(ubo.mView);
-  vec3 pos = vec3(-cam[3][0], -cam[3][1], -cam[3][2]);
-  float u = 100.0*(mesh.x - 0.5) - floor(abs(pos.x)/2500.0)*25.0*sign(pos.x);
-  float v = 100.0*(mesh.y - 0.5) - floor(abs(pos.z)/2500.0)*25.0*sign(pos.z);
-  fragColor = vec3(1.0, 0.5, 0.0);
-  texCoords = mesh;
-  gl_Position = vec4(u, 0.0, v, 1.0);
+    fragColor = vec3(1.0, 0.5, 0.0);
+    texCoords = mesh;
+    gl_Position = vec4(mesh.x, 0.0, mesh.y, 1.0);
 }

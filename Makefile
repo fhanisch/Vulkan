@@ -69,6 +69,7 @@ Shader1: build
 Shader2: build
 	glslangValidator -V shader\3d.vert -o build\vs_3d.spv
 	glslangValidator -V shader\sphere.vert -o build\vs_sphere.spv
+	glslangValidator -V shader\uvMesh.vert -o build\vs_uvMesh.spv
 	glslangValidator -V shader\perlinSphere.vert -o build\vs_perlinSphere.spv
 	glslangValidator -V shader\3d.frag -o build\fs_3d.spv
 	glslangValidator -V shader\3d_tex.frag -o build\fs_3d_tex.spv
@@ -77,6 +78,7 @@ Shader2: build
 	glslangValidator -V shader\terrainTesselator.vert -o build\vs_terrainTesselator.spv
 	glslangValidator -V shader\terrainTesselator.tesc -o build\tcs_terrainTesselator.spv
 	glslangValidator -V shader\terrainTesselator.tese -o build\tes_terrainTesselator.spv
+	glslangValidator -V shader\perlinSphere.tese -o build\tes_perlinSphere.spv
 	copy build\*.spv x64\Debug
 
 build:

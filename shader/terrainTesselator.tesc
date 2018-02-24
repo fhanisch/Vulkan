@@ -16,6 +16,11 @@ layout (location = 1) in vec2 inTexCoords[];
 layout (location = 0) out vec3 fragColor[4];
 layout (location = 1) out vec2 texCoords[4];
 
+layout (push_constant) uniform pushConstants
+{
+	float grid;
+} pushConsts;
+
 void main()
 {
 	float grid;
@@ -26,7 +31,7 @@ void main()
 		float distance = length(vec3(p.xyz));
 
 		if (distance < 200.0)
-			grid = 100.0;
+			grid = pushConsts.grid;
 		else
 			grid = 1.0;
 

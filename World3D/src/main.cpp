@@ -267,6 +267,9 @@ public:
 	VkVertexInputAttributeDescription *attributeDescriptions;
 	VkPrimitiveTopology topology;
 	VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo;
+	uint32_t pushConstantRangeCount;
+	VkPushConstantRange *pushConstantRange;
+	float pushConstGrid;
 
 	mat4 mModel;
 	mat4 *mView;
@@ -284,6 +287,8 @@ public:
 		tesselationEvaluationShaderName = tesName;
 		topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
 		tessellationStateCreateInfo = getTessellationStateCreateInfo(4);
+		pushConstantRangeCount = 1;
+		pushConstantRange = getPushConstantRange(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
 	}
 	void init(char *vertName, char *fragName, VkDeviceSize _uboOffset, mat4 *_mView)
 	{
@@ -301,6 +306,8 @@ public:
 		identity4(mModel);
 		mView = _mView;
 		getFrustum(mProj, 0.25f, 0.25f, 0.5f, 200.0f);
+		pushConstantRangeCount = 0;
+		pushConstantRange = nullptr;
 	}
 	static VkVertexInputBindingDescription getBindingDescription(uint32_t stride)
 	{
@@ -332,6 +339,16 @@ public:
 		createInfo.patchControlPoints = patchControlPoints;
 
 		return createInfo;
+	}
+	static VkPushConstantRange *getPushConstantRange(VkShaderStageFlags shaderStageFlags)
+	{
+		VkPushConstantRange *pushConstantRange = new VkPushConstantRange;
+
+		pushConstantRange->stageFlags = shaderStageFlags;
+		pushConstantRange->offset = 0;
+		pushConstantRange->size = sizeof(float);
+
+		return pushConstantRange;
 	}
 };
 
@@ -398,6 +415,7 @@ public:
 		uint32_t offset[] = { 0 };
 		terrain->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
 		getScale4(terrain->mModel, 100.0f, 1.0f, 100.0f);
+		terrain->pushConstGrid = 100;
 
 		sphere = new RenderObject("vs_sphere.spv", "fs_muster3_ADSperFrag.spv", 0x300, &mView);
 		sphere->indexCount = hIndices->indexData[3].size / sizeof(uint16_t);
@@ -424,6 +442,7 @@ public:
 		offset[0] = { 0 };
 		perlinSphere->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
 		getTrans4(perlinSphere->mModel, -3.0f, 20.0f, -6.0f);
+		perlinSphere->pushConstGrid = 25;
 	}
 	void camMotion()
 	{
@@ -1153,8 +1172,8 @@ private:
 		pipelineLayoutInfo.flags = 0;
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-		pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-		pipelineLayoutInfo.pPushConstantRanges = 0; // Optional
+		pipelineLayoutInfo.pushConstantRangeCount = obj->pushConstantRangeCount;
+		pipelineLayoutInfo.pPushConstantRanges = obj->pushConstantRange;
 
 		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &obj->pipelineLayout) != VK_SUCCESS)
 		{
@@ -1749,6 +1768,11 @@ private:
 
 					for (uint32_t j = 0; j < objectCount; j++)
 					{
+						if (renderObject[j]->pushConstantRangeCount)
+						{
+							vkCmdPushConstants(commandBuffers[i], renderObject[j]->pipelineLayout, renderObject[j]->pushConstantRange->stageFlags,
+								renderObject[j]->pushConstantRange->offset, renderObject[j]->pushConstantRange->size, &renderObject[j]->pushConstGrid);
+						}
 						vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
 							renderObject[j]->graphicsPipeline);
 						vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,

@@ -22,13 +22,22 @@ layout (push_constant) uniform PushConstants
 	float maxDistance;
 } pushConsts;
 
+const float pi = 3.14159;
+
 void main()
 {
+    float R=500.0;
 	float grid;
+     vec3 f;
 
 	if (gl_InvocationID==0) // wird nur beim ersten Durchlauf gesetzt
 	{
-		vec4 p = ubo.mView * ubo.mModel * (gl_in[0].gl_Position + vec4(0.5, 0.0, 0.5, 0.0));
+        float u = 2.0*pi*gl_in[0].gl_Position.x;
+        float v = pi*gl_in[0].gl_Position.z;
+        f.x = R*sin(v)*cos(u);
+	    f.y = R*sin(v)*sin(u);
+	    f.z = R*cos(v);
+		vec4 p = ubo.mView * ubo.mModel * vec4(f,1.0);
 		float distance = length(vec3(p.xyz));
 
 		if (distance < pushConsts.maxDistance)

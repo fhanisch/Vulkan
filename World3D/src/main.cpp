@@ -89,6 +89,12 @@ struct IndexData
 	uint32_t size;
 };
 
+struct PushConstants
+{
+	float grid;
+	float maxDistance;
+};
+
 class VertexHandler
 {
 public:
@@ -269,7 +275,7 @@ public:
 	VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo;
 	uint32_t pushConstantRangeCount;
 	VkPushConstantRange *pushConstantRange;
-	float pushConstGrid;
+	PushConstants pushConsts;
 
 	mat4 mModel;
 	mat4 *mView;
@@ -288,7 +294,7 @@ public:
 		topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
 		tessellationStateCreateInfo = getTessellationStateCreateInfo(4);
 		pushConstantRangeCount = 1;
-		pushConstantRange = getPushConstantRange(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+		pushConstantRange = getPushConstantRange(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(PushConstants));
 	}
 	void init(char *vertName, char *fragName, VkDeviceSize _uboOffset, mat4 *_mView)
 	{
@@ -340,13 +346,13 @@ public:
 
 		return createInfo;
 	}
-	static VkPushConstantRange *getPushConstantRange(VkShaderStageFlags shaderStageFlags)
+	static VkPushConstantRange *getPushConstantRange(VkShaderStageFlags shaderStageFlags, uint32_t size)
 	{
 		VkPushConstantRange *pushConstantRange = new VkPushConstantRange;
 
 		pushConstantRange->stageFlags = shaderStageFlags;
 		pushConstantRange->offset = 0;
-		pushConstantRange->size = sizeof(float);
+		pushConstantRange->size = size;
 
 		return pushConstantRange;
 	}
@@ -369,7 +375,8 @@ public:
 		phi = 3.0f / 4.0f*PI;
 		theta = PI / 4.0f;
 		identity4(cam);
-		cam[3][0] = -20.0f; cam[3][1] = -20.0f; cam[3][2] = 20.0f;
+		//cam[3][0] = -20.0f; cam[3][1] = -20.0f; cam[3][2] = 20.0f;
+		cam[3][0] = 0.0f; cam[3][1] = -500.0f; cam[3][2] = 0.0f;
 		//cam[3][0] = 150000.0f; cam[3][1] = -20.0f; cam[3][2] = 150000.0f;
 		identity4(mViewSkybox);
 
@@ -415,7 +422,8 @@ public:
 		uint32_t offset[] = { 0 };
 		terrain->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
 		getScale4(terrain->mModel, 100.0f, 1.0f, 100.0f);
-		terrain->pushConstGrid = 100;
+		terrain->pushConsts.grid = 100.0f;
+		terrain->pushConsts.maxDistance = 200.0f;
 
 		sphere = new RenderObject("vs_sphere.spv", "fs_muster3_ADSperFrag.spv", 0x300, &mView);
 		sphere->indexCount = hIndices->indexData[3].size / sizeof(uint16_t);
@@ -433,7 +441,7 @@ public:
 		getFrustum(skybox->mProj, 0.25f, 0.25f, 0.5f, 300.0f);
 		getScale4(skybox->mModel, 150.0f, 150.0f, 150.0f);
 
-		perlinSphere = new RenderObject("vs_uvMesh.spv", "tcs_terrainTesselator.spv", "tes_perlinSphere.spv", "fs_muster3_ADSperFrag.spv", 0x500, &mView);
+		perlinSphere = new RenderObject("vs_uvMesh.spv", "tcs_perlinSphere.spv", "tes_perlinSphere.spv", "fs_muster3_ADSperFrag.spv", 0x500, &mView);
 		perlinSphere->indexCount = hIndices->indexData[2].size / sizeof(uint16_t);
 		perlinSphere->firstIndex = hIndices->getOffset(2) / sizeof(uint16_t);
 		perlinSphere->bindingDescription = RenderObject::getBindingDescription(2 * sizeof(float));
@@ -441,8 +449,9 @@ public:
 		format[0] = { VK_FORMAT_R32G32_SFLOAT };
 		offset[0] = { 0 };
 		perlinSphere->attributeDescriptions = RenderObject::getAttributeDescriptions(1, format, offset);
-		getTrans4(perlinSphere->mModel, -3.0f, 20.0f, -6.0f);
-		perlinSphere->pushConstGrid = 25;
+		//getTrans4(perlinSphere->mModel, -3.0f, 20.0f, -6.0f);
+		perlinSphere->pushConsts.grid = 100.0f;
+		perlinSphere->pushConsts.maxDistance = 200.0f;
 	}
 	void camMotion()
 	{
@@ -1771,7 +1780,7 @@ private:
 						if (renderObject[j]->pushConstantRangeCount)
 						{
 							vkCmdPushConstants(commandBuffers[i], renderObject[j]->pipelineLayout, renderObject[j]->pushConstantRange->stageFlags,
-								renderObject[j]->pushConstantRange->offset, renderObject[j]->pushConstantRange->size, &renderObject[j]->pushConstGrid);
+								renderObject[j]->pushConstantRange->offset, renderObject[j]->pushConstantRange->size, &renderObject[j]->pushConsts);
 						}
 						vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
 							renderObject[j]->graphicsPipeline);

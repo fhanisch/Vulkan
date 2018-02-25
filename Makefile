@@ -78,6 +78,7 @@ Shader2: build
 	glslangValidator -V shader\terrainTesselator.vert -o build\vs_terrainTesselator.spv
 	glslangValidator -V shader\terrainTesselator.tesc -o build\tcs_terrainTesselator.spv
 	glslangValidator -V shader\terrainTesselator.tese -o build\tes_terrainTesselator.spv
+	glslangValidator -V shader\perlinSphere.tesc -o build\tcs_perlinSphere.spv
 	glslangValidator -V shader\perlinSphere.tese -o build\tes_perlinSphere.spv
 	copy build\*.spv x64\Debug
 

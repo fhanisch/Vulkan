@@ -518,9 +518,9 @@ public:
 		//getRotY4(Ry, dphi);
 		//mult4(R, Rx, Ry);
 		//getTrans4(T, dx, dy, dz);
-		//dup4(A, *mView);
+		//dup4(A, mView);
 		//mult4(B, R, T);
-		//mult4(*mView, B, A);
+		//mult4(mView, B, A);
 	}
 };
 

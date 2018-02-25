@@ -114,17 +114,18 @@ void main()
 	n = f;
 
     //float dr = 0.1*perlin_interp3(2.0*(f.x+1.0),2.0*(f.y+1.0),2.0*(f.z+1.0)) + 0.05*perlin_interp3(4.0*(f.x+1.0),4.0*(f.y+1.0),4.0*(f.z+1.0));
-    float dr = 0.1*perlin_interp3(n_1,0.02*(f.x+1.0),0.02*(f.y+1.0),0.02*(f.z+1.0)) + 0.01*perlin_interp3(n_2,0.125*(f.x+1.0),0.125*(f.y+1.0),0.125*(f.z+1.0));
+    float dr = 0.1*perlin_interp3(n_1,0.02*(f.x+1.0),0.02*(f.y+1.0),0.02*(f.z+1.0));// + 0.01*perlin_interp3(n_2,0.125*(f.x+1.0),0.125*(f.y+1.0),0.125*(f.z+1.0));
 
-    n_1.x*=100;
-    n_1.z*=100;
-    n_2.x*=100;
-    n_2.z*=100;
-    n+=n_1+n_2;
+    n_1.x*=1;
+    n_1.z*=1;
+    n_2.x*=1;
+    n_2.z*=1;
+    //n+=n_1;//+n_2; // Normalen auf Kugel bezogen
+    n=n_1;//+n_2; // Normalen auf Ebene bezogen
 
     f*=1.0+dr;
 
-    fragColor = vec3(1.0, 1.0, 0.0);
+    fragColor = vec3(0.0, 1.0, 0.0);
     texCoords = vec2(256.0*pu, 128.0*pv);
     vertexPosition = vec3(ubo.mView * ubo.mModel * vec4(f, 1.0));
     normalPosition = vec3(transpose(inverse(ubo.mView * ubo.mModel)) * vec4(normalize(n), 1.0));

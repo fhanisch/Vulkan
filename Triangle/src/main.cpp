@@ -212,7 +212,7 @@ private:
 		appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 0);
 		appInfo.pEngineName = ENGINE_NAME;
 		appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_0;
+		appInfo.apiVersion = VK_API_VERSION_1_1;
 
 		unsigned int enabledLayerCount = 0;
 		for (uint32_t i = 0; i < layerCount; i++)

@@ -20,6 +20,7 @@ LIBS_WORLD = vulkan-1.lib mathlib.lib user32.lib Shcore.lib libusb-1.0.lib
 all: App T1 T2 World ML Shader1 Shader2 Tex
 
 App: build
+	clang $(SrcPath)\main.cpp -I $(INC_VULKAN) -o $(BuildPath)\test.exe 
 	cl /nologo /EHsc /I$(INC_VULKAN) /Fo$(BuildPath)\ $(SrcPath)\main.cpp /link /out:$(BuildPath)\app.exe
 
 T1: build
@@ -28,11 +29,13 @@ T1: build
 	del build\*.obj
 
 T2: build
+	clang $(SrcPath2DAction)\main.cpp -D NOCONSOLE -I $(INC_VULKAN) -I $(INC_DEV) -I $(INC_STB) -L $(LIB_VULKAN) -L $(LIB_DEV) -lmathlib -lvulkan-1 -luser32 -lShcore -o $(BuildPath)\test.exe
 	cl /nologo /W3 /EHsc /DNOCONSOLE /I$(INC_VULKAN) /I$(INC_DEV) /I$(INC_STB) /Fo$(BuildPath)\ $(SrcPath2DAction)\main.cpp \
 		/link $(LIBS_T2) /LIBPATH:$(LIB_VULKAN) /LIBPATH:$(LIB_DEV) /out:$(BuildPath)\2DAction.exe
 	del build\*.obj
 
 World: build
+	clang $(SrcPathWorld)\main.cpp -D NOCONSOLE -I $(INC_VULKAN) -I $(INC_DEV) -I $(INC_STB) -I $(INC_USB) -L $(LIB_VULKAN) -L $(LIB_DEV) -L $(LIB_USB) -lvulkan-1 -lmathlib -luser32 -lShcore -llibusb-1.0 -o $(BuildPath)\test.exe
 	cl /nologo /W3 /EHsc /DNOCONSOLE /I$(INC_VULKAN) /I$(INC_DEV) /I$(INC_STB) /I$(INC_USB) /Fo$(BuildPath)\ $(SrcPathWorld)\main.cpp \
 		/link $(LIBS_WORLD) /LIBPATH:$(LIB_VULKAN) /LIBPATH:$(LIB_DEV) /LIBPATH:$(LIB_USB) /out:$(BuildPath)\World.exe
 	del build\*.obj

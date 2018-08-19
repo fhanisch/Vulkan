@@ -6,3 +6,5 @@ build
 *.filters
 log.txt
 *.user
+*.obj
+*.exe

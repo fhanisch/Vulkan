@@ -19,6 +19,10 @@ LIBS_WORLD = vulkan-1.lib mathlib.lib user32.lib Shcore.lib libusb-1.0.lib
 
 all: App T1 T2 World ML Shader1 Shader2 Tex
 
+VA: build
+	clang-cl VulkanApp2\src\main.cpp VulkanApp2\src\Window.cpp user32.lib Shcore.lib -o build\VulkanApp2a.exe
+	cl /nologo /EHsc VulkanApp2\src\main.cpp VulkanApp2\src\Window.cpp /link user32.lib Shcore.lib /out:build\VulkanApp2b.exe
+
 App: build
 	clang $(SrcPath)\main.cpp -I $(INC_VULKAN) -o $(BuildPath)\test.exe 
 	cl /nologo /EHsc /I$(INC_VULKAN) /Fo$(BuildPath)\ $(SrcPath)\main.cpp /link /out:$(BuildPath)\app.exe

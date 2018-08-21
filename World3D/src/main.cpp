@@ -272,7 +272,7 @@ public:
 	uint32_t attributeDescriptionCount;
 	VkVertexInputAttributeDescription *attributeDescriptions;
 	VkPrimitiveTopology topology;
-	VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo;
+	VkPipelineTessellationStateCreateInfo *pTessellationStateCreateInfo;
 	uint32_t pushConstantRangeCount;
 	VkPushConstantRange *pushConstantRange;
 	PushConstants pushConsts;
@@ -292,7 +292,7 @@ public:
 		tesselationControllShaderName = tcsName;
 		tesselationEvaluationShaderName = tesName;
 		topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-		tessellationStateCreateInfo = getTessellationStateCreateInfo(4);
+		pTessellationStateCreateInfo = getTessellationStateCreateInfo(4);
 		pushConstantRangeCount = 1;
 		pushConstantRange = getPushConstantRange(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, sizeof(PushConstants));
 	}
@@ -312,6 +312,7 @@ public:
 		identity4(mModel);
 		mView = _mView;
 		getFrustum(mProj, 0.25f, 0.25f, 0.5f, 200.0f);
+		pTessellationStateCreateInfo = nullptr;
 		pushConstantRangeCount = 0;
 		pushConstantRange = nullptr;
 	}
@@ -338,11 +339,12 @@ public:
 
 		return attributeDescriptions;
 	}
-	static VkPipelineTessellationStateCreateInfo getTessellationStateCreateInfo(uint32_t patchControlPoints)
+	static VkPipelineTessellationStateCreateInfo *getTessellationStateCreateInfo(uint32_t patchControlPoints)
 	{
-		VkPipelineTessellationStateCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-		createInfo.patchControlPoints = patchControlPoints;
+		VkPipelineTessellationStateCreateInfo *createInfo = new VkPipelineTessellationStateCreateInfo[1];
+		*createInfo = {};
+		createInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+		createInfo->patchControlPoints = patchControlPoints;
 
 		return createInfo;
 	}
@@ -630,6 +632,7 @@ private:
 		for (uint32_t i = 0; i < objectCount; i++)
 		{
 			if (renderObject[i]->hasGraphicsPipeline)
+				createPipelineLayout(renderObject[i]);
 				createGraphicsPipeline(renderObject[i]);
 		}
 		//renderObject[2]->graphicsPipeline = renderObject[1]->graphicsPipeline;
@@ -1048,6 +1051,24 @@ private:
 			exit(1);
 		}
 	}
+	void createPipelineLayout(RenderObject *obj)
+	{
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelineLayoutInfo.pNext = nullptr;
+		pipelineLayoutInfo.flags = 0;
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+		pipelineLayoutInfo.pushConstantRangeCount = obj->pushConstantRangeCount;
+		pipelineLayoutInfo.pPushConstantRanges = obj->pushConstantRange;
+
+		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &obj->pipelineLayout) != VK_SUCCESS)
+		{
+			PRINT("Failed to create pipeline layout!");
+			exit(1);
+		}
+	}
+
 	void createGraphicsPipeline(RenderObject *obj)
 	{
 		ShaderCode vertShaderCode = loadShader(obj->vertexShaderFileName);
@@ -1175,28 +1196,13 @@ private:
 		colorBlending.blendConstants[2] = 0.0f; // Optional
 		colorBlending.blendConstants[3] = 0.0f; // Optional
 
-		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.pNext = nullptr;
-		pipelineLayoutInfo.flags = 0;
-		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-		pipelineLayoutInfo.pushConstantRangeCount = obj->pushConstantRangeCount;
-		pipelineLayoutInfo.pPushConstantRanges = obj->pushConstantRange;
-
-		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &obj->pipelineLayout) != VK_SUCCESS)
-		{
-			PRINT("Failed to create pipeline layout!");
-			exit(1);
-		}
-
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		pipelineInfo.stageCount = obj->stageCount;
 		pipelineInfo.pStages = shaderStages;
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &inputAssembly;
-		pipelineInfo.pTessellationState = &obj->tessellationStateCreateInfo;
+		pipelineInfo.pTessellationState = obj->pTessellationStateCreateInfo;
 		pipelineInfo.pViewportState = &viewportState;
 		pipelineInfo.pRasterizationState = &rasterizer;
 		pipelineInfo.pMultisampleState = &multisampling;

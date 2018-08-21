@@ -1,6 +1,6 @@
 #include "Window.h"
 
-static bool	key[256];
+static bool key[256];
 
 LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg)
@@ -22,7 +22,6 @@ Window::Window(const char *_windowName, int _width, int _height) {
 	windowName = _windowName;
 	width = _width;
 	height = _height;
-	window = nullptr;
 	hInstance = GetModuleHandle(nullptr);
 	wc.lpszClassName = "Test";
 	wc.lpszMenuName = NULL;
@@ -72,3 +71,11 @@ bool Window::checkMessage() {
 	}
 	return FALSE;
 }
+
+HWND Window::getWindow() { return window; }
+
+HINSTANCE Window::getInstance() { return hInstance; }
+
+int Window::getWidth() { return width; }
+
+int Window::getHeight() { return height; }

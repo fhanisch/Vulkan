@@ -17,5 +17,9 @@ public:
 	void showWindow();
 	bool *getKey();
 	bool checkMessage();
+	HWND getWindow();
+	HINSTANCE getInstance();
+	int getWidth();
+	int getHeight();
 };
 

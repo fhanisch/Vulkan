@@ -4,6 +4,7 @@ SrcPathTriangle = Triangle\src
 SrcPath2DAction = 2DAction\src
 SrcPathWorld = World3D\src
 SrcPathMathLib = mathlib\src
+SrcVA = VulkanApp2\src
 INC_VULKAN = C:\VulkanSDK\1.1.77.0\Include
 INC_GLFW = C:\Home\Entwicklung\glfw-3.2.1.bin.WIN64\include
 INC_DEV = C:\Home\Entwicklung\inc
@@ -20,8 +21,13 @@ LIBS_WORLD = vulkan-1.lib mathlib.lib user32.lib Shcore.lib libusb-1.0.lib
 all: App T1 T2 World ML Shader1 Shader2 Tex
 
 VA: build
-	clang-cl VulkanApp2\src\main.cpp VulkanApp2\src\Window.cpp user32.lib Shcore.lib -o build\VulkanApp2a.exe
-	cl /nologo /EHsc VulkanApp2\src\main.cpp VulkanApp2\src\Window.cpp /link user32.lib Shcore.lib /out:build\VulkanApp2b.exe
+	cl /nologo /EHsc /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2a.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib
+	clang-cl /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2b.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib
+	clang -Wall $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp -I C:\VulkanSDK\1.1.82.0\Include -I C:\Home\Entwicklung\inc -I C:\Home\Entwicklung\stb -l user32 -l Shcore -l vulkan-1 -l mathlib -o VulkanApp2c.exe -L C:\VulkanSDK\1.1.82.0\Lib -L C:\Home\Entwicklung\lib
+
+VAS: build
+	glslangValidator -V shader\test.vert -o build\vs_test.spv
+	glslangValidator -V shader\test.frag -o build\fs_test.spv
 
 App: build
 	clang $(SrcPath)\main.cpp -I $(INC_VULKAN) -o $(BuildPath)\test.exe 
@@ -71,7 +77,6 @@ Shader1: build
 	glslangValidator -V shader\perlin1dTesselator.vert -o build\vs_perlin1dTesselator.spv
 	glslangValidator -V shader\perlin1dTesselator.tesc -o build\tcs_perlin1dTesselator.spv
 	glslangValidator -V shader\perlin1dTesselator.tese -o build\tes_perlin1dTesselator.spv
-	copy build\*.spv x64\Debug
 
 Shader2: build
 	glslangValidator -V shader\3d.vert -o build\vs_3d.spv
@@ -87,7 +92,6 @@ Shader2: build
 	glslangValidator -V shader\terrainTesselator.tese -o build\tes_terrainTesselator.spv
 	glslangValidator -V shader\perlinSphere.tesc -o build\tcs_perlinSphere.spv
 	glslangValidator -V shader\perlinSphere.tese -o build\tes_perlinSphere.spv
-	copy build\*.spv x64\Debug
 
 build:
 	mkdir build

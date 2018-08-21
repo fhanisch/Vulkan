@@ -810,11 +810,18 @@ void VulkanSetup::createDescriptorSetLayout() {
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
 
-	VkDescriptorSetLayoutBinding bindings[] = { uboLayoutBinding,samplerLayoutBinding };
+	VkDescriptorSetLayoutBinding uboMaterialBinding = {};
+	uboMaterialBinding.binding = 2;
+	uboMaterialBinding.descriptorCount = 1;
+	uboMaterialBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uboMaterialBinding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+	uboMaterialBinding.pImmutableSamplers = nullptr;
+
+	VkDescriptorSetLayoutBinding bindings[] = { uboLayoutBinding, samplerLayoutBinding, uboMaterialBinding };
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = 2;
+	layoutInfo.bindingCount = 3;
 	layoutInfo.pBindings = bindings;
 
 	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
@@ -927,7 +934,7 @@ Texture::~Texture() {
 
 void Texture::createTextureImage() {
 	int texWidth, texHeight, texChannels;
-	stbi_uc *pixels = stbi_load("C:/Home/Entwicklung/Vulkan/x64/Debug/sky.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	stbi_uc *pixels = stbi_load("C:/Home/Entwicklung/Vulkan/build/sky.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
 
@@ -1244,7 +1251,7 @@ void RenderObject::createDescriptorSet() {
 	imageInfo.imageView = texture->getTextureImageView();
 	imageInfo.sampler = texture->getTextureSampler();
 
-	VkWriteDescriptorSet descriptorWrites[2] = {};
+	VkWriteDescriptorSet descriptorWrites[3] = {};
 	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptorWrites[0].dstSet = descriptorSet;
 	descriptorWrites[0].dstBinding = 0;
@@ -1263,7 +1270,17 @@ void RenderObject::createDescriptorSet() {
 	descriptorWrites[1].descriptorCount = 1;
 	descriptorWrites[1].pImageInfo = &imageInfo;
 
-	vkUpdateDescriptorSets(vulkanSetup->getDevice(), 2, descriptorWrites, 0, nullptr);
+	descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrites[2].dstSet = descriptorSet;
+	descriptorWrites[2].dstBinding = 2;
+	descriptorWrites[2].dstArrayElement = 0;
+	descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorWrites[2].descriptorCount = 1;
+	descriptorWrites[2].pBufferInfo = &bufferInfo;
+	descriptorWrites[2].pImageInfo = nullptr; // Optional
+	descriptorWrites[2].pTexelBufferView = nullptr; // Optional
+
+	vkUpdateDescriptorSets(vulkanSetup->getDevice(), 3, descriptorWrites, 0, nullptr);
 }
 
 uint32_t RenderObject::getPushConstantRangeCount() { return pushConstantRangeCount; }
@@ -1279,7 +1296,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, uint32_t _objectCount) {
 	createIndexBuffer();
 	createUniformBuffer();
 	createDescriptorPool();
-	obj = new RenderObject(vulkanSetup, "C:/Home/Entwicklung/Vulkan/x64/Debug/vs_3d.spv", "C:/Home/Entwicklung/Vulkan/x64/Debug/fs_muster3.spv", uniformBuffer->getBuffer(), descriptorPool);
+	obj = new RenderObject(vulkanSetup, "C:/Home/Entwicklung/Vulkan/build/vs_test.spv", "C:/Home/Entwicklung/Vulkan/build/fs_test.spv", uniformBuffer->getBuffer(), descriptorPool);
 	createCommandBuffers();
 }
 
@@ -1305,7 +1322,7 @@ void RenderScene::createUniformBuffer() {
 void RenderScene::createDescriptorPool() {
 	VkDescriptorPoolSize poolSize[2] = {};
 	poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize[0].descriptorCount = objectCount;
+	poolSize[0].descriptorCount = objectCount*2;
 	poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSize[1].descriptorCount = objectCount;
 

@@ -5,6 +5,9 @@
 
 	Build:
 		clang-cl /W4 main.cpp Window.cpp Vulkan.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2a.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib
+		
+		oder:
+		
 		cl /nologo /EHsc /W4 main.cpp Window.cpp Vulkan.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2b.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib
 
 	Links:
@@ -16,13 +19,28 @@
 #include "Window.h"
 #include "Vulkan.h"
 
+char getNextDelimiter(char **src, const char *delimiter) {
+	while (**src != 0) {
+		for (uint32_t i = 0; i < strlen(delimiter); i++) {
+			if (**src == delimiter[i]) {
+				(*src)++;
+				return delimiter[i];
+			}
+		}
+		(*src)++;
+	}
+	return 0;
+}
+
 class App {
 	// Main Application Class
+	const char *appDir;
 	Window *window;
 	VulkanSetup *vulkanSetup;
 	RenderScene *renderScene;
 public:
-	App() {
+	App(const char *_appDir) {
+		appDir = _appDir;
 		std::cout << "***** HalliHalllo *****" << std::endl;
 		window = new Window("Vulkan App 2", 1800, 1800);
 		window->createWindow();
@@ -47,9 +65,15 @@ public:
 
 //Entry Function
 int main(int argc, char *argv[]) {
+	char *str = argv[0];
+	char *ptr = str;
+	while (getNextDelimiter(&ptr, "\\")!=0) {
+		str = ptr;
+	}
+	*str = 0;
 	std::cout << argv[0] << std::endl;
 	if (argc > 1) std::cout << argv[1] << std::endl;
-	App app;
+	App app(argv[0]);
 	app.run();
 	return 0;
 }

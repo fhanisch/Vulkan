@@ -164,13 +164,14 @@ class Texture
 {
 protected:
 	VulkanSetup *vulkanSetup;
+	const char *filename;
 	Image *textureImage;
 	VkSampler textureSampler;
 	void createTextureImage();
 	void createTextureImageView();
 	void createTextureSampler();
 public:
-	Texture(VulkanSetup *_vulkanSetup);
+	Texture(VulkanSetup *_vulkanSetup, const char *_filename);
 	~Texture();
 	VkImageView getTextureImageView();
 	VkSampler getTextureSampler();
@@ -210,9 +211,15 @@ protected:
 	void createDescriptorSet();
 public:
 	mat4 mModel;
-	mat4 mView;
+	mat4 *mView;
 	mat4 mProj;
-	RenderObject(VulkanSetup *_vulkanSetup, const char *vertexShaderFileName, const char *fragmentShaderFileName, VkDescriptorPool _descriptorPool);
+	RenderObject(	VulkanSetup *_vulkanSetup,
+					VkDescriptorPool _descriptorPool,
+					const char *vertexShaderFileName,
+					const char *fragmentShaderFileName,
+					const char *textureFileName,
+					VkPrimitiveTopology _topology,
+					mat4 *_mView);
 	~RenderObject();
 	void updateUniformBuffer();
 	uint32_t getPushConstantRangeCount();
@@ -225,6 +232,7 @@ class RenderScene
 {
 protected:
 	bool *key;
+	mat4 cam;
 	VulkanSetup *vulkanSetup;
 	uint32_t objectCount;
 	RenderObject *obj;

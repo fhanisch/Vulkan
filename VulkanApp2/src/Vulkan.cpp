@@ -951,9 +951,10 @@ void Shader::load(const char *fileName)
 size_t Shader::getSize() { return size; }
 uint32_t *Shader::getCode() { return code; }
 
-Texture::Texture(VulkanSetup *_vulkanSetup)
+Texture::Texture(VulkanSetup *_vulkanSetup, const char *_filename)
 {
 	vulkanSetup = _vulkanSetup;
+	filename = _filename;
 	textureImage = new Image(vulkanSetup->getPhysicalDevice(), vulkanSetup->getDevice(), vulkanSetup->getCommandPool(), vulkanSetup->getQueue());
 	createTextureImage();
 	createTextureImageView();
@@ -965,7 +966,7 @@ Texture::~Texture() {}
 void Texture::createTextureImage()
 {
 	int texWidth, texHeight, texChannels;
-	stbi_uc *pixels = stbi_load("C:/Home/Entwicklung/Vulkan/build/sky.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	stbi_uc *pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
 
@@ -1031,7 +1032,13 @@ VkImageView Texture::getTextureImageView() { return textureImage->getImageView()
 
 VkSampler Texture::getTextureSampler() { return textureSampler; }
 
-RenderObject::RenderObject(VulkanSetup *_vulkanSetup, const char *vertexShaderFileName, const char *fragmentShaderFileName, VkDescriptorPool _descriptorPool)
+RenderObject::RenderObject(	VulkanSetup *_vulkanSetup,
+							VkDescriptorPool _descriptorPool,
+							const char *vertexShaderFileName,
+							const char *fragmentShaderFileName,
+							const char *textureFileName,
+							VkPrimitiveTopology _topology,
+							mat4 *_mView)
 {
 	vulkanSetup = _vulkanSetup;
 	vertexShader.load(vertexShaderFileName);
@@ -1042,17 +1049,18 @@ RenderObject::RenderObject(VulkanSetup *_vulkanSetup, const char *vertexShaderFi
 	VkFormat formats[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
 	uint32_t offsets[] = { offsetof(Vertex, pos) ,offsetof(Vertex, color) ,offsetof(Vertex, texCoords) };
 	pAttributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
-	topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	topology = _topology;
 	bindingDescription = getBindingDescription(sizeof(Vertex));
 	pTessellationStateCreateInfo = nullptr;
 	pushConstantRangeCount = 0;
 	pushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
-	identity4(mView);
+	mView = _mView;
 	identity4(mProj);
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup);
+	if (textureFileName) texture = new Texture(vulkanSetup, textureFileName);
+	else texture = nullptr;
 	createUniformBuffer();
 	createPipelineLayout();
 	createGraphicsPipeline();
@@ -1066,7 +1074,7 @@ void RenderObject::updateUniformBuffer()
 	void* data;
 	vkMapMemory(vulkanSetup->getDevice(), uniformBuffer->getBufferMemory(), 0, uboBufferSize, 0, &data);
 		memcpy((char*)data, &mModel, sizeof(mat4));
-		memcpy((char*)data + sizeof(mat4), &mView, sizeof(mat4));
+		memcpy((char*)data + sizeof(mat4), mView, sizeof(mat4));
 		memcpy((char*)data + 2 * sizeof(mat4), &mProj, sizeof(mat4));
 		memcpy((char*)data + 0x100, &color, sizeof(color));
 	vkUnmapMemory(vulkanSetup->getDevice(), uniformBuffer->getBufferMemory());
@@ -1355,10 +1363,17 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	vulkanSetup = _vulkanSetup;
 	objectCount = 1;
 	key = _key;
+	identity4(cam);
 	createVertexBuffer();
 	createIndexBuffer();
 	createDescriptorPool();
-	obj = new RenderObject(vulkanSetup, "C:/Home/Entwicklung/Vulkan/build/vs_test.spv", "C:/Home/Entwicklung/Vulkan/build/fs_test.spv", descriptorPool);
+	obj = new RenderObject(	vulkanSetup,
+							descriptorPool,
+							"C:/Home/Entwicklung/Vulkan/build/vs_test.spv",
+							"C:/Home/Entwicklung/Vulkan/build/fs_test.spv",
+							"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
+							VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+							&cam);
 	createCommandBuffers();
 }
 
@@ -1457,18 +1472,46 @@ void RenderScene::updateUniformBuffers()
 
 void RenderScene::camMotion()
 {
-	mat4 Rz, tmp;
+	mat4 T, Rz, tmp;
 	float dphi = 0.0f;;
 
 	if (key[VK_LEFT] == true) {
-		dphi = 0.05f;
+		dphi = -0.05f;
 	}
 	if (key[VK_RIGHT] == true) {
-		dphi = -0.05f;
+		dphi = 0.05f;
 	}
 	getRotZ4(Rz, dphi);
 	dup4(tmp, obj[0].mModel);
 	mult4(obj[0].mModel, Rz, tmp);
+
+	if (key[0x41] == true)
+	{
+		dup4(tmp, cam);
+		getTrans4(T, 0.1f, 0.0f, 0.0f);
+		mult4(cam, T, tmp);
+	}
+
+	if (key[0x44] == true)
+	{
+		dup4(tmp, cam);
+		getTrans4(T, -0.1f, 0.0f, 0.0f);
+		mult4(cam, T, tmp);
+	}
+
+	if (key[0x53] == true)
+	{
+		dup4(tmp, cam);
+		getTrans4(T, 0.0f, -0.1f, 0.0f);
+		mult4(cam, T, tmp);
+	}
+
+	if (key[0x57] == true)
+	{
+		dup4(tmp, cam);
+		getTrans4(T, 0.0f, 0.1f, 0.0f);
+		mult4(cam, T, tmp);
+	}
 }
 
 void RenderScene::drawFrame()

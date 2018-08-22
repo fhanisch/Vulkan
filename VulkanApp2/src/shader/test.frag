@@ -1,6 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+layout(binding = 1) uniform sampler2D texSampler;
 layout (binding = 2) uniform UniformBufferObject {vec4 myColor;} c;
 
 layout (location = 0) in vec3 color;
@@ -24,5 +25,9 @@ void main() {
 		farbe=vec4(farbe2,1.0);
 	else
 		farbe=vec4(0.5*farbe2,1.0);
-	outColor = farbe;
+
+	float u = texCoords.x;
+    float v = 1.0 - texCoords.y;
+    vec4 texColor = texture(texSampler, vec2(u,v));
+	outColor = mix(farbe,texColor,0.5);
 }

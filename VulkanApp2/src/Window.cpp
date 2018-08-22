@@ -2,7 +2,8 @@
 
 static bool key[256];
 
-LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
 	switch (uMsg)
 	{
 	case WM_KEYDOWN:
@@ -18,7 +19,8 @@ LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-Window::Window(const char *_windowName, int _width, int _height) {
+Window::Window(const char *_windowName, int _width, int _height)
+{
 	windowName = _windowName;
 	width = _width;
 	height = _height;
@@ -39,20 +41,24 @@ Window::Window(const char *_windowName, int _width, int _height) {
 
 Window::~Window() { if (window) DestroyWindow(window); }
 
-void Window::createWindow() {
+void Window::createWindow()
+{
 	window = CreateWindow(wc.lpszClassName, windowName, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
 		0, 0, width, height, NULL, NULL, hInstance, NULL);
 }
 
-void Window::showWindow() {
+void Window::showWindow()
+{
 	ShowWindow(window, SW_SHOW);
 }
 
-bool *Window::getKey() {
+bool *Window::getKey()
+{
 	return &key[0];
 }
 
-bool Window::checkMessage() {
+bool Window::checkMessage()
+{
 	MSG msg;
 	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	{

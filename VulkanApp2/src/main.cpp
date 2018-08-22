@@ -19,10 +19,14 @@
 #include "Window.h"
 #include "Vulkan.h"
 
-char getNextDelimiter(char **src, const char *delimiter) {
-	while (**src != 0) {
-		for (uint32_t i = 0; i < strlen(delimiter); i++) {
-			if (**src == delimiter[i]) {
+char getNextDelimiter(char **src, const char *delimiter)
+{
+	while (**src != 0)
+	{
+		for (uint32_t i = 0; i < strlen(delimiter); i++)
+		{
+			if (**src == delimiter[i])
+			{
 				(*src)++;
 				return delimiter[i];
 			}
@@ -32,44 +36,47 @@ char getNextDelimiter(char **src, const char *delimiter) {
 	return 0;
 }
 
-class App {
+class App
+{
 	// Main Application Class
 	const char *appDir;
 	Window *window;
 	VulkanSetup *vulkanSetup;
 	RenderScene *renderScene;
 public:
-	App(const char *_appDir) {
+	App(const char *_appDir)
+	{
 		appDir = _appDir;
 		std::cout << "***** HalliHalllo *****" << std::endl;
 		window = new Window("Vulkan App 2", 1800, 1800);
 		window->createWindow();
 		vulkanSetup = new VulkanSetup("VulkanApp","MyVulkanEngine",window);
-		renderScene = new RenderScene(vulkanSetup, 1);
+		renderScene = new RenderScene(vulkanSetup, window->getKey());
 	}
-	~App() {
+	~App()
+	{
 		std::cout << "Servus!" << std::endl;
 		delete vulkanSetup;
 		delete window;
 	}
-	void run() {
-		//bool *key = window->getKey(); --> später zur Steuerung notwendig
-
+	void run()
+	{
 		window->showWindow();
-		while (!window->checkMessage()) {
-			renderScene->updateUniformBuffer();
+		while (!window->checkMessage())
+		{
+			renderScene->updateUniformBuffers();
+			renderScene->camMotion();
 			renderScene->drawFrame();
 		}
 	}
 };
 
 //Entry Function
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	char *str = argv[0];
 	char *ptr = str;
-	while (getNextDelimiter(&ptr, "\\")!=0) {
-		str = ptr;
-	}
+	while (getNextDelimiter(&ptr, "\\") != 0) str = ptr;
 	*str = 0;
 	std::cout << argv[0] << std::endl;
 	if (argc > 1) std::cout << argv[1] << std::endl;

@@ -2,7 +2,8 @@
 #include <Windows.h>
 #include <ShellScalingApi.h> // notwendig für high dpi scaling
 
-class Window {
+class Window
+{
 protected:
 	HWND window;
 	HINSTANCE hInstance;

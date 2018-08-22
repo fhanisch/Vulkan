@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout (binding = 2) uniform UniformBufferObject
+layout (binding = 0) uniform UniformBufferObject
 {
   mat4 mModel;
   mat4 mView;

@@ -27,8 +27,12 @@ VA: build
 
 VAS: build
 	glslangValidator -V $(SrcVA)\shader\test.vert -o build\vs_test.spv
+	glslangValidator -V $(SrcVA)\shader\text.vert -o build\vs_text.spv
 	glslangValidator -V $(SrcVA)\shader\test.frag -o build\fs_test.spv
+	glslangValidator -V $(SrcVA)\shader\text.frag -o build\fs_text.spv
 	glslangValidator -V $(SrcVA)\shader\powermeter.frag -o build\fs_powermeter.spv
+	glslangValidator -V $(SrcVA)\shader\perlin2d.frag -o build\fs_perlin2d.spv
+	glslangValidator -V $(SrcVA)\shader\circleFilled.frag -o build\fs_circleFilled.spv
 
 App: build
 	clang $(SrcPath)\main.cpp -I $(INC_VULKAN) -o $(BuildPath)\test.exe 

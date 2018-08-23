@@ -1,18 +1,37 @@
 #pragma once
+
 #define _CRT_SECURE_NO_WARNINGS
 #define VK_USE_PLATFORM_WIN32_KHR
+
 #include <vulkan/vulkan.h>
 #include "Window.h"
 #include <iostream>
 #include <algorithm>
 #include <matrix.h>
+#include "stb_font_consolas_24_latin1.inl"
+
 #undef min
 #undef max
+
+// Max. number of chars the text overlay buffer can hold
+#define TEXTOVERLAY_MAX_CHAR_COUNT 2048
 
 struct Vertex {
 	vec3 pos;
 	vec3 color;
 	vec2 texCoords;
+};
+
+struct VertexData {
+	float *data;
+	uint32_t size;
+	uint32_t offset;
+};
+
+struct IndexData {
+	uint16_t *data;
+	uint32_t size;
+	uint32_t offset;
 };
 
 const Vertex vertices[] = {
@@ -160,18 +179,42 @@ public:
 	uint32_t *getCode();
 };
 
+class TextOverlay
+{
+protected:
+	VulkanSetup *vulkanSetup;
+	vec4 *charVertices;
+	stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
+public:
+	TextOverlay(VulkanSetup *_vulkanSetup);
+	~TextOverlay();
+	uint32_t numLetters;
+	Buffer *vertexBuffer;
+	Image *fontImage;
+	VkSampler fontTextureSampler;
+	void beginTextUpdate();
+	void addText(std::string text, float x, float y);
+	void endTextUpdate();
+};
+
 class Texture
 {
 protected:
 	VulkanSetup *vulkanSetup;
 	const char *filename;
 	Image *textureImage;
+	int texWidth, texHeight, texChannels;
+	VkDeviceSize imageSize;
+	unsigned char *pixels;
 	VkSampler textureSampler;
+	void loadTexture();
+	void loadFontTexture();
 	void createTextureImage();
 	void createTextureImageView();
 	void createTextureSampler();
 public:
 	Texture(VulkanSetup *_vulkanSetup, const char *_filename);
+	Texture(VulkanSetup *_vulkanSetup, TextOverlay *_textOverlay);
 	~Texture();
 	VkImageView getTextureImageView();
 	VkSampler getTextureSampler();
@@ -197,7 +240,7 @@ protected:
 	VkPushConstantRange *pushConstantRange;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
-	Texture *texture;
+	//Texture *texture;
 	VkDescriptorSet descriptorSet;
 	vec4 color;
 	// Methods
@@ -218,6 +261,7 @@ public:
 					const char *vertexShaderFileName,
 					const char *fragmentShaderFileName,
 					const char *textureFileName,
+					TextOverlay *_textOverly,
 					VkPrimitiveTopology _topology,
 					mat4 *_mView);
 	~RenderObject();
@@ -226,6 +270,9 @@ public:
 	VkPipelineLayout getPipelineLayout();
 	VkPipeline getGraphicsPipeline();
 	VkDescriptorSet *getDescriptorSetPtr();
+
+	//TMP
+	TextOverlay *textOverlay;
 };
 
 class RenderScene
@@ -235,9 +282,12 @@ protected:
 	mat4 cam;
 	VulkanSetup *vulkanSetup;
 	uint32_t objectCount;
-	RenderObject *obj;
+	RenderObject **obj;
+	VertexData *vertexData;
+	IndexData *indexData;
 	Buffer *vertexBuffer;
 	Buffer *indexBuffer;
+	TextOverlay *textOverlay;
 	VkDescriptorPool descriptorPool;
 	VkCommandBuffer *commandBuffers;
 	void createVertexBuffer();
@@ -249,5 +299,6 @@ public:
 	~RenderScene();
 	void updateUniformBuffers();
 	void camMotion();
+	void updateTextOverlay(uint32_t fps);
 	void drawFrame();
 };

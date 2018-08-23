@@ -18,6 +18,7 @@
 #include <iostream>
 #include "Window.h"
 #include "Vulkan.h"
+#include <time.h>
 
 char getNextDelimiter(char **src, const char *delimiter)
 {
@@ -43,6 +44,8 @@ class App
 	Window *window;
 	VulkanSetup *vulkanSetup;
 	RenderScene *renderScene;
+	clock_t start_t, sync_t;
+	uint32_t framecount = 0;
 public:
 	App(const char *_appDir)
 	{
@@ -62,11 +65,22 @@ public:
 	void run()
 	{
 		window->showWindow();
+		start_t = clock(); //FPS
+		sync_t = start_t;
 		while (!window->checkMessage())
 		{
 			renderScene->updateUniformBuffers();
 			renderScene->camMotion();
 			renderScene->drawFrame();
+			while ((clock() - sync_t) * 125 < CLOCKS_PER_SEC); // Achtung: Auflösung von <1ms scheinbar nicht möglich --> nicht jede FPS-Vorgabe funktioniert daher genau
+			if ((clock() - start_t) >= CLOCKS_PER_SEC)
+			{
+				renderScene->updateTextOverlay(framecount);
+				start_t = clock();
+				framecount = 0;
+			}
+			sync_t = clock();
+			framecount++;
 		}
 	}
 };

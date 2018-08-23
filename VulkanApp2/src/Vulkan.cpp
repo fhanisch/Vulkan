@@ -965,7 +965,15 @@ Texture::Texture(VulkanSetup *_vulkanSetup, const char *_filename)
 Texture::Texture(VulkanSetup *_vulkanSetup, TextOverlay *_textOverlay)
 {
 	vulkanSetup = _vulkanSetup;
+	texWidth = _textOverlay->texWidth;
+	texHeight = _textOverlay->texHeight;
+	imageSize = _textOverlay->tetxtureSize;
+	pixels = _textOverlay->pixels;
+	imageFormat = VK_FORMAT_R8_UNORM;
 	textureImage = new Image(vulkanSetup->getPhysicalDevice(), vulkanSetup->getDevice(), vulkanSetup->getCommandPool(), vulkanSetup->getQueue());
+	createTextureImage();
+	createTextureImageView();
+	createTextureSampler();
 }
 
 Texture::~Texture() {}
@@ -974,15 +982,11 @@ void Texture::loadTexture()
 {
 	pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	imageSize = texWidth * texHeight * 4;
+	imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
 	if (!pixels) {
 		std::cout << "Failed to load texture image!" << std::endl;
 		exit(1);
 	}
-}
-
-void Texture::loadFontTexture()
-{
-
 }
 
 void Texture::createTextureImage()
@@ -996,14 +1000,14 @@ void Texture::createTextureImage()
 	memcpy(data, pixels, imageSize);
 	vkUnmapMemory(vulkanSetup->getDevice(), stagingBuffer.getBufferMemory());
 
-	stbi_image_free(pixels);
+	//stbi_image_free(pixels);
 
-	textureImage->createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+	textureImage->createImage(texWidth, texHeight, imageFormat, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	textureImage->transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	textureImage->transitionImageLayout(imageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	textureImage->copyBufferToImage(stagingBuffer.getBuffer(), texWidth, texHeight);
-	textureImage->transitionImageLayout(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	textureImage->transitionImageLayout(imageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	vkDestroyBuffer(vulkanSetup->getDevice(), stagingBuffer.getBuffer(), nullptr);
 	vkFreeMemory(vulkanSetup->getDevice(), stagingBuffer.getBufferMemory(), nullptr);
@@ -1011,7 +1015,7 @@ void Texture::createTextureImage()
 
 void Texture::createTextureImageView()
 {
-	textureImage->createImageView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+	textureImage->createImageView(imageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void Texture::createTextureSampler()
@@ -1049,31 +1053,24 @@ RenderObject::RenderObject(	VulkanSetup *_vulkanSetup,
 							const char *vertexShaderFileName,
 							const char *fragmentShaderFileName,
 							const char *textureFileName,
-							TextOverlay *_textOverly,
+							TextOverlay *_textOverlay,
+							uint32_t stride,
+							uint32_t _attributeDescriptionCount,
+							VkFormat *formats,
+							uint32_t *offsets,
 							VkPrimitiveTopology _topology,
 							mat4 *_mView)
 {
 	vulkanSetup = _vulkanSetup;
+	textOverlay = _textOverlay;
 	vertexShader.load(vertexShaderFileName);
 	fragmentShader.load(fragmentShaderFileName);
 	descriptorPool = _descriptorPool;
 	stageCount = 2;
-
-
-	// TMP
-	//attributeDescriptionCount = 3;
-	attributeDescriptionCount = 2;
-	
-	//VkFormat formats[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
-	VkFormat formats[] = { VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
-	//uint32_t offsets[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
-	uint32_t offsets[] = { 0 , 2*sizeof(float) };
-	//
-
+	attributeDescriptionCount = _attributeDescriptionCount;
 	pAttributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
 	topology = _topology;
-	//bindingDescription = getBindingDescription(sizeof(Vertex));
-	bindingDescription = getBindingDescription(sizeof(vec4));
+	bindingDescription = getBindingDescription(stride);
 	pTessellationStateCreateInfo = nullptr;
 	pushConstantRangeCount = 0;
 	pushConstantRange = nullptr;
@@ -1082,8 +1079,8 @@ RenderObject::RenderObject(	VulkanSetup *_vulkanSetup,
 	mView = _mView;
 	identity4(mProj);
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	//texture = new Texture(vulkanSetup, textureFileName);
-	textOverlay = _textOverly;
+	if (textureFileName) texture = new Texture(vulkanSetup, textureFileName);
+	if (textOverlay) texture = new Texture(vulkanSetup, textOverlay);
 	createUniformBuffer();
 	createPipelineLayout();
 	createGraphicsPipeline();
@@ -1341,13 +1338,8 @@ void RenderObject::createDescriptorSet()
 
 	VkDescriptorImageInfo imageInfo = {};
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	
-	//TMP
-	//imageInfo.imageView = texture->getTextureImageView();
-	imageInfo.imageView = textOverlay->fontImage->getImageView();
-	//imageInfo.sampler = texture->getTextureSampler();
-	imageInfo.sampler = textOverlay->fontTextureSampler;
-	//
+	imageInfo.imageView = texture->getTextureImageView();
+	imageInfo.sampler = texture->getTextureSampler();
 
 	VkWriteDescriptorSet descriptorWrites[3] = {};
 	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1385,6 +1377,8 @@ uint32_t RenderObject::getPushConstantRangeCount() { return pushConstantRangeCou
 VkPipelineLayout RenderObject::getPipelineLayout() { return pipelineLayout; }
 VkPipeline RenderObject::getGraphicsPipeline() { return graphicsPipeline; }
 VkDescriptorSet *RenderObject::getDescriptorSetPtr() { return &descriptorSet; }
+VkBuffer RenderObject::getTextOverlayVertexBuffer() { return textOverlay->vertexBuffer->getBuffer(); }
+uint32_t RenderObject::getNumLetters() { return textOverlay->numLetters; }
 
 TextOverlay::TextOverlay(VulkanSetup *_vulkanSetup)
 {
@@ -1392,59 +1386,19 @@ TextOverlay::TextOverlay(VulkanSetup *_vulkanSetup)
 	const uint32_t fontWidth = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
 	const uint32_t fontHeight = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
 
-	static unsigned char font24pixels[fontWidth][fontHeight];
+	texWidth = fontWidth;
+	texHeight = fontHeight;
+	tetxtureSize = fontWidth * fontHeight;
+
+	unsigned char font24pixels[fontWidth][fontHeight];
 	stb_font_consolas_24_latin1(stbFontData, font24pixels, fontHeight);
+
+	pixels = &font24pixels[0][0];
 
 	// Vertex buffer
 	VkDeviceSize bufferSize = TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(vec4);
 	vertexBuffer = new Buffer(vulkanSetup->getPhysicalDevice(), vulkanSetup->getDevice(), vulkanSetup->getCommandPool(), vulkanSetup->getQueue());
 	vertexBuffer->createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-	// Font texture
-	fontImage = new Image(vulkanSetup->getPhysicalDevice(), vulkanSetup->getDevice(), vulkanSetup->getCommandPool(), vulkanSetup->getQueue());
-	Buffer stagingBuffer = Buffer(vulkanSetup->getPhysicalDevice(), vulkanSetup->getDevice(), vulkanSetup->getCommandPool(), vulkanSetup->getQueue());
-
-	stagingBuffer.createBuffer(fontWidth * fontHeight, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-	void* data;
-	vkMapMemory(vulkanSetup->getDevice(), stagingBuffer.getBufferMemory(), 0, fontWidth * fontHeight, 0, &data);
-	memcpy(data, &font24pixels[0][0], fontWidth * fontHeight);
-	vkUnmapMemory(vulkanSetup->getDevice(), stagingBuffer.getBufferMemory());
-
-	fontImage->createImage(fontWidth, fontHeight, VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-	fontImage->transitionImageLayout(VK_FORMAT_R8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	fontImage->copyBufferToImage(stagingBuffer.getBuffer(), fontWidth, fontHeight);
-	fontImage->transitionImageLayout(VK_FORMAT_R8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	vkDestroyBuffer(vulkanSetup->getDevice(), stagingBuffer.getBuffer(), nullptr);
-	vkFreeMemory(vulkanSetup->getDevice(), stagingBuffer.getBufferMemory(), nullptr);
-
-	fontImage->createImageView(VK_FORMAT_R8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
-
-	VkSamplerCreateInfo samplerInfo = {};
-	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	samplerInfo.magFilter = VK_FILTER_LINEAR;
-	samplerInfo.minFilter = VK_FILTER_LINEAR;
-	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.anisotropyEnable = VK_TRUE;
-	samplerInfo.maxAnisotropy = 16;
-	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	samplerInfo.unnormalizedCoordinates = VK_FALSE;
-	samplerInfo.compareEnable = VK_FALSE;
-	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	samplerInfo.mipLodBias = 0.0f;
-	samplerInfo.minLod = 0.0f;
-	samplerInfo.maxLod = 0.0f;
-
-	if (vkCreateSampler(vulkanSetup->getDevice(), &samplerInfo, nullptr, &fontTextureSampler) != VK_SUCCESS) {
-		std::cout << "Failed to create texture sampler!" << std::endl;
-		exit(1);
-	}
 }
 
 TextOverlay::~TextOverlay() {}
@@ -1524,57 +1478,89 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	vulkanSetup = _vulkanSetup;
 	key = _key;
 	identity4(cam);
-	objectCount = 1;
+	objectCount = 5;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
-	/*
 	// Square with texture and Schachbrett
+	VkFormat formats0[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
+	uint32_t offsets0[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
 	obj[0] = new RenderObject(	vulkanSetup,
 								descriptorPool,
 								"C:/Home/Entwicklung/Vulkan/build/vs_test.spv",
 								"C:/Home/Entwicklung/Vulkan/build/fs_test.spv",
 								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
+								nullptr,
+								sizeof(Vertex),
+								3,
+								formats0,
+								offsets0,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 								&cam);
 	getTrans4(obj[0]->mModel, 0.0f, 0.0f, 0.5f);
 	// Tacho
+	VkFormat formats1[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
+	uint32_t offsets1[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
 	obj[1] = new RenderObject(	vulkanSetup,
 								descriptorPool,
 								"C:/Home/Entwicklung/Vulkan/build/vs_test.spv",
 								"C:/Home/Entwicklung/Vulkan/build/fs_powermeter.spv",
 								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
+								nullptr,
+								sizeof(Vertex),
+								3,
+								formats1,
+								offsets1,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 								&cam);
 	getTrans4(obj[1]->mModel, 0.0f, -5.0f, 0.5f);
 	// flat Perlin2d
+	VkFormat formats2[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
+	uint32_t offsets2[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
 	obj[2] = new RenderObject(	vulkanSetup,
 								descriptorPool,
 								"C:/Home/Entwicklung/Vulkan/build/vs_test.spv",
 								"C:/Home/Entwicklung/Vulkan/build/fs_perlin2d.spv",
 								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
+								nullptr,
+								sizeof(Vertex),
+								3,
+								formats2,
+								offsets2,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 								&cam);
 	getTrans4(obj[2]->mModel, -5.0f, -5.0f, 0.5f);
 	// filled Circle
+	VkFormat formats3[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
+	uint32_t offsets3[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
 	obj[3] = new RenderObject(	vulkanSetup,
 								descriptorPool,
 								"C:/Home/Entwicklung/Vulkan/build/vs_test.spv",
 								"C:/Home/Entwicklung/Vulkan/build/fs_circleFilled.spv",
 								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
+								nullptr,
+								sizeof(Vertex),
+								3,
+								formats3,
+								offsets3,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 								&cam);
-	getTrans4(obj[3]->mModel, 5.0f, 5.0f, 0.0f);
-	*/
+	getTrans4(obj[3]->mModel, 5.0f, 5.0f, 0.1f);
 	// Text Overlay
+	VkFormat formats4[] = { VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
+	uint32_t offsets4[] = { 0 , 2 * sizeof(float) };
 	textOverlay = new TextOverlay(vulkanSetup);
-	obj[0] = new RenderObject(vulkanSetup,
-		descriptorPool,
-		"C:/Home/Entwicklung/Vulkan/build/vs_text.spv",
-		"C:/Home/Entwicklung/Vulkan/build/fs_text.spv",
-		"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
-		textOverlay,
-		VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
-		&cam);
+	obj[4] = new RenderObject(	vulkanSetup,
+								descriptorPool,
+								"C:/Home/Entwicklung/Vulkan/build/vs_text.spv",
+								"C:/Home/Entwicklung/Vulkan/build/fs_text.spv",
+								nullptr,
+								textOverlay,
+								sizeof(vec4),
+								2,
+								formats4,
+								offsets4,
+								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+								&cam);
 	char str[32];
 	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->beginTextUpdate();
@@ -1657,30 +1643,24 @@ void RenderScene::createCommandBuffers()
 
 			vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-				// TMP
-				/*
 				VkDeviceSize offsets[] = { 0 };
 				VkBuffer vB[] = { vertexBuffer->getBuffer() };
 				vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vB, offsets);
 				vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
-				for (uint32_t j = 0; j < objectCount; j++)
+				for (uint32_t j = 0; j < objectCount-1; j++)
 				{
 					vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[j]->getGraphicsPipeline());
 					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[j]->getPipelineLayout(), 0, 1, obj[j]->getDescriptorSetPtr(), 0, nullptr);
 					vkCmdDrawIndexed(commandBuffers[i], 6, 1, 0, 0, 0);
 				}
-				*/
-				vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[0]->getGraphicsPipeline());
-				vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[0]->getPipelineLayout(), 0, 1, obj[0]->getDescriptorSetPtr(), 0, nullptr);
-				VkDeviceSize offsets = 0;
-				//VkDeviceSize offsets[] = { 0,0 };
-				//VkBuffer buffers[] = { buffer, buffer };
-				VkBuffer vB[] = { obj[0]->textOverlay->vertexBuffer->getBuffer() };
-				vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vB, &offsets);
-				//vkCmdBindVertexBuffers(cmdBuffers[i], 1, 1, &buffer, &offsets);
-				//vkCmdBindVertexBuffers(cmdBuffers[i], 0, 2, buffers, offsets);
-				for (uint32_t j = 0; j < obj[0]->textOverlay->numLetters; j++)
+				
+				vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[4]->getGraphicsPipeline());
+				vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[4]->getPipelineLayout(), 0, 1, obj[4]->getDescriptorSetPtr(), 0, nullptr);
+				VkDeviceSize offsets1 = 0;
+				VkBuffer vB1[] = { obj[4]->getTextOverlayVertexBuffer() };
+				vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vB1, &offsets1);
+				for (uint32_t j = 0; j < obj[4]->getNumLetters(); j++)
 				{
 					vkCmdDraw(commandBuffers[i], 4, 1, j * 4, 0);
 				}
@@ -1696,7 +1676,7 @@ void RenderScene::createCommandBuffers()
 
 void RenderScene::updateUniformBuffers()
 {
-	for (uint32_t i = 0; i < objectCount; i++)
+	for (uint32_t i = 0; i < objectCount-1; i++)
 	{
 		obj[i]->updateUniformBuffer();
 	}

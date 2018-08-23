@@ -188,10 +188,11 @@ protected:
 public:
 	TextOverlay(VulkanSetup *_vulkanSetup);
 	~TextOverlay();
+	int texWidth, texHeight;
+	VkDeviceSize tetxtureSize;
+	unsigned char *pixels;
 	uint32_t numLetters;
 	Buffer *vertexBuffer;
-	Image *fontImage;
-	VkSampler fontTextureSampler;
 	void beginTextUpdate();
 	void addText(std::string text, float x, float y);
 	void endTextUpdate();
@@ -206,9 +207,9 @@ protected:
 	int texWidth, texHeight, texChannels;
 	VkDeviceSize imageSize;
 	unsigned char *pixels;
+	VkFormat imageFormat;
 	VkSampler textureSampler;
 	void loadTexture();
-	void loadFontTexture();
 	void createTextureImage();
 	void createTextureImageView();
 	void createTextureSampler();
@@ -240,7 +241,8 @@ protected:
 	VkPushConstantRange *pushConstantRange;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
-	//Texture *texture;
+	Texture *texture;
+	TextOverlay *textOverlay;
 	VkDescriptorSet descriptorSet;
 	vec4 color;
 	// Methods
@@ -261,7 +263,11 @@ public:
 					const char *vertexShaderFileName,
 					const char *fragmentShaderFileName,
 					const char *textureFileName,
-					TextOverlay *_textOverly,
+					TextOverlay *_textOverlay,
+					uint32_t stride,
+					uint32_t _attributeDescriptionCount,
+					VkFormat *formats,
+					uint32_t *offsets,
 					VkPrimitiveTopology _topology,
 					mat4 *_mView);
 	~RenderObject();
@@ -270,9 +276,8 @@ public:
 	VkPipelineLayout getPipelineLayout();
 	VkPipeline getGraphicsPipeline();
 	VkDescriptorSet *getDescriptorSetPtr();
-
-	//TMP
-	TextOverlay *textOverlay;
+	VkBuffer getTextOverlayVertexBuffer();
+	uint32_t getNumLetters();
 };
 
 class RenderScene

@@ -2,6 +2,11 @@
 // stb_image.h --> muss hier inkludiert werden statt in Header-Datei, da sonst doppelter Code
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include "stb_font_consolas_24_latin1.inl"
+
+// Max. number of chars the text overlay buffer can hold
+#define TEXTOVERLAY_MAX_CHAR_COUNT 2048
+stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
 
 Buffer::Buffer(VkPhysicalDevice _physicalDevice, VkDevice _device, VkCommandPool _commandPool, VkQueue _queue)
 {
@@ -1565,6 +1570,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->beginTextUpdate();
 	textOverlay->addText(str, 5.0f, 5.0f);
+	sprintf(str, "x=%5.1f", 0.0f);
+	textOverlay->addText(str, 5.0f, 35.0f);
+	sprintf(str, "y=%5.1f", 0.0f);
+	textOverlay->addText(str, 5.0f, 65.0f);
 	textOverlay->endTextUpdate();
 	//getTrans4(obj[4]->mModel, 5.0f, 5.0f, 0.0f);
 	createVertexBuffer();
@@ -1760,6 +1769,10 @@ void RenderScene::updateTextOverlay(uint32_t fps)
 	sprintf(str, "FPS: %-4u", fps);
 	textOverlay->beginTextUpdate();
 	textOverlay->addText(str, 5.0f, 5.0f);
+	sprintf(str, "x=%5.1f", cam[3][0]);
+	textOverlay->addText(str, 5.0f, 35.0f);
+	sprintf(str, "y=%5.1f", cam[3][1]);
+	textOverlay->addText(str, 5.0f, 65.0f);
 	textOverlay->endTextUpdate();
 }
 

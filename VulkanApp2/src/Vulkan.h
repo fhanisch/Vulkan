@@ -8,13 +8,9 @@
 #include <iostream>
 #include <algorithm>
 #include <matrix.h>
-#include "stb_font_consolas_24_latin1.inl"
 
 #undef min
 #undef max
-
-// Max. number of chars the text overlay buffer can hold
-#define TEXTOVERLAY_MAX_CHAR_COUNT 2048
 
 struct Vertex {
 	vec3 pos;
@@ -184,7 +180,6 @@ class TextOverlay
 protected:
 	VulkanSetup *vulkanSetup;
 	vec4 *charVertices;
-	stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
 public:
 	TextOverlay(VulkanSetup *_vulkanSetup);
 	~TextOverlay();

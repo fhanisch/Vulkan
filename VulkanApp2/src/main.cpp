@@ -40,18 +40,22 @@ char getNextDelimiter(char **src, const char *delimiter)
 class App
 {
 	// Main Application Class
+	const char *windowName = "Vulkan App 2";
+	int windowWidth = 1800;
+	int windowHeight = 1800;
 	const char *appDir;
 	Window *window;
 	VulkanSetup *vulkanSetup;
 	RenderScene *renderScene;
 	clock_t start_t, sync_t;
 	uint32_t framecount = 0;
+	uint32_t fps = 0;
 public:
 	App(const char *_appDir)
 	{
 		appDir = _appDir;
 		std::cout << "***** HalliHalllo *****" << std::endl;
-		window = new Window("Vulkan App 2", 1800, 1800);
+		window = new Window(windowName, windowWidth, windowHeight);
 		window->createWindow();
 		vulkanSetup = new VulkanSetup("VulkanApp","MyVulkanEngine",window);
 		renderScene = new RenderScene(vulkanSetup, window->getKey());
@@ -75,10 +79,11 @@ public:
 			while ((clock() - sync_t) * 125 < CLOCKS_PER_SEC); // Achtung: Auflösung von <1ms scheinbar nicht möglich --> nicht jede FPS-Vorgabe funktioniert daher genau
 			if ((clock() - start_t) >= CLOCKS_PER_SEC)
 			{
-				renderScene->updateTextOverlay(framecount);
+				fps = framecount;
 				start_t = clock();
 				framecount = 0;
 			}
+			renderScene->updateTextOverlay(fps);
 			sync_t = clock();
 			framecount++;
 		}

@@ -44,6 +44,8 @@ class App
 	int windowWidth = 1800;
 	int windowHeight = 1800;
 	const char *appDir;
+	const char *appName = "VulkanApp";
+	const char *engineName = "MyVulkanEngine";
 	Window *window;
 	VulkanSetup *vulkanSetup;
 	RenderScene *renderScene;
@@ -57,7 +59,7 @@ public:
 		std::cout << "***** HalliHalllo *****" << std::endl;
 		window = new Window(windowName, windowWidth, windowHeight);
 		window->createWindow();
-		vulkanSetup = new VulkanSetup("VulkanApp","MyVulkanEngine",window);
+		vulkanSetup = new VulkanSetup(appName, engineName, window);
 		renderScene = new RenderScene(vulkanSetup, window->getKey());
 	}
 	~App()

@@ -18,16 +18,22 @@ struct Vertex {
 	vec2 texCoords;
 };
 
-struct VertexData {
+class VertexData
+{
+protected:
 	float *data;
-	uint32_t size;
-	uint32_t offset;
+	uint64_t size;
+	uint32_t *offsets;
+	uint32_t offsetCount;
 };
 
-struct IndexData {
+class IndexData
+{
+protected:
 	uint16_t *data;
-	uint32_t size;
-	uint32_t offset;
+	uint64_t size;
+	uint32_t *offsets;
+	uint32_t offsetCount;
 };
 
 const Vertex vertices[] = {
@@ -266,7 +272,7 @@ public:
 					VkPrimitiveTopology _topology,
 					mat4 *_mView);
 	~RenderObject();
-	void updateUniformBuffer();
+	virtual void updateUniformBuffer();
 	uint32_t getPushConstantRangeCount();
 	VkPipelineLayout getPipelineLayout();
 	VkPipeline getGraphicsPipeline();

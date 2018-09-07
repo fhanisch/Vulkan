@@ -8,6 +8,102 @@
 #define TEXTOVERLAY_MAX_CHAR_COUNT 2048
 stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
 
+VertexData::VertexData()
+{
+	data = nullptr;
+	size = 0;
+	offsets = nullptr;
+	dataSetCount = 0;
+}
+
+VertexData::~VertexData() {}
+
+void VertexData::addData(float *_data, uint64_t _size)
+{
+	uint64_t *tmp1 = offsets;
+	offsets = new uint64_t[dataSetCount + 1];
+	if (tmp1) memcpy(offsets, tmp1, dataSetCount * sizeof(uint64_t));
+	offsets[dataSetCount] = size;
+	if (tmp1) delete[] tmp1;
+
+	float *tmp2 = data;
+	data = (float*)malloc(size + _size);
+	if (tmp2) memcpy(data, tmp2, size);
+	memcpy((char*)data + size, _data, _size);
+	dataSetCount++;
+	size += _size;
+	if (tmp2) free(tmp2);
+}
+
+uint64_t VertexData::getOffset(uint32_t index)
+{
+	return offsets[index];
+}
+
+float *VertexData::getData()
+{
+	return data;
+}
+
+uint64_t VertexData::getSize()
+{
+	return size;
+}
+
+IndexData::IndexData()
+{
+	data = nullptr;
+	size = 0;
+	indexCount = nullptr;
+	firstIndex = nullptr;
+	dataSetCount = 0;
+}
+
+IndexData::~IndexData() {}
+
+void IndexData::addData(uint16_t *_data, uint64_t _size)
+{
+	uint32_t *tmp1 = indexCount;
+	indexCount = new uint32_t[dataSetCount + 1];
+	if (tmp1) memcpy(indexCount, tmp1, dataSetCount * sizeof(uint32_t));
+	indexCount[dataSetCount] = (uint32_t)_size / (uint32_t)sizeof(uint16_t);
+	if (tmp1) delete[] tmp1;
+
+	tmp1 = firstIndex;
+	firstIndex = new uint32_t[dataSetCount + 1];
+	if (tmp1) memcpy(firstIndex, tmp1, dataSetCount * sizeof(uint32_t));
+	firstIndex[dataSetCount] = (uint32_t)size / (uint32_t)sizeof(uint16_t);
+	if (tmp1) delete[] tmp1;
+
+	uint16_t *tmp2 = data;
+	data = (uint16_t*)malloc(size + _size);
+	if (tmp2) memcpy(data, tmp2, size);
+	memcpy((char*)data + size, _data, _size);
+	dataSetCount++;
+	size += _size;
+	if (tmp2) free(tmp2);
+}
+
+uint16_t *IndexData::getData()
+{
+	return data;
+}
+
+uint64_t IndexData::getSize()
+{
+	return size;
+}
+
+uint32_t IndexData::getIndexCount(uint32_t index)
+{
+	return indexCount[index];
+}
+
+uint32_t IndexData::getFirstIndex(uint32_t index)
+{
+	return firstIndex[index];
+}
+
 Buffer::Buffer(VkPhysicalDevice _physicalDevice, VkDevice _device, VkCommandPool _commandPool, VkQueue _queue)
 {
 	physicalDevice = _physicalDevice;
@@ -1064,7 +1160,10 @@ RenderObject::RenderObject(	VulkanSetup *_vulkanSetup,
 							VkFormat *formats,
 							uint32_t *offsets,
 							VkPrimitiveTopology _topology,
-							mat4 *_mView)
+							mat4 *_mView,
+							uint64_t _vertexOffset,
+							uint32_t _indexCount,
+							uint32_t _firstIndex)
 {
 	vulkanSetup = _vulkanSetup;
 	textOverlay = _textOverlay;
@@ -1082,6 +1181,9 @@ RenderObject::RenderObject(	VulkanSetup *_vulkanSetup,
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	mView = _mView;
+	vertexOffset = _vertexOffset;
+	indexCount = _indexCount;
+	firstIndex = _firstIndex;
 	identity4(mProj);
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	if (textureFileName) texture = new Texture(vulkanSetup, textureFileName);
@@ -1384,6 +1486,9 @@ VkPipeline RenderObject::getGraphicsPipeline() { return graphicsPipeline; }
 VkDescriptorSet *RenderObject::getDescriptorSetPtr() { return &descriptorSet; }
 VkBuffer RenderObject::getTextOverlayVertexBuffer() { return textOverlay->vertexBuffer->getBuffer(); }
 uint32_t RenderObject::getNumLetters() { return textOverlay->numLetters; }
+uint64_t RenderObject::getVertexOffset() { return vertexOffset; }
+uint32_t RenderObject::getIndexCount() { return indexCount; }
+uint32_t RenderObject::getFirstIndex() { return firstIndex; }
 
 TextOverlay::TextOverlay(VulkanSetup *_vulkanSetup)
 {
@@ -1483,6 +1588,12 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	vulkanSetup = _vulkanSetup;
 	key = _key;
 	identity4(cam);
+	vertexData = new VertexData;
+	indexData = new IndexData;
+	vertexData->addData((float*)_t, sizeof(_t));
+	vertexData->addData((float*)vertices, sizeof(vertices));
+	indexData->addData((uint16_t*)indices, sizeof(indices));
+	indexData->addData((uint16_t*)indices2, sizeof(indices2));
 	objectCount = 5;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
@@ -1500,7 +1611,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 								formats0,
 								offsets0,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-								&cam);
+								&cam,
+								vertexData->getOffset(1),
+								indexData->getIndexCount(1),
+								indexData->getFirstIndex(1));
 	getTrans4(obj[0]->mModel, 0.0f, 0.0f, 0.5f);
 	// Tacho
 	VkFormat formats1[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
@@ -1516,7 +1630,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 								formats1,
 								offsets1,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-								&cam);
+								&cam,
+								vertexData->getOffset(1),
+								indexData->getIndexCount(0),
+								indexData->getFirstIndex(0));
 	getTrans4(obj[1]->mModel, 0.0f, -5.0f, 0.5f);
 	// flat Perlin2d
 	VkFormat formats2[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
@@ -1532,7 +1649,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 								formats2,
 								offsets2,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-								&cam);
+								&cam,
+								vertexData->getOffset(1),
+								indexData->getIndexCount(0),
+								indexData->getFirstIndex(0));
 	getTrans4(obj[2]->mModel, -5.0f, -5.0f, 0.5f);
 	// filled Circle
 	VkFormat formats3[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
@@ -1548,7 +1668,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 								formats3,
 								offsets3,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-								&cam);
+								&cam,
+								vertexData->getOffset(1),
+								indexData->getIndexCount(0),
+								indexData->getFirstIndex(0));
 	getTrans4(obj[3]->mModel, 5.0f, 5.0f, 0.1f);
 	// Text Overlay
 	VkFormat formats4[] = { VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
@@ -1565,7 +1688,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 								formats4,
 								offsets4,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
-								&cam);
+								&cam,
+								vertexData->getOffset(1),
+								indexData->getIndexCount(0),
+								indexData->getFirstIndex(0));
 	char str[32];
 	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->beginTextUpdate();
@@ -1586,13 +1712,13 @@ RenderScene::~RenderScene() {}
 void RenderScene::createVertexBuffer()
 {
 	vertexBuffer = new Buffer(vulkanSetup->getPhysicalDevice(), vulkanSetup->getDevice(), vulkanSetup->getCommandPool(), vulkanSetup->getQueue());
-	vertexBuffer->createDeviceLocalBuffer(vertices, sizeof(vertices), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	vertexBuffer->createDeviceLocalBuffer(vertexData->getData(), vertexData->getSize(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 }
 
 void RenderScene::createIndexBuffer()
 {
 	indexBuffer = new Buffer(vulkanSetup->getPhysicalDevice(), vulkanSetup->getDevice(), vulkanSetup->getCommandPool(), vulkanSetup->getQueue());
-	indexBuffer->createDeviceLocalBuffer(indices, sizeof(indices), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	indexBuffer->createDeviceLocalBuffer(indexData->getData(), indexData->getSize(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 }
 
 void RenderScene::createDescriptorPool()
@@ -1652,16 +1778,16 @@ void RenderScene::createCommandBuffers()
 
 			vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-				VkDeviceSize offsets[] = { 0 };
 				VkBuffer vB[] = { vertexBuffer->getBuffer() };
-				vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vB, offsets);
 				vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
 				for (uint32_t j = 0; j < objectCount-1; j++)
 				{
+					VkDeviceSize offsets[] = { obj[j]->getVertexOffset() };
+					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vB, offsets);
 					vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[j]->getGraphicsPipeline());
 					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[j]->getPipelineLayout(), 0, 1, obj[j]->getDescriptorSetPtr(), 0, nullptr);
-					vkCmdDrawIndexed(commandBuffers[i], 6, 1, 0, 0, 0);
+					vkCmdDrawIndexed(commandBuffers[i], obj[j]->getIndexCount(), 1, obj[j]->getFirstIndex(), 0, 0);
 				}
 				
 				vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[4]->getGraphicsPipeline());

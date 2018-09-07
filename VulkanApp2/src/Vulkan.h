@@ -23,8 +23,15 @@ class VertexData
 protected:
 	float *data;
 	uint64_t size;
-	uint32_t *offsets;
-	uint32_t offsetCount;
+	uint64_t *offsets;
+	uint32_t dataSetCount;
+public:
+	VertexData();
+	~VertexData();
+	void addData(float *_data, uint64_t _size);
+	float *getData();
+	uint64_t getSize();
+	uint64_t getOffset(uint32_t index);
 };
 
 class IndexData
@@ -32,8 +39,17 @@ class IndexData
 protected:
 	uint16_t *data;
 	uint64_t size;
-	uint32_t *offsets;
-	uint32_t offsetCount;
+	uint32_t *indexCount;
+	uint32_t *firstIndex;
+	uint32_t dataSetCount;
+public:
+	IndexData();
+	~IndexData();
+	void addData(uint16_t *_data, uint64_t _size);
+	uint16_t *getData();
+	uint64_t getSize();
+	uint32_t getIndexCount(uint32_t index);
+	uint32_t getFirstIndex(uint32_t index);
 };
 
 const Vertex vertices[] = {
@@ -42,8 +58,10 @@ const Vertex vertices[] = {
 	{ {  1.0f, -1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
 	{ { -1.0f, -1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } }
 };
+const float _t[] = { 0.0f, 0.2f, 0.4f, 0.6f, 0.8f, 1.0f };
 
 const uint16_t indices[] = { 0,1,2,2,3,0 };
+const uint16_t indices2[] = { 0,1,2 };
 
 class Buffer
 {
@@ -246,6 +264,9 @@ protected:
 	TextOverlay *textOverlay;
 	VkDescriptorSet descriptorSet;
 	vec4 color;
+	uint64_t vertexOffset;
+	uint32_t indexCount;
+	uint32_t firstIndex;
 	// Methods
 	VkShaderModule createShaderModule(Shader shader);
 	VkPipelineShaderStageCreateInfo getShaderStageInfo(VkShaderStageFlagBits stage, VkShaderModule module);
@@ -270,7 +291,10 @@ public:
 					VkFormat *formats,
 					uint32_t *offsets,
 					VkPrimitiveTopology _topology,
-					mat4 *_mView);
+					mat4 *_mView,
+					uint64_t _vertexOffset,
+					uint32_t _indexCount,
+					uint32_t _firstIndex);
 	~RenderObject();
 	virtual void updateUniformBuffer();
 	uint32_t getPushConstantRangeCount();
@@ -279,6 +303,9 @@ public:
 	VkDescriptorSet *getDescriptorSetPtr();
 	VkBuffer getTextOverlayVertexBuffer();
 	uint32_t getNumLetters();
+	uint64_t getVertexOffset();
+	uint32_t getIndexCount();
+	uint32_t getFirstIndex();
 };
 
 class RenderScene

@@ -26,8 +26,9 @@ VA: build
 	clang -Wall $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp -I C:\VulkanSDK\1.1.82.0\Include -I C:\Home\Entwicklung\inc -I C:\Home\Entwicklung\stb -l user32 -l Shcore -l vulkan-1 -l mathlib -o VulkanApp2c.exe -L C:\VulkanSDK\1.1.82.0\Lib -L C:\Home\Entwicklung\lib
 
 VAS: build
-	glslangValidator -V $(SrcVA)\shader\test.vert -o build\vs_test.spv
+	glslangValidator -V $(SrcVA)\shader\default.vert -o build\vs_default.spv
 	glslangValidator -V $(SrcVA)\shader\text.vert -o build\vs_text.spv
+	glslangValidator -V $(SrcVA)\shader\default.frag -o build\fs_default.spv
 	glslangValidator -V $(SrcVA)\shader\test.frag -o build\fs_test.spv
 	glslangValidator -V $(SrcVA)\shader\text.frag -o build\fs_text.spv
 	glslangValidator -V $(SrcVA)\shader\powermeter.frag -o build\fs_powermeter.spv

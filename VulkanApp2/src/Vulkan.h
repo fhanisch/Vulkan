@@ -52,16 +52,28 @@ public:
 	uint32_t getFirstIndex(uint32_t index);
 };
 
-const Vertex vertices[] = {
+const Vertex verticesPlane[] = {
 	{ { -1.0f,  1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
 	{ {  1.0f,  1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } },
 	{ {  1.0f, -1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
 	{ { -1.0f, -1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } }
 };
-const float _t[] = { 0.0f, 0.2f, 0.4f, 0.6f, 0.8f, 1.0f };
 
-const uint16_t indices[] = { 0,1,2,2,3,0 };
-const uint16_t indices2[] = { 0,1,2 };
+const Vertex verticesStar[] = {
+	{ {   0.0f,  -1.0f,  0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+	{ {  0.25f, -0.25f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
+	{ { -0.25f, -0.25f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
+	{ {   1.0f,   0.0f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
+	{ {  0.25f,  0.25f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
+	{ {   0.0f,   1.0f,  0.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+	{ {  -0.25,  0.25f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
+	{ {  -1.0f,   0.0f,  0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } }
+};
+
+//const float _t[] = { 0.0f, 0.2f, 0.4f, 0.6f, 0.8f, 1.0f };
+
+const uint16_t indicesPlane[] = { 0, 1, 2, 2, 3, 0 };
+const uint16_t indicesStar[] = { 0, 1, 2, 1, 3, 4, 4, 5, 6, 6, 7, 2, 2, 1, 4, 4, 6, 2 };
 
 class Buffer
 {
@@ -280,6 +292,7 @@ public:
 	mat4 mModel;
 	mat4 *mView;
 	mat4 mProj;
+	RenderObject(VulkanSetup *_vulkanSetup, VkDescriptorPool _descriptorPool, TextOverlay *_textOverlay);
 	RenderObject(	VulkanSetup *_vulkanSetup,
 					VkDescriptorPool _descriptorPool,
 					const char *vertexShaderFileName,
@@ -316,6 +329,7 @@ protected:
 	VulkanSetup *vulkanSetup;
 	uint32_t objectCount;
 	RenderObject **obj;
+	RenderObject *txtObj;
 	VertexData *vertexData;
 	IndexData *indexData;
 	Buffer *vertexBuffer;

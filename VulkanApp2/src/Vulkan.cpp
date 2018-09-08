@@ -1149,6 +1149,13 @@ VkImageView Texture::getTextureImageView() { return textureImage->getImageView()
 
 VkSampler Texture::getTextureSampler() { return textureSampler; }
 
+RenderObject::RenderObject(VulkanSetup *_vulkanSetup, VkDescriptorPool _descriptorPool, TextOverlay *_textOverlay)
+{
+	vulkanSetup = _vulkanSetup;
+	descriptorPool = _descriptorPool;
+	textOverlay = _textOverlay;
+}
+
 RenderObject::RenderObject(	VulkanSetup *_vulkanSetup,
 							VkDescriptorPool _descriptorPool,
 							const char *vertexShaderFileName,
@@ -1590,10 +1597,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	identity4(cam);
 	vertexData = new VertexData;
 	indexData = new IndexData;
-	vertexData->addData((float*)_t, sizeof(_t));
-	vertexData->addData((float*)vertices, sizeof(vertices));
-	indexData->addData((uint16_t*)indices, sizeof(indices));
-	indexData->addData((uint16_t*)indices2, sizeof(indices2));
+	vertexData->addData((float*)verticesPlane, sizeof(verticesPlane));
+	vertexData->addData((float*)verticesStar, sizeof(verticesStar));
+	indexData->addData((uint16_t*)indicesPlane, sizeof(indicesPlane));
+	indexData->addData((uint16_t*)indicesStar, sizeof(indicesStar));
 	objectCount = 5;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
@@ -1602,7 +1609,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	uint32_t offsets0[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
 	obj[0] = new RenderObject(	vulkanSetup,
 								descriptorPool,
-								"C:/Home/Entwicklung/Vulkan/build/vs_test.spv",
+								"C:/Home/Entwicklung/Vulkan/build/vs_default.spv",
 								"C:/Home/Entwicklung/Vulkan/build/fs_test.spv",
 								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
 								nullptr,
@@ -1612,16 +1619,16 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 								offsets0,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 								&cam,
-								vertexData->getOffset(1),
-								indexData->getIndexCount(1),
-								indexData->getFirstIndex(1));
+								vertexData->getOffset(0),
+								indexData->getIndexCount(0),
+								indexData->getFirstIndex(0));
 	getTrans4(obj[0]->mModel, 0.0f, 0.0f, 0.5f);
 	// Tacho
 	VkFormat formats1[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
 	uint32_t offsets1[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
 	obj[1] = new RenderObject(	vulkanSetup,
 								descriptorPool,
-								"C:/Home/Entwicklung/Vulkan/build/vs_test.spv",
+								"C:/Home/Entwicklung/Vulkan/build/vs_default.spv",
 								"C:/Home/Entwicklung/Vulkan/build/fs_powermeter.spv",
 								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
 								nullptr,
@@ -1631,7 +1638,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 								offsets1,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 								&cam,
-								vertexData->getOffset(1),
+								vertexData->getOffset(0),
 								indexData->getIndexCount(0),
 								indexData->getFirstIndex(0));
 	getTrans4(obj[1]->mModel, 0.0f, -5.0f, 0.5f);
@@ -1640,7 +1647,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	uint32_t offsets2[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
 	obj[2] = new RenderObject(	vulkanSetup,
 								descriptorPool,
-								"C:/Home/Entwicklung/Vulkan/build/vs_test.spv",
+								"C:/Home/Entwicklung/Vulkan/build/vs_default.spv",
 								"C:/Home/Entwicklung/Vulkan/build/fs_perlin2d.spv",
 								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
 								nullptr,
@@ -1650,17 +1657,17 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 								offsets2,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 								&cam,
-								vertexData->getOffset(1),
+								vertexData->getOffset(0),
 								indexData->getIndexCount(0),
 								indexData->getFirstIndex(0));
 	getTrans4(obj[2]->mModel, -5.0f, -5.0f, 0.5f);
-	// filled Circle
+	// Star
 	VkFormat formats3[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
 	uint32_t offsets3[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
 	obj[3] = new RenderObject(	vulkanSetup,
 								descriptorPool,
-								"C:/Home/Entwicklung/Vulkan/build/vs_test.spv",
-								"C:/Home/Entwicklung/Vulkan/build/fs_circleFilled.spv",
+								"C:/Home/Entwicklung/Vulkan/build/vs_default.spv",
+								"C:/Home/Entwicklung/Vulkan/build/fs_default.spv",
 								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
 								nullptr,
 								sizeof(Vertex),
@@ -1670,14 +1677,33 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 								&cam,
 								vertexData->getOffset(1),
+								indexData->getIndexCount(1),
+								indexData->getFirstIndex(1));
+	getTrans4(obj[3]->mModel, 5.0f, 5.0f, 0.2f);
+	// filled Circle
+	VkFormat formats4[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
+	uint32_t offsets4[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
+	obj[4] = new RenderObject(	vulkanSetup,
+								descriptorPool,
+								"C:/Home/Entwicklung/Vulkan/build/vs_default.spv",
+								"C:/Home/Entwicklung/Vulkan/build/fs_circleFilled.spv",
+								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
+								nullptr,
+								sizeof(Vertex),
+								3,
+								formats4,
+								offsets4,
+								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+								&cam,
+								vertexData->getOffset(0),
 								indexData->getIndexCount(0),
 								indexData->getFirstIndex(0));
-	getTrans4(obj[3]->mModel, 5.0f, 5.0f, 0.1f);
+	getTrans4(obj[4]->mModel, 5.0f, 5.0f, 0.1f);
 	// Text Overlay
-	VkFormat formats4[] = { VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
-	uint32_t offsets4[] = { 0 , 2 * sizeof(float) };
+	VkFormat formats5[] = { VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
+	uint32_t offsets5[] = { 0 , 2 * sizeof(float) };
 	textOverlay = new TextOverlay(vulkanSetup);
-	obj[4] = new RenderObject(	vulkanSetup,
+	txtObj = new RenderObject(	vulkanSetup,
 								descriptorPool,
 								"C:/Home/Entwicklung/Vulkan/build/vs_text.spv",
 								"C:/Home/Entwicklung/Vulkan/build/fs_text.spv",
@@ -1685,11 +1711,11 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 								textOverlay,
 								sizeof(vec4),
 								2,
-								formats4,
-								offsets4,
+								formats5,
+								offsets5,
 								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
 								&cam,
-								vertexData->getOffset(1),
+								vertexData->getOffset(0),
 								indexData->getIndexCount(0),
 								indexData->getFirstIndex(0));
 	char str[32];
@@ -1701,7 +1727,6 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	sprintf(str, "y=%5.1f", 0.0f);
 	textOverlay->addText(str, 5.0f, 65.0f);
 	textOverlay->endTextUpdate();
-	//getTrans4(obj[4]->mModel, 5.0f, 5.0f, 0.0f);
 	createVertexBuffer();
 	createIndexBuffer();
 	createCommandBuffers();
@@ -1725,15 +1750,15 @@ void RenderScene::createDescriptorPool()
 {
 	VkDescriptorPoolSize poolSize[2] = {};
 	poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize[0].descriptorCount = objectCount*2;
+	poolSize[0].descriptorCount = (objectCount+1)*2;
 	poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSize[1].descriptorCount = objectCount;
+	poolSize[1].descriptorCount = objectCount+1;
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = 2;
 	poolInfo.pPoolSizes = poolSize;
-	poolInfo.maxSets = objectCount;
+	poolInfo.maxSets = objectCount+1;
 
 	if (vkCreateDescriptorPool(vulkanSetup->getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
 		std::cout << "Failed to create descriptor pool!" << std::endl;
@@ -1781,7 +1806,7 @@ void RenderScene::createCommandBuffers()
 				VkBuffer vB[] = { vertexBuffer->getBuffer() };
 				vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
-				for (uint32_t j = 0; j < objectCount-1; j++)
+				for (uint32_t j = 0; j < objectCount; j++)
 				{
 					VkDeviceSize offsets[] = { obj[j]->getVertexOffset() };
 					vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vB, offsets);
@@ -1790,12 +1815,12 @@ void RenderScene::createCommandBuffers()
 					vkCmdDrawIndexed(commandBuffers[i], obj[j]->getIndexCount(), 1, obj[j]->getFirstIndex(), 0, 0);
 				}
 				
-				vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[4]->getGraphicsPipeline());
-				vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[4]->getPipelineLayout(), 0, 1, obj[4]->getDescriptorSetPtr(), 0, nullptr);
+				vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, txtObj->getGraphicsPipeline());
+				vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, txtObj->getPipelineLayout(), 0, 1, txtObj->getDescriptorSetPtr(), 0, nullptr);
 				VkDeviceSize offsets1 = 0;
-				VkBuffer vB1[] = { obj[4]->getTextOverlayVertexBuffer() };
+				VkBuffer vB1[] = { txtObj->getTextOverlayVertexBuffer() };
 				vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vB1, &offsets1);
-				for (uint32_t j = 0; j < obj[4]->getNumLetters(); j++)
+				for (uint32_t j = 0; j < txtObj->getNumLetters(); j++)
 				{
 					vkCmdDraw(commandBuffers[i], 4, 1, j * 4, 0);
 				}
@@ -1811,7 +1836,7 @@ void RenderScene::createCommandBuffers()
 
 void RenderScene::updateUniformBuffers()
 {
-	for (uint32_t i = 0; i < objectCount-1; i++)
+	for (uint32_t i = 0; i < objectCount; i++)
 	{
 		obj[i]->updateUniformBuffer();
 	}
@@ -1819,7 +1844,7 @@ void RenderScene::updateUniformBuffers()
 
 void RenderScene::camMotion()
 {
-	mat4 T, Rz, tmp;
+	mat4 T, Rz, Rz2, tmp, tmp2;
 	float dphi = 0.0f;;
 
 	if (key[0x52] == true) {
@@ -1831,6 +1856,12 @@ void RenderScene::camMotion()
 	getRotZ4(Rz, dphi);
 	dup4(tmp, obj[0]->mModel);
 	mult4(obj[0]->mModel, Rz, tmp);
+
+	getRotZ4(Rz, 0.005f);
+	getRotZ4(Rz2, 0.04f);
+	dup4(tmp, obj[3]->mModel);
+	mult4(tmp2, tmp, Rz2);
+	mult4(obj[3]->mModel, Rz, tmp2);
 
 	if (key[0x41] == true)
 	{
@@ -1862,30 +1893,30 @@ void RenderScene::camMotion()
 
 	if (key[VK_LEFT] == true)
 	{
-		dup4(tmp, obj[3]->mModel);
+		dup4(tmp, obj[4]->mModel);
 		getTrans4(T, -0.1f, 0.0f, 0.0f);
-		mult4(obj[3]->mModel, T, tmp);
+		mult4(obj[4]->mModel, T, tmp);
 	}
 
 	if (key[VK_RIGHT] == true)
 	{
-		dup4(tmp, obj[3]->mModel);
+		dup4(tmp, obj[4]->mModel);
 		getTrans4(T, 0.1f, 0.0f, 0.0f);
-		mult4(obj[3]->mModel, T, tmp);
+		mult4(obj[4]->mModel, T, tmp);
 	}
 
 	if (key[VK_UP] == true)
 	{
-		dup4(tmp, obj[3]->mModel);
+		dup4(tmp, obj[4]->mModel);
 		getTrans4(T, 0.0f, -0.1f, 0.0f);
-		mult4(obj[3]->mModel, T, tmp);
+		mult4(obj[4]->mModel, T, tmp);
 	}
 
 	if (key[VK_DOWN] == true)
 	{
-		dup4(tmp, obj[3]->mModel);
+		dup4(tmp, obj[4]->mModel);
 		getTrans4(T, 0.0f, 0.1f, 0.0f);
-		mult4(obj[3]->mModel, T, tmp);
+		mult4(obj[4]->mModel, T, tmp);
 	}
 }
 

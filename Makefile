@@ -21,9 +21,9 @@ LIBS_WORLD = vulkan-1.lib mathlib.lib user32.lib Shcore.lib libusb-1.0.lib
 all: App T1 T2 World ML Shader1 Shader2 Tex
 
 VA: build
-	cl /nologo /EHsc /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2a.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib
-	clang-cl /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2b.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib
-	clang -Wall $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp -I C:\VulkanSDK\1.1.82.0\Include -I C:\Home\Entwicklung\inc -I C:\Home\Entwicklung\stb -l user32 -l Shcore -l vulkan-1 -l mathlib -o VulkanApp2c.exe -L C:\VulkanSDK\1.1.82.0\Lib -L C:\Home\Entwicklung\lib
+	cl /nologo /EHsc /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2a.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib
+	clang-cl /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2b.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib
+	clang -Wall $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp -I C:\VulkanSDK\1.1.82.0\Include -I C:\Home\Entwicklung\inc -I C:\Home\Entwicklung\stb -l user32 -l Shcore -l vulkan-1 -l mathlib -o VulkanApp2c.exe -L C:\VulkanSDK\1.1.82.0\Lib -L C:\Home\Entwicklung\lib
 
 VAS: build
 	glslangValidator -V $(SrcVA)\shader\default.vert -o build\vs_default.spv

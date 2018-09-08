@@ -279,6 +279,7 @@ protected:
 	uint64_t vertexOffset;
 	uint32_t indexCount;
 	uint32_t firstIndex;
+	bool *key;
 	// Methods
 	VkShaderModule createShaderModule(Shader shader);
 	VkPipelineShaderStageCreateInfo getShaderStageInfo(VkShaderStageFlagBits stage, VkShaderModule module);
@@ -292,24 +293,14 @@ public:
 	mat4 mModel;
 	mat4 *mView;
 	mat4 mProj;
-	RenderObject(VulkanSetup *_vulkanSetup, VkDescriptorPool _descriptorPool, TextOverlay *_textOverlay);
 	RenderObject(	VulkanSetup *_vulkanSetup,
 					VkDescriptorPool _descriptorPool,
-					const char *vertexShaderFileName,
-					const char *fragmentShaderFileName,
-					const char *textureFileName,
 					TextOverlay *_textOverlay,
-					uint32_t stride,
-					uint32_t _attributeDescriptionCount,
-					VkFormat *formats,
-					uint32_t *offsets,
-					VkPrimitiveTopology _topology,
 					mat4 *_mView,
-					uint64_t _vertexOffset,
-					uint32_t _indexCount,
-					uint32_t _firstIndex);
+					bool *_key);
 	~RenderObject();
 	virtual void updateUniformBuffer();
+	virtual void motion();
 	uint32_t getPushConstantRangeCount();
 	VkPipelineLayout getPipelineLayout();
 	VkPipeline getGraphicsPipeline();

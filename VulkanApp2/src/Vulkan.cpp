@@ -1,4 +1,5 @@
 #include "Vulkan.h"
+#include "Models.h"
 // stb_image.h --> muss hier inkludiert werden statt in Header-Datei, da sonst doppelter Code
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -1149,56 +1150,17 @@ VkImageView Texture::getTextureImageView() { return textureImage->getImageView()
 
 VkSampler Texture::getTextureSampler() { return textureSampler; }
 
-RenderObject::RenderObject(VulkanSetup *_vulkanSetup, VkDescriptorPool _descriptorPool, TextOverlay *_textOverlay)
-{
-	vulkanSetup = _vulkanSetup;
-	descriptorPool = _descriptorPool;
-	textOverlay = _textOverlay;
-}
-
 RenderObject::RenderObject(	VulkanSetup *_vulkanSetup,
 							VkDescriptorPool _descriptorPool,
-							const char *vertexShaderFileName,
-							const char *fragmentShaderFileName,
-							const char *textureFileName,
 							TextOverlay *_textOverlay,
-							uint32_t stride,
-							uint32_t _attributeDescriptionCount,
-							VkFormat *formats,
-							uint32_t *offsets,
-							VkPrimitiveTopology _topology,
 							mat4 *_mView,
-							uint64_t _vertexOffset,
-							uint32_t _indexCount,
-							uint32_t _firstIndex)
+							bool *_key)
 {
 	vulkanSetup = _vulkanSetup;
-	textOverlay = _textOverlay;
-	vertexShader.load(vertexShaderFileName);
-	fragmentShader.load(fragmentShaderFileName);
 	descriptorPool = _descriptorPool;
-	stageCount = 2;
-	attributeDescriptionCount = _attributeDescriptionCount;
-	pAttributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
-	topology = _topology;
-	bindingDescription = getBindingDescription(stride);
-	pTessellationStateCreateInfo = nullptr;
-	pushConstantRangeCount = 0;
-	pushConstantRange = nullptr;
-	uboBufferSize = 0x200;
-	identity4(mModel);
+	textOverlay = _textOverlay;
 	mView = _mView;
-	vertexOffset = _vertexOffset;
-	indexCount = _indexCount;
-	firstIndex = _firstIndex;
-	identity4(mProj);
-	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	if (textureFileName) texture = new Texture(vulkanSetup, textureFileName);
-	if (textOverlay) texture = new Texture(vulkanSetup, textOverlay);
-	createUniformBuffer();
-	createPipelineLayout();
-	createGraphicsPipeline();
-	createDescriptorSet();
+	key = _key;
 }
 
 RenderObject::~RenderObject() {}
@@ -1213,6 +1175,8 @@ void RenderObject::updateUniformBuffer()
 		memcpy((char*)data + 0x100, &color, sizeof(color));
 	vkUnmapMemory(vulkanSetup->getDevice(), uniformBuffer->getBufferMemory());
 }
+
+void RenderObject::motion() {}
 
 VkShaderModule RenderObject::createShaderModule(Shader shader)
 {
@@ -1604,120 +1568,13 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	objectCount = 5;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
-	// Square with texture and Schachbrett
-	VkFormat formats0[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
-	uint32_t offsets0[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
-	obj[0] = new RenderObject(	vulkanSetup,
-								descriptorPool,
-								"C:/Home/Entwicklung/Vulkan/build/vs_default.spv",
-								"C:/Home/Entwicklung/Vulkan/build/fs_test.spv",
-								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
-								nullptr,
-								sizeof(Vertex),
-								3,
-								formats0,
-								offsets0,
-								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-								&cam,
-								vertexData->getOffset(0),
-								indexData->getIndexCount(0),
-								indexData->getFirstIndex(0));
-	getTrans4(obj[0]->mModel, 0.0f, 0.0f, 0.5f);
-	// Tacho
-	VkFormat formats1[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
-	uint32_t offsets1[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
-	obj[1] = new RenderObject(	vulkanSetup,
-								descriptorPool,
-								"C:/Home/Entwicklung/Vulkan/build/vs_default.spv",
-								"C:/Home/Entwicklung/Vulkan/build/fs_powermeter.spv",
-								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
-								nullptr,
-								sizeof(Vertex),
-								3,
-								formats1,
-								offsets1,
-								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-								&cam,
-								vertexData->getOffset(0),
-								indexData->getIndexCount(0),
-								indexData->getFirstIndex(0));
-	getTrans4(obj[1]->mModel, 0.0f, -5.0f, 0.5f);
-	// flat Perlin2d
-	VkFormat formats2[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
-	uint32_t offsets2[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
-	obj[2] = new RenderObject(	vulkanSetup,
-								descriptorPool,
-								"C:/Home/Entwicklung/Vulkan/build/vs_default.spv",
-								"C:/Home/Entwicklung/Vulkan/build/fs_perlin2d.spv",
-								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
-								nullptr,
-								sizeof(Vertex),
-								3,
-								formats2,
-								offsets2,
-								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-								&cam,
-								vertexData->getOffset(0),
-								indexData->getIndexCount(0),
-								indexData->getFirstIndex(0));
-	getTrans4(obj[2]->mModel, -5.0f, -5.0f, 0.5f);
-	// Star
-	VkFormat formats3[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
-	uint32_t offsets3[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
-	obj[3] = new RenderObject(	vulkanSetup,
-								descriptorPool,
-								"C:/Home/Entwicklung/Vulkan/build/vs_default.spv",
-								"C:/Home/Entwicklung/Vulkan/build/fs_default.spv",
-								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
-								nullptr,
-								sizeof(Vertex),
-								3,
-								formats3,
-								offsets3,
-								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-								&cam,
-								vertexData->getOffset(1),
-								indexData->getIndexCount(1),
-								indexData->getFirstIndex(1));
-	getTrans4(obj[3]->mModel, 5.0f, 5.0f, 0.2f);
-	// filled Circle
-	VkFormat formats4[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
-	uint32_t offsets4[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
-	obj[4] = new RenderObject(	vulkanSetup,
-								descriptorPool,
-								"C:/Home/Entwicklung/Vulkan/build/vs_default.spv",
-								"C:/Home/Entwicklung/Vulkan/build/fs_circleFilled.spv",
-								"C:/Home/Entwicklung/Vulkan/build/texture.jpg",
-								nullptr,
-								sizeof(Vertex),
-								3,
-								formats4,
-								offsets4,
-								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-								&cam,
-								vertexData->getOffset(0),
-								indexData->getIndexCount(0),
-								indexData->getFirstIndex(0));
-	getTrans4(obj[4]->mModel, 5.0f, 5.0f, 0.1f);
-	// Text Overlay
-	VkFormat formats5[] = { VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
-	uint32_t offsets5[] = { 0 , 2 * sizeof(float) };
+	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
+	obj[1] = new Tacho(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
+	obj[2] = new FlatPerlin2d(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
+	obj[3] = new Star(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
+	obj[4] = new FilledCircle(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	textOverlay = new TextOverlay(vulkanSetup);
-	txtObj = new RenderObject(	vulkanSetup,
-								descriptorPool,
-								"C:/Home/Entwicklung/Vulkan/build/vs_text.spv",
-								"C:/Home/Entwicklung/Vulkan/build/fs_text.spv",
-								nullptr,
-								textOverlay,
-								sizeof(vec4),
-								2,
-								formats5,
-								offsets5,
-								VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
-								&cam,
-								vertexData->getOffset(0),
-								indexData->getIndexCount(0),
-								indexData->getFirstIndex(0));
+	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &cam, key, vertexData, indexData);
 	char str[32];
 	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->beginTextUpdate();
@@ -1844,24 +1701,9 @@ void RenderScene::updateUniformBuffers()
 
 void RenderScene::camMotion()
 {
-	mat4 T, Rz, Rz2, tmp, tmp2;
-	float dphi = 0.0f;;
+	for (uint32_t i = 0; i < objectCount; i++) obj[i]->motion();
 
-	if (key[0x52] == true) {
-		dphi = -0.05f;
-	}
-	if (key[0x54] == true) {
-		dphi = 0.05f;
-	}
-	getRotZ4(Rz, dphi);
-	dup4(tmp, obj[0]->mModel);
-	mult4(obj[0]->mModel, Rz, tmp);
-
-	getRotZ4(Rz, 0.005f);
-	getRotZ4(Rz2, 0.04f);
-	dup4(tmp, obj[3]->mModel);
-	mult4(tmp2, tmp, Rz2);
-	mult4(obj[3]->mModel, Rz, tmp2);
+	mat4 T, tmp;
 
 	if (key[0x41] == true)
 	{
@@ -1889,34 +1731,6 @@ void RenderScene::camMotion()
 		dup4(tmp, cam);
 		getTrans4(T, 0.0f, 0.1f, 0.0f);
 		mult4(cam, T, tmp);
-	}
-
-	if (key[VK_LEFT] == true)
-	{
-		dup4(tmp, obj[4]->mModel);
-		getTrans4(T, -0.1f, 0.0f, 0.0f);
-		mult4(obj[4]->mModel, T, tmp);
-	}
-
-	if (key[VK_RIGHT] == true)
-	{
-		dup4(tmp, obj[4]->mModel);
-		getTrans4(T, 0.1f, 0.0f, 0.0f);
-		mult4(obj[4]->mModel, T, tmp);
-	}
-
-	if (key[VK_UP] == true)
-	{
-		dup4(tmp, obj[4]->mModel);
-		getTrans4(T, 0.0f, -0.1f, 0.0f);
-		mult4(obj[4]->mModel, T, tmp);
-	}
-
-	if (key[VK_DOWN] == true)
-	{
-		dup4(tmp, obj[4]->mModel);
-		getTrans4(T, 0.0f, 0.1f, 0.0f);
-		mult4(obj[4]->mModel, T, tmp);
 	}
 }
 

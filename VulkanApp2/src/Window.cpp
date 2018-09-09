@@ -43,8 +43,20 @@ Window::~Window() { if (window) DestroyWindow(window); }
 
 void Window::createWindow()
 {
-	window = CreateWindow(wc.lpszClassName, windowName, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-		0, 0, width, height, NULL, NULL, hInstance, NULL);
+	//Fullscreen
+	memset(&screenSettings, 0, sizeof(screenSettings));
+	screenSettings.dmSize = sizeof(screenSettings);
+	screenSettings.dmPelsWidth = width;
+	screenSettings.dmPelsHeight = height;
+	screenSettings.dmBitsPerPel = 32;
+	screenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+	ChangeDisplaySettings(&screenSettings, 0);
+
+	//DWORD dwStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+	DWORD dwStyle = WS_POPUP;
+
+	window = CreateWindow(wc.lpszClassName, windowName, dwStyle, 0, 0, width, height, NULL, NULL, hInstance, NULL);
+	ShowCursor(0);
 }
 
 void Window::showWindow()

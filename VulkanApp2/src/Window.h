@@ -8,6 +8,7 @@ protected:
 	HWND window;
 	HINSTANCE hInstance;
 	WNDCLASS wc;
+	DEVMODE screenSettings;
 	const char *windowName;
 	int width;
 	int height;

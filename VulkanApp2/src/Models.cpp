@@ -27,6 +27,7 @@ Square::Square(	VulkanSetup *_vulkanSetup,
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
+	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/build/texture.jpg");
 	getTrans4(mModel, 0.0f, 0.0f, 0.5f);
@@ -81,6 +82,7 @@ Tacho::Tacho(	VulkanSetup *_vulkanSetup,
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
+	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/build/texture.jpg");
 	getTrans4(mModel, 0.0f, -5.0f, 0.5f);
@@ -119,6 +121,7 @@ FlatPerlin2d::FlatPerlin2d(	VulkanSetup *_vulkanSetup,
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
+	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/build/texture.jpg");
 	getTrans4(mModel, -5.0f, -5.0f, 0.5f);
@@ -157,6 +160,7 @@ Star::Star(	VulkanSetup *_vulkanSetup,
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
+	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/build/texture.jpg");
 	getTrans4(mModel, 5.0f, 5.0f, 0.2f);
@@ -206,6 +210,7 @@ FilledCircle::FilledCircle(	VulkanSetup *_vulkanSetup,
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
+	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/build/texture.jpg");
 	getTrans4(mModel, 5.0f, 5.0f, 0.1f);

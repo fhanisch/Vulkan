@@ -41,8 +41,8 @@ class App
 {
 	// Main Application Class
 	const char *windowName = "Vulkan App 2";
-	int windowWidth = 1800;
-	int windowHeight = 1800;
+	int windowWidth = 3840;
+	int windowHeight = 2160;
 	const char *appDir;
 	const char *appName = "VulkanApp";
 	const char *engineName = "MyVulkanEngine";

@@ -1161,6 +1161,7 @@ RenderObject::RenderObject(	VulkanSetup *_vulkanSetup,
 	textOverlay = _textOverlay;
 	mView = _mView;
 	key = _key;
+	startTime = clock();
 }
 
 RenderObject::~RenderObject() {}
@@ -1563,9 +1564,13 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	indexData = new IndexData;
 	vertexData->addData((float*)verticesPlane, sizeof(verticesPlane));
 	vertexData->addData((float*)verticesStar, sizeof(verticesStar));
+	vecf(&verticesCurve, &verticesCurveSize, 0.0f, 0.01f, 101);
+	vertexData->addData(verticesCurve, verticesCurveSize);
 	indexData->addData((uint16_t*)indicesPlane, sizeof(indicesPlane));
 	indexData->addData((uint16_t*)indicesStar, sizeof(indicesStar));
-	objectCount = 5;
+	vecs(&indicesCurve, &indicesCurveSize, 0, 101);
+	indexData->addData(indicesCurve, indicesCurveSize);
+	objectCount = 7;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
 	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
@@ -1573,6 +1578,8 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	obj[2] = new FlatPerlin2d(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[3] = new Star(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[4] = new FilledCircle(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
+	obj[5] = new Circle(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
+	obj[6] = new Wave(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	textOverlay = new TextOverlay(vulkanSetup);
 	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &cam, key, vertexData, indexData);
 	char str[32];

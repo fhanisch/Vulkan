@@ -2,7 +2,10 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 layout(binding = 1) uniform sampler2D texSampler;
-layout (binding = 2) uniform UniformBufferObject {vec4 myColor;} c;
+layout (binding = 2) uniform UniformBufferObject
+{
+	vec4 myColor;
+} c;
 
 layout (location = 0) in vec3 color;
 layout (location = 1) in vec2 texCoords;

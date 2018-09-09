@@ -20,20 +20,22 @@ LIBS_WORLD = vulkan-1.lib mathlib.lib user32.lib Shcore.lib libusb-1.0.lib
 
 all: App T1 T2 World ML Shader1 Shader2 Tex
 
-VA: build
+VA: build build\VulkanApp2
 	cl /nologo /EHsc /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2a.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib
 	clang-cl /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2b.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib
 	clang -Wall $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp -I C:\VulkanSDK\1.1.82.0\Include -I C:\Home\Entwicklung\inc -I C:\Home\Entwicklung\stb -l user32 -l Shcore -l vulkan-1 -l mathlib -o VulkanApp2c.exe -L C:\VulkanSDK\1.1.82.0\Lib -L C:\Home\Entwicklung\lib
 
-VAS: build
-	glslangValidator -V $(SrcVA)\shader\default.vert -o build\vs_default.spv
-	glslangValidator -V $(SrcVA)\shader\text.vert -o build\vs_text.spv
-	glslangValidator -V $(SrcVA)\shader\default.frag -o build\fs_default.spv
-	glslangValidator -V $(SrcVA)\shader\test.frag -o build\fs_test.spv
-	glslangValidator -V $(SrcVA)\shader\text.frag -o build\fs_text.spv
-	glslangValidator -V $(SrcVA)\shader\powermeter.frag -o build\fs_powermeter.spv
-	glslangValidator -V $(SrcVA)\shader\perlin2d.frag -o build\fs_perlin2d.spv
-	glslangValidator -V $(SrcVA)\shader\circleFilled.frag -o build\fs_circleFilled.spv
+VAS: build build\VulkanApp2
+	glslangValidator -V $(SrcVA)\shader\default.vert -o build\VulkanApp2\vs_default.spv
+	glslangValidator -V $(SrcVA)\shader\text.vert -o build\VulkanApp2\vs_text.spv
+	glslangValidator -V $(SrcVA)\shader\circle.vert -o build\VulkanApp2\vs_circle.spv
+	glslangValidator -V $(SrcVA)\shader\welle.vert -o build\VulkanApp2\vs_welle.spv
+	glslangValidator -V $(SrcVA)\shader\default.frag -o build\VulkanApp2\fs_default.spv
+	glslangValidator -V $(SrcVA)\shader\test.frag -o build\VulkanApp2\fs_test.spv
+	glslangValidator -V $(SrcVA)\shader\text.frag -o build\VulkanApp2\fs_text.spv
+	glslangValidator -V $(SrcVA)\shader\powermeter.frag -o build\VulkanApp2\fs_powermeter.spv
+	glslangValidator -V $(SrcVA)\shader\perlin2d.frag -o build\VulkanApp2\fs_perlin2d.spv
+	glslangValidator -V $(SrcVA)\shader\circleFilled.frag -o build\VulkanApp2\fs_circleFilled.spv
 
 App: build
 	clang $(SrcPath)\main.cpp -I $(INC_VULKAN) -o $(BuildPath)\test.exe 
@@ -102,10 +104,11 @@ Shader2: build
 build:
 	mkdir build
 
+build\VulkanApp2:
+	mkdir build\VulkanApp2 
+
 Tex:
-	copy textures\texture.jpg x64\Debug
 	copy textures\texture.jpg build
-	copy textures\sky.png x64\Debug
 	copy textures\sky.png build
 
 clean:

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <algorithm>
 #include <matrix.h>
+#include <time.h>
 
 #undef min
 #undef max
@@ -69,11 +70,13 @@ const Vertex verticesStar[] = {
 	{ {  -0.25,  0.25f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
 	{ {  -1.0f,   0.0f,  0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } }
 };
-
-//const float _t[] = { 0.0f, 0.2f, 0.4f, 0.6f, 0.8f, 1.0f };
+static float *verticesCurve;
+static uint32_t verticesCurveSize;
 
 const uint16_t indicesPlane[] = { 0, 1, 2, 2, 3, 0 };
 const uint16_t indicesStar[] = { 0, 1, 2, 1, 3, 4, 4, 5, 6, 6, 7, 2, 2, 1, 4, 4, 6, 2 };
+static uint16_t *indicesCurve;
+static uint32_t indicesCurveSize;
 
 class Buffer
 {
@@ -279,6 +282,7 @@ protected:
 	uint64_t vertexOffset;
 	uint32_t indexCount;
 	uint32_t firstIndex;
+	clock_t startTime;
 	bool *key;
 	// Methods
 	VkShaderModule createShaderModule(Shader shader);

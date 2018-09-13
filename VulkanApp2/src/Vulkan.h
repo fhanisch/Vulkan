@@ -265,6 +265,8 @@ protected:
 	VkDescriptorPool descriptorPool;
 	Shader vertexShader;
 	Shader fragmentShader;
+	Shader tessellationControlShader;
+	Shader tessellationEvaluationShader;
 	uint32_t stageCount;
 	VkVertexInputBindingDescription bindingDescription;
 	uint32_t attributeDescriptionCount;

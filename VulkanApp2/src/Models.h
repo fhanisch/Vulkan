@@ -97,6 +97,19 @@ public:
 	void updateUniformBuffer();
 };
 
+class Perlin1d : public RenderObject
+{
+public:
+	Perlin1d(	VulkanSetup *_vulkanSetup,
+				VkDescriptorPool _descriptorPool,
+				TextOverlay *_textOverlay,
+				mat4 *_mView,
+				bool *_key,
+				VertexData *vertexData,
+				IndexData *indexData);
+	~Perlin1d();
+};
+
 class TxtObj : public RenderObject
 {
 public:

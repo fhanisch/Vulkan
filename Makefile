@@ -30,6 +30,7 @@ VAS: build build\VulkanApp2
 	glslangValidator -V $(SrcVA)\shader\text.vert -o build\VulkanApp2\vs_text.spv
 	glslangValidator -V $(SrcVA)\shader\circle.vert -o build\VulkanApp2\vs_circle.spv
 	glslangValidator -V $(SrcVA)\shader\welle.vert -o build\VulkanApp2\vs_welle.spv
+	glslangValidator -V $(SrcVA)\shader\perlin1d.vert -o build\VulkanApp2\vs_perlin1d.spv
 	glslangValidator -V $(SrcVA)\shader\default.frag -o build\VulkanApp2\fs_default.spv
 	glslangValidator -V $(SrcVA)\shader\test.frag -o build\VulkanApp2\fs_test.spv
 	glslangValidator -V $(SrcVA)\shader\text.frag -o build\VulkanApp2\fs_text.spv

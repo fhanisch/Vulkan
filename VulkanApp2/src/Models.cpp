@@ -348,6 +348,48 @@ void Wave::updateUniformBuffer()
 	vkUnmapMemory(vulkanSetup->getDevice(), uniformBuffer->getBufferMemory());
 }
 
+Perlin1d::Perlin1d(	VulkanSetup *_vulkanSetup,
+					VkDescriptorPool _descriptorPool,
+					TextOverlay *_textOverlay,
+					mat4 *_mView,
+					bool *_key,
+					VertexData *vertexData,
+					IndexData *indexData)
+					: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+{
+	mat4 A, B;
+	vertexShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/vs_perlin1d.spv");
+	fragmentShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/fs_default.spv");
+	vertexOffset = vertexData->getOffset(2);
+	indexCount = indexData->getIndexCount(2);
+	firstIndex = indexData->getFirstIndex(2);
+	stageCount = 2;
+	attributeDescriptionCount = 1;
+	VkFormat formats[] = { VK_FORMAT_R32_SFLOAT };
+	uint32_t offsets[] = { 0 };
+	pAttributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
+	topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+	bindingDescription = getBindingDescription(sizeof(float));
+	pTessellationStateCreateInfo = nullptr;
+	pushConstantRangeCount = 0;
+	pushConstantRange = nullptr;
+	uboBufferSize = 0x200;
+	identity4(mModel);
+	identity4(mProj);
+	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
+	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
+	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
+	getScale4(A, 2.0f, 1.0f, 1.0f);
+	getTrans4(B, 2.0f, 0.0f, 0.0f);
+	mult4(mModel, B, A);
+	createUniformBuffer();
+	createPipelineLayout();
+	createGraphicsPipeline();
+	createDescriptorSet();
+}
+
+Perlin1d::~Perlin1d() {}
+
 TxtObj::TxtObj(	VulkanSetup *_vulkanSetup,
 				VkDescriptorPool _descriptorPool,
 				TextOverlay *_textOverlay,

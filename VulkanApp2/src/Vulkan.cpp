@@ -1236,6 +1236,15 @@ VkVertexInputAttributeDescription *RenderObject::getAttributeDescriptions(uint32
 	return attributeDescriptions;
 }
 
+VkPipelineTessellationStateCreateInfo getTessellationStateCreateInfo(uint32_t patchControlPoints)
+{
+	VkPipelineTessellationStateCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+	createInfo.patchControlPoints = patchControlPoints;
+
+	return createInfo;
+}
+
 void RenderObject::createUniformBuffer()
 {
 	uniformBuffer = new Buffer(vulkanSetup->getPhysicalDevice(), vulkanSetup->getDevice(), vulkanSetup->getCommandPool(), vulkanSetup->getQueue());
@@ -1570,7 +1579,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	indexData->addData((uint16_t*)indicesStar, sizeof(indicesStar));
 	vecs(&indicesCurve, &indicesCurveSize, 0, 101);
 	indexData->addData(indicesCurve, indicesCurveSize);
-	objectCount = 7;
+	objectCount = 8;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
 	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
@@ -1580,6 +1589,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	obj[4] = new FilledCircle(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[5] = new Circle(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[6] = new Wave(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
+	obj[7] = new Perlin1d(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	textOverlay = new TextOverlay(vulkanSetup);
 	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &cam, key, vertexData, indexData);
 	char str[32];

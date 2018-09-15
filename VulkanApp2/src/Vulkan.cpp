@@ -1495,7 +1495,6 @@ void RenderObject::createDescriptorSet()
 
 uint32_t RenderObject::getPushConstantRangeCount() { return pushConstantRangeCount; }
 VkPushConstantRange RenderObject::getPushConstantRange() { return *pPushConstantRange; }
-void *RenderObject::getPushConstants() { return nullptr; }
 VkPipelineLayout RenderObject::getPipelineLayout() { return pipelineLayout; }
 VkPipeline RenderObject::getGraphicsPipeline() { return graphicsPipeline; }
 VkDescriptorSet *RenderObject::getDescriptorSetPtr() { return &descriptorSet; }
@@ -1610,12 +1609,23 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	vecf(&verticesCurve, &verticesCurveSize, 0.0f, 0.001f, 1001);
 	vertexData->addData(verticesCurve, verticesCurveSize);
 	vertexData->addData((float*)verticesPatches, sizeof(verticesPatches));
+	uint16_t patchesCount = 101;
+	vecf(&verticesPatches2, &verticesPatches2Size, 0.0f, 1.0f, patchesCount);
+	vertexData->addData(verticesPatches2, verticesPatches2Size);
 	indexData->addData((uint16_t*)indicesPlane, sizeof(indicesPlane));
 	indexData->addData((uint16_t*)indicesStar, sizeof(indicesStar));
 	vecs(&indicesCurve, &indicesCurveSize, 0, 1001);
 	indexData->addData(indicesCurve, indicesCurveSize);
 	indexData->addData((uint16_t*)indicesPatches, sizeof(indicesPatches));
-	objectCount = 9;
+	indicesPatches2Size = 2 * (patchesCount - 1) * sizeof(uint16_t);
+	indicesPatches2 = new uint16_t[2 * (patchesCount - 1)];
+	for (uint16_t i = 0; i < (patchesCount - 1); i++)
+	{
+		indicesPatches2[2 * i] = i;
+		indicesPatches2[2 * i + 1] = i + 1;
+	}
+	indexData->addData(indicesPatches2, indicesPatches2Size);
+	objectCount = 10;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
 	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
@@ -1627,6 +1637,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	obj[6] = new Wave(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[7] = new Perlin1d(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[8] = new CurveTessellator(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
+	obj[9] = new Perlin1dTessellator(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	textOverlay = new TextOverlay(vulkanSetup);
 	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &cam, key, vertexData, indexData);
 	char str[32];

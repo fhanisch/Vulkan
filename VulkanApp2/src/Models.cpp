@@ -297,8 +297,6 @@ PerlinCircle::PerlinCircle(	VulkanSetup *_vulkanSetup,
 
 PerlinCircle::~PerlinCircle() {}
 
-void *PerlinCircle::getPushConstants() { return &pushConsts; }
-
 void PerlinCircle::motion()
 {
 	if (key[VK_SPACE] == true)
@@ -453,6 +451,50 @@ CurveTessellator::CurveTessellator(	VulkanSetup *_vulkanSetup,
 }
 
 CurveTessellator::~CurveTessellator() {}
+
+Perlin1dTessellator::Perlin1dTessellator(	VulkanSetup *_vulkanSetup,
+											VkDescriptorPool _descriptorPool,
+											TextOverlay *_textOverlay,
+											mat4 *_mView,
+											bool *_key,
+											VertexData *vertexData,
+											IndexData *indexData)
+											: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+{
+	mat4 A, B;
+	vertexShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/vs_curveTessellator.spv");
+	tessellationControlShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/tcs_perlin1dTessellator.spv");
+	tessellationEvaluationShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/tes_perlin1dTessellator.spv");
+	fragmentShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/fs_curveTessellator.spv");
+	vertexOffset = vertexData->getOffset(4);
+	indexCount = indexData->getIndexCount(4);
+	firstIndex = indexData->getFirstIndex(4);
+	stageCount = 4;
+	attributeDescriptionCount = 1;
+	VkFormat formats[] = { VK_FORMAT_R32_SFLOAT };
+	uint32_t offsets[] = { 0 };
+	pAttributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
+	topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+	bindingDescription = getBindingDescription(sizeof(float));
+	pTessellationStateCreateInfo = getTessellationStateCreateInfo(2);
+	pushConstantRangeCount = 0;
+	pPushConstantRange = nullptr;
+	uboBufferSize = 0x200;
+	identity4(mModel);
+	identity4(mProj);
+	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
+	color[0] = 1.0f; color[1] = 0.0f; color[2] = 0.0f; color[3] = 1.0f;
+	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
+	getScale4(A, 2.0f, 1.0f, 1.0f);
+	getTrans4(B, 0.0f, 10.0f, 0.0f);
+	mult4(mModel, B, A);
+	createUniformBuffer();
+	createPipelineLayout();
+	createGraphicsPipeline();
+	createDescriptorSet();
+}
+
+Perlin1dTessellator::~Perlin1dTessellator() {}
 
 TxtObj::TxtObj(	VulkanSetup *_vulkanSetup,
 				VkDescriptorPool _descriptorPool,

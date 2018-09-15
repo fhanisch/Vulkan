@@ -88,7 +88,6 @@ public:
 					VertexData *vertexData,
 					IndexData *indexData);
 	~PerlinCircle();
-	void *getPushConstants();
 	void motion();
 };
 
@@ -130,6 +129,19 @@ public:
 						VertexData *vertexData,
 						IndexData *indexData);
 	~CurveTessellator();
+};
+
+class Perlin1dTessellator : public RenderObject
+{
+public:
+	Perlin1dTessellator(VulkanSetup *_vulkanSetup,
+						VkDescriptorPool _descriptorPool,
+						TextOverlay *_textOverlay,
+						mat4 *_mView,
+						bool *_key,
+						VertexData *vertexData,
+						IndexData *indexData);
+	~Perlin1dTessellator();
 };
 
 class TxtObj : public RenderObject

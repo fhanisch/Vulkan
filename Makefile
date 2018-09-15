@@ -33,7 +33,9 @@ VAS: build build\VulkanApp2
 	glslangValidator -V $(SrcVA)\shader\perlin1d.vert -o build\VulkanApp2\vs_perlin1d.spv
 	glslangValidator -V $(SrcVA)\shader\curveTessellator.vert -o build\VulkanApp2\vs_curveTessellator.spv
 	glslangValidator -V $(SrcVA)\shader\curveTessellator.tesc -o build\VulkanApp2\tcs_curveTessellator.spv
+	glslangValidator -V $(SrcVA)\shader\perlin1dTessellator.tesc -o build\VulkanApp2\tcs_perlin1dTessellator.spv
 	glslangValidator -V $(SrcVA)\shader\curveTessellator.tese -o build\VulkanApp2\tes_curveTessellator.spv
+	glslangValidator -V $(SrcVA)\shader\perlin1dTessellator.tese -o build\VulkanApp2\tes_perlin1dTessellator.spv
 	glslangValidator -V $(SrcVA)\shader\default.frag -o build\VulkanApp2\fs_default.spv
 	glslangValidator -V $(SrcVA)\shader\test.frag -o build\VulkanApp2\fs_test.spv
 	glslangValidator -V $(SrcVA)\shader\text.frag -o build\VulkanApp2\fs_text.spv

@@ -73,12 +73,16 @@ const Vertex verticesStar[] = {
 const float verticesPatches[] = { 0.0f, 1.0f, 2.0f };
 static float *verticesCurve;
 static uint32_t verticesCurveSize;
+static float *verticesPatches2;
+static uint32_t verticesPatches2Size;
 
 const uint16_t indicesPlane[] = { 0, 1, 2, 2, 3, 0 };
 const uint16_t indicesStar[] = { 0, 1, 2, 1, 3, 4, 4, 5, 6, 6, 7, 2, 2, 1, 4, 4, 6, 2 };
 const uint16_t indicesPatches[] = { 0,1, 1,2 };
 static uint16_t *indicesCurve;
 static uint32_t indicesCurveSize;
+static uint16_t *indicesPatches2;
+static uint32_t indicesPatches2Size;
 
 class Buffer
 {
@@ -321,7 +325,6 @@ public:
 	uint64_t getVertexOffset();
 	uint32_t getIndexCount();
 	uint32_t getFirstIndex();
-	virtual void *getPushConstants();
 };
 
 class RenderScene

@@ -771,6 +771,7 @@ void VulkanSetup::createLogicalDevice()
 	VkPhysicalDeviceFeatures deviceFeatures = {};
 	deviceFeatures.tessellationShader = VK_TRUE;
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.wideLines = VK_TRUE;
 
 	const unsigned int deviceExtensionCount = 1;
 	const char *deviceExtensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -1236,13 +1237,25 @@ VkVertexInputAttributeDescription *RenderObject::getAttributeDescriptions(uint32
 	return attributeDescriptions;
 }
 
-VkPipelineTessellationStateCreateInfo getTessellationStateCreateInfo(uint32_t patchControlPoints)
+VkPipelineTessellationStateCreateInfo *RenderObject::getTessellationStateCreateInfo(uint32_t patchControlPoints)
 {
-	VkPipelineTessellationStateCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-	createInfo.patchControlPoints = patchControlPoints;
+	VkPipelineTessellationStateCreateInfo *createInfo = new VkPipelineTessellationStateCreateInfo;
+	*createInfo = {};
+	createInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+	createInfo->patchControlPoints = patchControlPoints;
 
 	return createInfo;
+}
+
+VkPushConstantRange *RenderObject::createPushConstantRange(VkShaderStageFlags shaderStageFlags, uint32_t size)
+{
+	VkPushConstantRange *pushConstantRange = new VkPushConstantRange;
+
+	pushConstantRange->stageFlags = shaderStageFlags;
+	pushConstantRange->offset = 0;
+	pushConstantRange->size = size;
+
+	return pushConstantRange;
 }
 
 void RenderObject::createUniformBuffer()
@@ -1260,7 +1273,7 @@ void RenderObject::createPipelineLayout()
 	pipelineLayoutInfo.setLayoutCount = 1;
 	pipelineLayoutInfo.pSetLayouts = vulkanSetup->getDescriptorSetLayoutPtr();
 	pipelineLayoutInfo.pushConstantRangeCount = pushConstantRangeCount;
-	pipelineLayoutInfo.pPushConstantRanges = pushConstantRange;
+	pipelineLayoutInfo.pPushConstantRanges = pPushConstantRange;
 
 	if (vkCreatePipelineLayout(vulkanSetup->getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 		std::cout << "Failed to create pipeline layout!" << std::endl;
@@ -1274,7 +1287,26 @@ void RenderObject::createGraphicsPipeline()
 	VkShaderModule fragmentShaderModule = createShaderModule(fragmentShader);
 	VkPipelineShaderStageCreateInfo vertexShaderStageInfo = getShaderStageInfo(VK_SHADER_STAGE_VERTEX_BIT, vertexShaderModule);
 	VkPipelineShaderStageCreateInfo fragmentShaderStageInfo = getShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragmentShaderModule);
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShaderStageInfo, fragmentShaderStageInfo };
+	VkPipelineShaderStageCreateInfo *shaderStages;
+
+	if (stageCount > 2)
+	{
+		VkShaderModule tessellationControlShaderModule = createShaderModule(tessellationControlShader);
+		VkShaderModule tessellationEvaluationShaderModule = createShaderModule(tessellationEvaluationShader);
+		VkPipelineShaderStageCreateInfo tessellationControlShaderStageInfo = getShaderStageInfo(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, tessellationControlShaderModule);
+		VkPipelineShaderStageCreateInfo tessellationEvaluationShaderStageInfo = getShaderStageInfo(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, tessellationEvaluationShaderModule);
+		shaderStages = new VkPipelineShaderStageCreateInfo[4];
+		shaderStages[0] = vertexShaderStageInfo;
+		shaderStages[1] = tessellationControlShaderStageInfo;
+		shaderStages[2] = tessellationEvaluationShaderStageInfo;
+		shaderStages[3] = fragmentShaderStageInfo;
+	}
+	else
+	{
+		shaderStages = new VkPipelineShaderStageCreateInfo[2];
+		shaderStages[0] = vertexShaderStageInfo;
+		shaderStages[1] = fragmentShaderStageInfo;
+	}
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -1320,7 +1352,7 @@ void RenderObject::createGraphicsPipeline()
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizer.lineWidth = 1.0f;
+	rasterizer.lineWidth = 2.0f; // --> Feature muss extra aktiviert werden
 	rasterizer.cullMode = VK_CULL_MODE_NONE; // Front and Back werden gerendert
 	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
@@ -1462,6 +1494,8 @@ void RenderObject::createDescriptorSet()
 }
 
 uint32_t RenderObject::getPushConstantRangeCount() { return pushConstantRangeCount; }
+VkPushConstantRange RenderObject::getPushConstantRange() { return *pPushConstantRange; }
+void *RenderObject::getPushConstants() { return nullptr; }
 VkPipelineLayout RenderObject::getPipelineLayout() { return pipelineLayout; }
 VkPipeline RenderObject::getGraphicsPipeline() { return graphicsPipeline; }
 VkDescriptorSet *RenderObject::getDescriptorSetPtr() { return &descriptorSet; }
@@ -1573,13 +1607,15 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	indexData = new IndexData;
 	vertexData->addData((float*)verticesPlane, sizeof(verticesPlane));
 	vertexData->addData((float*)verticesStar, sizeof(verticesStar));
-	vecf(&verticesCurve, &verticesCurveSize, 0.0f, 0.01f, 101);
+	vecf(&verticesCurve, &verticesCurveSize, 0.0f, 0.001f, 1001);
 	vertexData->addData(verticesCurve, verticesCurveSize);
+	vertexData->addData((float*)verticesPatches, sizeof(verticesPatches));
 	indexData->addData((uint16_t*)indicesPlane, sizeof(indicesPlane));
 	indexData->addData((uint16_t*)indicesStar, sizeof(indicesStar));
-	vecs(&indicesCurve, &indicesCurveSize, 0, 101);
+	vecs(&indicesCurve, &indicesCurveSize, 0, 1001);
 	indexData->addData(indicesCurve, indicesCurveSize);
-	objectCount = 8;
+	indexData->addData((uint16_t*)indicesPatches, sizeof(indicesPatches));
+	objectCount = 9;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
 	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
@@ -1587,9 +1623,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	obj[2] = new FlatPerlin2d(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[3] = new Star(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[4] = new FilledCircle(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
-	obj[5] = new Circle(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
+	obj[5] = new PerlinCircle(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[6] = new Wave(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[7] = new Perlin1d(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
+	obj[8] = new CurveTessellator(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	textOverlay = new TextOverlay(vulkanSetup);
 	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &cam, key, vertexData, indexData);
 	char str[32];

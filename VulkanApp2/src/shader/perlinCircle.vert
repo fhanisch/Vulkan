@@ -1,14 +1,30 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-const float SEED_U = 1289.0;
-const float SEED_V = 587.0;
-const float scale = 10.0;
+const float PI = 3.14159;
 
-layout (location = 0) in vec3 color;
-layout (location = 1) in vec2 texCoords;
+layout (binding = 0) uniform UniformBufferObject
+{
+  mat4 mModel;
+  mat4 mView;
+  mat4 mProj;
+} ubo;
 
-layout (location = 0) out vec4 outColor;
+layout (push_constant) uniform PushConstants
+{
+	float seed_u;
+	float seed_v;
+} pushConsts;
+
+layout (location = 0) in float u;
+
+layout (location = 0) out vec3 fragColor;
+layout (location = 1) out vec2 texCoords;
+
+out gl_PerVertex
+{
+    vec4 gl_Position;
+};
 
 float random2d(vec2 pos, float seed)
 {
@@ -17,6 +33,8 @@ float random2d(vec2 pos, float seed)
 
 float perlin_interp2(float u, float v)
 {
+	float SEED_U = pushConsts.seed_u;
+	float SEED_V = pushConsts.seed_v;
 	float x = fract(u);
 	float y = fract(v);
 	vec2 g_00 = vec2(2.0*random2d(vec2(floor(u),floor(v)), SEED_U)-1.0, 2.0*random2d(vec2(floor(u),floor(v)), SEED_V)-1.0);
@@ -37,18 +55,17 @@ float perlin_interp2(float u, float v)
 
 void main()
 {
-	vec4 farbe;
-	float x = texCoords.x;
-	float y = texCoords.y;
+    float x,y;
 
-	float c = 2.0*perlin_interp2(scale*x, scale*y);
+    x = cos(u*2.0*PI);
+    y = -sin(u*2.0*PI);
 
-	if (c>=0.5)
-		farbe=vec4(0.5,0.25,0.0,1.0);
-	else if (c>-0.1 && c<0.5)
-		farbe=vec4(1.0,1.0,0.5,1.0);
-	else
-		farbe=vec4(0.0,0.0,1.0,1.0);
+	float dr = 0.8*perlin_interp2(x, y) + 0.2*perlin_interp2(4.0*x, 4.0*y);
 
-	outColor = farbe;
+	x=(1+dr)*x;
+	y=(1+dr)*y;
+
+    fragColor = vec3(0.0, 1.0, 0.0);
+    texCoords = vec2(0.0, 0.0);
+    gl_Position = ubo.mProj * ubo.mView * ubo.mModel * vec4(x, y, 0.0, 1.0);
 }

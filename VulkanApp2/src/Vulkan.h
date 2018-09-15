@@ -54,10 +54,10 @@ public:
 };
 
 const Vertex verticesPlane[] = {
-	{ { -1.0f,  1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
-	{ {  1.0f,  1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } },
-	{ {  1.0f, -1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
-	{ { -1.0f, -1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } }
+	{ {  -1.0f,   1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
+	{ {   1.0f,   1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } },
+	{ {   1.0f,  -1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
+	{ {  -1.0f,  -1.0f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } }
 };
 
 const Vertex verticesStar[] = {
@@ -70,11 +70,13 @@ const Vertex verticesStar[] = {
 	{ {  -0.25,  0.25f,  0.0f }, { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
 	{ {  -1.0f,   0.0f,  0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } }
 };
+const float verticesPatches[] = { 0.0f, 1.0f, 2.0f };
 static float *verticesCurve;
 static uint32_t verticesCurveSize;
 
 const uint16_t indicesPlane[] = { 0, 1, 2, 2, 3, 0 };
 const uint16_t indicesStar[] = { 0, 1, 2, 1, 3, 4, 4, 5, 6, 6, 7, 2, 2, 1, 4, 4, 6, 2 };
+const uint16_t indicesPatches[] = { 0,1, 1,2 };
 static uint16_t *indicesCurve;
 static uint32_t indicesCurveSize;
 
@@ -274,7 +276,7 @@ protected:
 	VkPrimitiveTopology topology;
 	VkPipelineTessellationStateCreateInfo *pTessellationStateCreateInfo;
 	uint32_t pushConstantRangeCount;
-	VkPushConstantRange *pushConstantRange;
+	VkPushConstantRange *pPushConstantRange;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	Texture *texture;
@@ -291,6 +293,8 @@ protected:
 	VkPipelineShaderStageCreateInfo getShaderStageInfo(VkShaderStageFlagBits stage, VkShaderModule module);
 	VkVertexInputBindingDescription getBindingDescription(uint32_t stride);
 	VkVertexInputAttributeDescription *getAttributeDescriptions(uint32_t count, VkFormat *formats, uint32_t *offsets);
+	VkPipelineTessellationStateCreateInfo *getTessellationStateCreateInfo(uint32_t patchControlPoints);
+	VkPushConstantRange *createPushConstantRange(VkShaderStageFlags shaderStageFlags, uint32_t size);
 	void createUniformBuffer();
 	void createPipelineLayout();
 	void createGraphicsPipeline();
@@ -308,6 +312,7 @@ public:
 	virtual void updateUniformBuffer();
 	virtual void motion();
 	uint32_t getPushConstantRangeCount();
+	VkPushConstantRange getPushConstantRange();
 	VkPipelineLayout getPipelineLayout();
 	VkPipeline getGraphicsPipeline();
 	VkDescriptorSet *getDescriptorSetPtr();
@@ -316,6 +321,7 @@ public:
 	uint64_t getVertexOffset();
 	uint32_t getIndexCount();
 	uint32_t getFirstIndex();
+	virtual void *getPushConstants();
 };
 
 class RenderScene

@@ -93,7 +93,14 @@ public:
 };
 
 //Entry Function
+#define CONSOLE
+#ifndef CONSOLE
+#define argc __argc
+#define argv __argv
+int WinMain(HINSTANCE , HINSTANCE , LPSTR , int )
+#else
 int main(int argc, char *argv[])
+#endif
 {
 	char *str = argv[0];
 	char *ptr = str;

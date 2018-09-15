@@ -23,7 +23,7 @@ Square::Square(	VulkanSetup *_vulkanSetup,
 	bindingDescription = getBindingDescription(sizeof(Vertex));
 	pTessellationStateCreateInfo = nullptr;
 	pushConstantRangeCount = 0;
-	pushConstantRange = nullptr;
+	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
@@ -78,7 +78,7 @@ Tacho::Tacho(	VulkanSetup *_vulkanSetup,
 	bindingDescription = getBindingDescription(sizeof(Vertex));
 	pTessellationStateCreateInfo = nullptr;
 	pushConstantRangeCount = 0;
-	pushConstantRange = nullptr;
+	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
@@ -117,7 +117,7 @@ FlatPerlin2d::FlatPerlin2d(	VulkanSetup *_vulkanSetup,
 	bindingDescription = getBindingDescription(sizeof(Vertex));
 	pTessellationStateCreateInfo = nullptr;
 	pushConstantRangeCount = 0;
-	pushConstantRange = nullptr;
+	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
@@ -156,7 +156,7 @@ Star::Star(	VulkanSetup *_vulkanSetup,
 	bindingDescription = getBindingDescription(sizeof(Vertex));
 	pTessellationStateCreateInfo = nullptr;
 	pushConstantRangeCount = 0;
-	pushConstantRange = nullptr;
+	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
@@ -206,7 +206,7 @@ FilledCircle::FilledCircle(	VulkanSetup *_vulkanSetup,
 	bindingDescription = getBindingDescription(sizeof(Vertex));
 	pTessellationStateCreateInfo = nullptr;
 	pushConstantRangeCount = 0;
-	pushConstantRange = nullptr;
+	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
@@ -255,16 +255,16 @@ void FilledCircle::motion()
 	}
 }
 
-Circle::Circle(	VulkanSetup *_vulkanSetup,
-				VkDescriptorPool _descriptorPool,
-				TextOverlay *_textOverlay,
-				mat4 *_mView,
-				bool *_key,
-				VertexData *vertexData,
-				IndexData *indexData)
-				: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+PerlinCircle::PerlinCircle(	VulkanSetup *_vulkanSetup,
+							VkDescriptorPool _descriptorPool,
+							TextOverlay *_textOverlay,
+							mat4 *_mView,
+							bool *_key,
+							VertexData *vertexData,
+							IndexData *indexData)
+							: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
 {
-	vertexShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/vs_circle.spv");
+	vertexShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/vs_perlinCircle.spv");
 	fragmentShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/fs_default.spv");
 	vertexOffset = vertexData->getOffset(2);
 	indexCount = indexData->getIndexCount(2);
@@ -277,8 +277,10 @@ Circle::Circle(	VulkanSetup *_vulkanSetup,
 	topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
 	bindingDescription = getBindingDescription(sizeof(float));
 	pTessellationStateCreateInfo = nullptr;
-	pushConstantRangeCount = 0;
-	pushConstantRange = nullptr;
+	pushConstantRangeCount = 1;
+	pPushConstantRange = createPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, sizeof(PushConstants));
+	pushConsts.seed_u = 158;
+	pushConsts.seed_v = 2767;
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
@@ -286,13 +288,31 @@ Circle::Circle(	VulkanSetup *_vulkanSetup,
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
 	getScale4(mModel, 1.5f, 1.5f, 1.0f);
+	commandBuffer = new Buffer(vulkanSetup->getPhysicalDevice(), vulkanSetup->getDevice(), vulkanSetup->getCommandPool(), vulkanSetup->getQueue());
 	createUniformBuffer();
 	createPipelineLayout();
 	createGraphicsPipeline();
 	createDescriptorSet();
 }
 
-Circle::~Circle() {}
+PerlinCircle::~PerlinCircle() {}
+
+void *PerlinCircle::getPushConstants() { return &pushConsts; }
+
+void PerlinCircle::motion()
+{
+	if (key[VK_SPACE] == true)
+	{
+		pushConsts.seed_u = (float)(clock() - startTime) / CLOCKS_PER_SEC;
+		pushConsts.seed_v = (float)(clock() - startTime) / CLOCKS_PER_SEC + 245.0f;
+		
+		commandBuffer->beginSingleTimeCommands();
+
+		vkCmdPushConstants(commandBuffer->getCommandBuffer(), pipelineLayout, pPushConstantRange->stageFlags, pPushConstantRange->offset, pPushConstantRange->size, &pushConsts);
+
+		commandBuffer->endSingleTimeCommands();
+	}
+}
 
 Wave::Wave(	VulkanSetup *_vulkanSetup,
 			VkDescriptorPool _descriptorPool,
@@ -318,7 +338,7 @@ Wave::Wave(	VulkanSetup *_vulkanSetup,
 	bindingDescription = getBindingDescription(sizeof(float));
 	pTessellationStateCreateInfo = nullptr;
 	pushConstantRangeCount = 0;
-	pushConstantRange = nullptr;
+	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
@@ -372,7 +392,7 @@ Perlin1d::Perlin1d(	VulkanSetup *_vulkanSetup,
 	bindingDescription = getBindingDescription(sizeof(float));
 	pTessellationStateCreateInfo = nullptr;
 	pushConstantRangeCount = 0;
-	pushConstantRange = nullptr;
+	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);
@@ -389,6 +409,50 @@ Perlin1d::Perlin1d(	VulkanSetup *_vulkanSetup,
 }
 
 Perlin1d::~Perlin1d() {}
+
+CurveTessellator::CurveTessellator(	VulkanSetup *_vulkanSetup,
+									VkDescriptorPool _descriptorPool,
+									TextOverlay *_textOverlay,
+									mat4 *_mView,
+									bool *_key,
+									VertexData *vertexData,
+									IndexData *indexData)
+									: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+{
+	mat4 A, B;
+	vertexShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/vs_curveTessellator.spv");
+	tessellationControlShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/tcs_curveTessellator.spv");
+	tessellationEvaluationShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/tes_curveTessellator.spv");
+	fragmentShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/fs_curveTessellator.spv");
+	vertexOffset = vertexData->getOffset(3);
+	indexCount = indexData->getIndexCount(3);
+	firstIndex = indexData->getFirstIndex(3);
+	stageCount = 4;
+	attributeDescriptionCount = 1;
+	VkFormat formats[] = { VK_FORMAT_R32_SFLOAT };
+	uint32_t offsets[] = { 0 };
+	pAttributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
+	topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+	bindingDescription = getBindingDescription(sizeof(float));
+	pTessellationStateCreateInfo = getTessellationStateCreateInfo(2);
+	pushConstantRangeCount = 0;
+	pPushConstantRange = nullptr;
+	uboBufferSize = 0x200;
+	identity4(mModel);
+	identity4(mProj);
+	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
+	color[0] = 1.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
+	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
+	getScale4(A, 2.0f, 1.0f, 1.0f);
+	getTrans4(B, -5.0f, 0.0f, 0.0f);
+	mult4(mModel, B, A);
+	createUniformBuffer();
+	createPipelineLayout();
+	createGraphicsPipeline();
+	createDescriptorSet();
+}
+
+CurveTessellator::~CurveTessellator() {}
 
 TxtObj::TxtObj(	VulkanSetup *_vulkanSetup,
 				VkDescriptorPool _descriptorPool,
@@ -413,7 +477,7 @@ TxtObj::TxtObj(	VulkanSetup *_vulkanSetup,
 	bindingDescription = getBindingDescription(sizeof(vec4));
 	pTessellationStateCreateInfo = nullptr;
 	pushConstantRangeCount = 0;
-	pushConstantRange = nullptr;
+	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	identity4(mProj);

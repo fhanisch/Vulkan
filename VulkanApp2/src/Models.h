@@ -70,17 +70,26 @@ public:
 	void motion();
 };
 
-class Circle : public RenderObject
+class PerlinCircle : public RenderObject
 {
+protected:
+	Buffer *commandBuffer;
+	struct PushConstants
+	{
+		float seed_u;
+		float seed_v;
+	} pushConsts;
 public:
-	Circle(	VulkanSetup *_vulkanSetup,
-			VkDescriptorPool _descriptorPool,
-			TextOverlay *_textOverlay,
-			mat4 *_mView,
-			bool *_key,
-			VertexData *vertexData,
-			IndexData *indexData);
-	~Circle();
+	PerlinCircle(	VulkanSetup *_vulkanSetup,
+					VkDescriptorPool _descriptorPool,
+					TextOverlay *_textOverlay,
+					mat4 *_mView,
+					bool *_key,
+					VertexData *vertexData,
+					IndexData *indexData);
+	~PerlinCircle();
+	void *getPushConstants();
+	void motion();
 };
 
 class Wave : public RenderObject
@@ -108,6 +117,19 @@ public:
 				VertexData *vertexData,
 				IndexData *indexData);
 	~Perlin1d();
+};
+
+class CurveTessellator : public RenderObject
+{
+public:
+	CurveTessellator(	VulkanSetup *_vulkanSetup,
+						VkDescriptorPool _descriptorPool,
+						TextOverlay *_textOverlay,
+						mat4 *_mView,
+						bool *_key,
+						VertexData *vertexData,
+						IndexData *indexData);
+	~CurveTessellator();
 };
 
 class TxtObj : public RenderObject

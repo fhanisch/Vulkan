@@ -28,15 +28,19 @@ VA: build build\VulkanApp2
 VAS: build build\VulkanApp2
 	glslangValidator -V $(SrcVA)\shader\default.vert -o build\VulkanApp2\vs_default.spv
 	glslangValidator -V $(SrcVA)\shader\text.vert -o build\VulkanApp2\vs_text.spv
-	glslangValidator -V $(SrcVA)\shader\circle.vert -o build\VulkanApp2\vs_circle.spv
+	glslangValidator -V $(SrcVA)\shader\perlinCircle.vert -o build\VulkanApp2\vs_perlinCircle.spv
 	glslangValidator -V $(SrcVA)\shader\welle.vert -o build\VulkanApp2\vs_welle.spv
 	glslangValidator -V $(SrcVA)\shader\perlin1d.vert -o build\VulkanApp2\vs_perlin1d.spv
+	glslangValidator -V $(SrcVA)\shader\curveTessellator.vert -o build\VulkanApp2\vs_curveTessellator.spv
+	glslangValidator -V $(SrcVA)\shader\curveTessellator.tesc -o build\VulkanApp2\tcs_curveTessellator.spv
+	glslangValidator -V $(SrcVA)\shader\curveTessellator.tese -o build\VulkanApp2\tes_curveTessellator.spv
 	glslangValidator -V $(SrcVA)\shader\default.frag -o build\VulkanApp2\fs_default.spv
 	glslangValidator -V $(SrcVA)\shader\test.frag -o build\VulkanApp2\fs_test.spv
 	glslangValidator -V $(SrcVA)\shader\text.frag -o build\VulkanApp2\fs_text.spv
 	glslangValidator -V $(SrcVA)\shader\powermeter.frag -o build\VulkanApp2\fs_powermeter.spv
 	glslangValidator -V $(SrcVA)\shader\perlin2d.frag -o build\VulkanApp2\fs_perlin2d.spv
 	glslangValidator -V $(SrcVA)\shader\circleFilled.frag -o build\VulkanApp2\fs_circleFilled.spv
+	glslangValidator -V $(SrcVA)\shader\curveTessellator.frag -o build\VulkanApp2\fs_curveTessellator.spv
 
 App: build
 	clang $(SrcPath)\main.cpp -I $(INC_VULKAN) -o $(BuildPath)\test.exe 

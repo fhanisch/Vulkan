@@ -9,8 +9,8 @@ layout(binding = 0) uniform UniformBufferObject {
 
 layout(location = 0) in vec2 mesh;
 
-layout (location = 0) out vec3 fragColor;
-layout (location = 1) out vec2 texCoords;
+layout(location = 0) out vec3 fragColor;
+layout(location = 1) out vec2 texCoords;
 layout(location = 2) out vec3 vertexPosition;
 layout(location = 3) out vec3 normalPosition;
 

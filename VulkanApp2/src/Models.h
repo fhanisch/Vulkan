@@ -144,6 +144,32 @@ public:
 	~Perlin1dTessellator();
 };
 
+class Plane : public RenderObject
+{
+public:
+	Plane(	VulkanSetup *_vulkanSetup,
+			VkDescriptorPool _descriptorPool,
+			TextOverlay *_textOverlay,
+			mat4 *_mView,
+			bool *_key,
+			VertexData *vertexData,
+			IndexData *indexData);
+	~Plane();
+};
+
+class Sphere : public RenderObject
+{
+public:
+	Sphere(	VulkanSetup *_vulkanSetup,
+			VkDescriptorPool _descriptorPool,
+			TextOverlay *_textOverlay,
+			mat4 *_mView,
+			bool *_key,
+			VertexData *vertexData,
+			IndexData *indexData);
+	~Sphere();
+};
+
 class TxtObj : public RenderObject
 {
 public:

@@ -75,6 +75,8 @@ static float *verticesCurve;
 static uint32_t verticesCurveSize;
 static float *verticesPatches2;
 static uint32_t verticesPatches2Size;
+static float *meshGridVertices;
+static uint32_t meshGridVerticesSize;
 
 const uint16_t indicesPlane[] = { 0, 1, 2, 2, 3, 0 };
 const uint16_t indicesStar[] = { 0, 1, 2, 1, 3, 4, 4, 5, 6, 6, 7, 2, 2, 1, 4, 4, 6, 2 };
@@ -83,6 +85,8 @@ static uint16_t *indicesCurve;
 static uint32_t indicesCurveSize;
 static uint16_t *indicesPatches2;
 static uint32_t indicesPatches2Size;
+static uint16_t *meshGridIndices;
+static uint32_t meshGridIndicesSize;
 
 class Buffer
 {
@@ -331,7 +335,7 @@ class RenderScene
 {
 protected:
 	bool *key;
-	mat4 cam;
+	mat4 cam, cam3d;
 	VulkanSetup *vulkanSetup;
 	uint32_t objectCount;
 	RenderObject **obj;
@@ -343,6 +347,7 @@ protected:
 	TextOverlay *textOverlay;
 	VkDescriptorPool descriptorPool;
 	VkCommandBuffer *commandBuffers;
+	void printMatrix(mat4 M, float x, float y);
 	void createVertexBuffer();
 	void createIndexBuffer();
 	void createDescriptorPool();

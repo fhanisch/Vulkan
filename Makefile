@@ -32,6 +32,7 @@ VAS: build build\VulkanApp2
 	glslangValidator -V $(SrcVA)\shader\welle.vert -o build\VulkanApp2\vs_welle.spv
 	glslangValidator -V $(SrcVA)\shader\perlin1d.vert -o build\VulkanApp2\vs_perlin1d.spv
 	glslangValidator -V $(SrcVA)\shader\curveTessellator.vert -o build\VulkanApp2\vs_curveTessellator.spv
+	glslangValidator -V $(SrcVA)\shader\sphere.vert -o build\VulkanApp2\vs_sphere.spv
 	glslangValidator -V $(SrcVA)\shader\curveTessellator.tesc -o build\VulkanApp2\tcs_curveTessellator.spv
 	glslangValidator -V $(SrcVA)\shader\perlin1dTessellator.tesc -o build\VulkanApp2\tcs_perlin1dTessellator.spv
 	glslangValidator -V $(SrcVA)\shader\curveTessellator.tese -o build\VulkanApp2\tes_curveTessellator.spv
@@ -43,6 +44,8 @@ VAS: build build\VulkanApp2
 	glslangValidator -V $(SrcVA)\shader\perlin2d.frag -o build\VulkanApp2\fs_perlin2d.spv
 	glslangValidator -V $(SrcVA)\shader\circleFilled.frag -o build\VulkanApp2\fs_circleFilled.spv
 	glslangValidator -V $(SrcVA)\shader\curveTessellator.frag -o build\VulkanApp2\fs_curveTessellator.spv
+	glslangValidator -V $(SrcVA)\shader\schachbrett.frag -o build\VulkanApp2\fs_schachbrett.spv
+	glslangValidator -V $(SrcVA)\shader\schachbrett_ADSperFrag.frag -o build\VulkanApp2\fs_schachbrett_ADSperFrag.spv
 
 App: build
 	clang $(SrcPath)\main.cpp -I $(INC_VULKAN) -o $(BuildPath)\test.exe 

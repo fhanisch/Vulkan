@@ -1602,8 +1602,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	vulkanSetup = _vulkanSetup;
 	key = _key;
 	identity4(cam);
+	identity4(cam3d);
 	vertexData = new VertexData;
 	indexData = new IndexData;
+	// Vertex Data
 	vertexData->addData((float*)verticesPlane, sizeof(verticesPlane));
 	vertexData->addData((float*)verticesStar, sizeof(verticesStar));
 	vecf(&verticesCurve, &verticesCurveSize, 0.0f, 0.001f, 1001);
@@ -1612,6 +1614,9 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	uint16_t patchesCount = 101;
 	vecf(&verticesPatches2, &verticesPatches2Size, 0.0f, 1.0f, patchesCount);
 	vertexData->addData(verticesPatches2, verticesPatches2Size);
+	createMeshGrid(&meshGridVertices, &meshGridVerticesSize, 101, 101);
+	vertexData->addData(meshGridVertices, meshGridVerticesSize);
+	// Index Data
 	indexData->addData((uint16_t*)indicesPlane, sizeof(indicesPlane));
 	indexData->addData((uint16_t*)indicesStar, sizeof(indicesStar));
 	vecs(&indicesCurve, &indicesCurveSize, 0, 1001);
@@ -1625,7 +1630,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 		indicesPatches2[2 * i + 1] = i + 1;
 	}
 	indexData->addData(indicesPatches2, indicesPatches2Size);
-	objectCount = 10;
+	createMeshGridIndices(&meshGridIndices, &meshGridIndicesSize, 101, 101, 0);
+	indexData->addData(meshGridIndices, meshGridIndicesSize);
+	// Objects
+	objectCount = 12;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
 	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
@@ -1638,16 +1646,15 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	obj[7] = new Perlin1d(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[8] = new CurveTessellator(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
 	obj[9] = new Perlin1dTessellator(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
+	obj[10] = new Plane(vulkanSetup, descriptorPool, nullptr, &cam3d, key, vertexData, indexData);
+	obj[11] = new Sphere(vulkanSetup, descriptorPool, nullptr, &cam3d, key, vertexData, indexData);
 	textOverlay = new TextOverlay(vulkanSetup);
 	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &cam, key, vertexData, indexData);
 	char str[32];
-	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->beginTextUpdate();
+	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->addText(str, 5.0f, 5.0f);
-	sprintf(str, "x=%5.1f", 0.0f);
-	textOverlay->addText(str, 5.0f, 35.0f);
-	sprintf(str, "y=%5.1f", 0.0f);
-	textOverlay->addText(str, 5.0f, 65.0f);
+	printMatrix(cam3d, 5.0, 35.0);
 	textOverlay->endTextUpdate();
 	createVertexBuffer();
 	createIndexBuffer();
@@ -1655,6 +1662,23 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 }
 
 RenderScene::~RenderScene() {}
+
+void RenderScene::printMatrix(mat4 M, float x, float y)
+{
+	char str[32];
+	float xOffset;
+	for (unsigned int i = 0; i < 4; i++)
+	{
+		xOffset = x;
+		for (unsigned int j = 0; j < 4; j++)
+		{
+			sprintf(str, "%6.2f", M[j][i]);
+			textOverlay->addText(str, xOffset, y);
+			xOffset += 125.0;
+		}
+		y += 30.0;
+	}
+}
 
 void RenderScene::createVertexBuffer()
 {
@@ -1766,49 +1790,94 @@ void RenderScene::updateUniformBuffers()
 
 void RenderScene::camMotion()
 {
-	for (uint32_t i = 0; i < objectCount; i++) obj[i]->motion();
+	//for (uint32_t i = 0; i < objectCount; i++) obj[i]->motion();
 
-	mat4 T, tmp;
+	//2d cam motion
+	mat4 A, T, Ry, tmp;
 
-	if (key[0x41] == true)
+	if (key[0x4a] == true)
 	{
 		dup4(tmp, cam);
 		getTrans4(T, 0.1f, 0.0f, 0.0f);
 		mult4(cam, T, tmp);
 	}
 
-	if (key[0x44] == true)
+	if (key[0x4c] == true)
 	{
 		dup4(tmp, cam);
 		getTrans4(T, -0.1f, 0.0f, 0.0f);
 		mult4(cam, T, tmp);
 	}
 
-	if (key[0x53] == true)
+	if (key[0x4b] == true)
 	{
 		dup4(tmp, cam);
 		getTrans4(T, 0.0f, -0.1f, 0.0f);
 		mult4(cam, T, tmp);
 	}
 
-	if (key[0x57] == true)
+	if (key[0x49] == true)
 	{
 		dup4(tmp, cam);
 		getTrans4(T, 0.0f, 0.1f, 0.0f);
 		mult4(cam, T, tmp);
 	}
+
+	//3d cam motion
+	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, v = 0.05f, w = 0.05f;
+	if (key[0x57] == true)
+		dz = v;
+
+	if (key[0x53] == true)
+		dz = -v;
+
+	if (key[0x41] == true)
+		dx = v;
+
+	if (key[0x44] == true)
+		dx = -v;
+
+	if (key[0x58] == true)
+		dy = v;
+
+	if (key[0x59] == true)
+		dy = -v;
+
+	if (key[VK_LEFT] == true)
+	{
+		dphi = w;
+		//phi += dphi;
+	}
+	if (key[VK_RIGHT] == true)
+	{
+		dphi = -w;
+		//phi += dphi;
+	}
+	if (key[VK_UP] == true)
+	{
+		dtheta = w;
+		//theta += dtheta;
+	}
+	if (key[VK_DOWN] == true)
+	{
+		dtheta = -w;
+		//theta += dtheta;
+	}
+
+	getTrans4(T, dx, dy, dz);
+	getRotY4(Ry, dphi);
+	dup4(tmp, cam3d);
+	mult4(A, Ry, T);
+	mult4(cam3d, A, tmp);
 }
 
 void RenderScene::updateTextOverlay(uint32_t fps)
 {
 	char str[32];
-	sprintf(str, "FPS: %-4u", fps);
 	textOverlay->beginTextUpdate();
+	sprintf(str, "FPS: %-4u", fps);
 	textOverlay->addText(str, 5.0f, 5.0f);
-	sprintf(str, "x=%5.1f", cam[3][0]);
-	textOverlay->addText(str, 5.0f, 35.0f);
-	sprintf(str, "y=%5.1f", cam[3][1]);
-	textOverlay->addText(str, 5.0f, 65.0f);
+	printMatrix(cam3d, 5.0, 35.0);
 	textOverlay->endTextUpdate();
 }
 

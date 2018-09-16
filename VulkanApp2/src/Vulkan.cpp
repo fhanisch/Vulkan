@@ -1601,8 +1601,11 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 {
 	vulkanSetup = _vulkanSetup;
 	key = _key;
-	identity4(cam);
-	identity4(cam3d);
+	identity4(mView);
+	identity4(mView2);
+	identity4(cam.M);
+	cam.yPos = 2.0f;
+	cam.zPos = 2.0f;
 	vertexData = new VertexData;
 	indexData = new IndexData;
 	// Vertex Data
@@ -1636,25 +1639,25 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	objectCount = 12;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
-	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
-	obj[1] = new Tacho(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
-	obj[2] = new FlatPerlin2d(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
-	obj[3] = new Star(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
-	obj[4] = new FilledCircle(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
-	obj[5] = new PerlinCircle(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
-	obj[6] = new Wave(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
-	obj[7] = new Perlin1d(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
-	obj[8] = new CurveTessellator(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
-	obj[9] = new Perlin1dTessellator(vulkanSetup, descriptorPool, nullptr, &cam, key, vertexData, indexData);
-	obj[10] = new Plane(vulkanSetup, descriptorPool, nullptr, &cam3d, key, vertexData, indexData);
-	obj[11] = new Sphere(vulkanSetup, descriptorPool, nullptr, &cam3d, key, vertexData, indexData);
+	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
+	obj[1] = new Tacho(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
+	obj[2] = new FlatPerlin2d(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
+	obj[3] = new Star(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
+	obj[4] = new FilledCircle(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
+	obj[5] = new PerlinCircle(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
+	obj[6] = new Wave(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
+	obj[7] = new Perlin1d(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
+	obj[8] = new CurveTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
+	obj[9] = new Perlin1dTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
+	obj[10] = new Plane(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
+	obj[11] = new Sphere(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
 	textOverlay = new TextOverlay(vulkanSetup);
-	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &cam, key, vertexData, indexData);
+	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &mView2, key, vertexData, indexData);
 	char str[32];
 	textOverlay->beginTextUpdate();
 	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->addText(str, 5.0f, 5.0f);
-	printMatrix(cam3d, 5.0, 35.0);
+	printMatrix(cam.M, 5.0, 35.0);
 	textOverlay->endTextUpdate();
 	createVertexBuffer();
 	createIndexBuffer();
@@ -1793,82 +1796,59 @@ void RenderScene::camMotion()
 	//for (uint32_t i = 0; i < objectCount; i++) obj[i]->motion();
 
 	//2d cam motion
-	mat4 A, T, Ry, tmp;
+	mat4 A, B, T, dT, R, Rx, Ry, Rz, tmp;
 
 	if (key[0x4a] == true)
 	{
-		dup4(tmp, cam);
+		dup4(tmp, mView2);
 		getTrans4(T, 0.1f, 0.0f, 0.0f);
-		mult4(cam, T, tmp);
+		mult4(mView2, T, tmp);
 	}
 
 	if (key[0x4c] == true)
 	{
-		dup4(tmp, cam);
+		dup4(tmp, mView2);
 		getTrans4(T, -0.1f, 0.0f, 0.0f);
-		mult4(cam, T, tmp);
+		mult4(mView2, T, tmp);
 	}
 
 	if (key[0x4b] == true)
 	{
-		dup4(tmp, cam);
+		dup4(tmp, mView2);
 		getTrans4(T, 0.0f, -0.1f, 0.0f);
-		mult4(cam, T, tmp);
+		mult4(mView2, T, tmp);
 	}
 
 	if (key[0x49] == true)
 	{
-		dup4(tmp, cam);
+		dup4(tmp, mView2);
 		getTrans4(T, 0.0f, 0.1f, 0.0f);
-		mult4(cam, T, tmp);
+		mult4(mView2, T, tmp);
 	}
 
 	//3d cam motion
-	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, v = 0.05f, w = 0.05f;
-	if (key[0x57] == true)
-		dz = v;
+	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f, v = 0.02f, w = 0.05f;
+	if (key[0x57]) dz -= v;
+	if (key[0x53]) dz += v;
+	if (key[0x41]) dx -= v;
+	if (key[0x44]) dx += v;
+	if (key[0x58]) dy -= v;
+	if (key[0x59]) dy += v;
+	if (key[VK_LEFT]) dphi -= w;
+	if (key[VK_RIGHT]) dphi += w;
+	if (key[VK_UP]) dtheta -= w;
+	if (key[VK_DOWN]) dtheta += w;
 
-	if (key[0x53] == true)
-		dz = -v;
-
-	if (key[0x41] == true)
-		dx = v;
-
-	if (key[0x44] == true)
-		dx = -v;
-
-	if (key[0x58] == true)
-		dy = v;
-
-	if (key[0x59] == true)
-		dy = -v;
-
-	if (key[VK_LEFT] == true)
-	{
-		dphi = w;
-		//phi += dphi;
-	}
-	if (key[VK_RIGHT] == true)
-	{
-		dphi = -w;
-		//phi += dphi;
-	}
-	if (key[VK_UP] == true)
-	{
-		dtheta = w;
-		//theta += dtheta;
-	}
-	if (key[VK_DOWN] == true)
-	{
-		dtheta = -w;
-		//theta += dtheta;
-	}
-
-	getTrans4(T, dx, dy, dz);
-	getRotY4(Ry, dphi);
-	dup4(tmp, cam3d);
-	mult4(A, Ry, T);
-	mult4(cam3d, A, tmp);
+	getRotX4(Rx, cam.xAngle += dtheta);
+	getRotY4(Ry, cam.yAngle += dphi);
+	mult4(R, Ry, Rx);
+	getTrans4(T, cam.xPos, cam.yPos, cam.zPos);
+	getTrans4(dT, dx, dy, dz);
+	mult4(cam.M, T, R);
+	dup4(tmp, cam.M);
+	mult4(cam.M, tmp, dT);
+	cam.xPos = cam.M[3][0]; cam.yPos = cam.M[3][1]; cam.zPos = cam.M[3][2];
+	invert4(mView, cam.M);
 }
 
 void RenderScene::updateTextOverlay(uint32_t fps)
@@ -1877,7 +1857,7 @@ void RenderScene::updateTextOverlay(uint32_t fps)
 	textOverlay->beginTextUpdate();
 	sprintf(str, "FPS: %-4u", fps);
 	textOverlay->addText(str, 5.0f, 5.0f);
-	printMatrix(cam3d, 5.0, 35.0);
+	printMatrix(cam.M, 5.0, 35.0);
 	textOverlay->endTextUpdate();
 }
 

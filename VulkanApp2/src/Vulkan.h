@@ -334,8 +334,13 @@ public:
 class RenderScene
 {
 protected:
+	struct Camera {
+		float xPos, yPos, zPos;
+		float xAngle, yAngle, zAngle;
+		mat4 M;
+	} cam;
 	bool *key;
-	mat4 cam, cam3d;
+	mat4 mView, mView2;
 	VulkanSetup *vulkanSetup;
 	uint32_t objectCount;
 	RenderObject **obj;

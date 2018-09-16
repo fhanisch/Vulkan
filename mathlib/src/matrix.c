@@ -104,7 +104,7 @@ void mult4(mat4 M, mat4 a, mat4 b)
 	int k, r, c;
 	for (c = 0; c < 4; ++c)
 		for (r = 0; r < 4; ++r) {
-			M[c][r] = 0.f;
+			M[c][r] = 0.0f;
 			for (k = 0; k < 4; ++k) M[c][r] += a[k][r] * b[c][k];
 		}
 }

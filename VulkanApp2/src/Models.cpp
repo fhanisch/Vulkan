@@ -505,7 +505,7 @@ Plane::Plane(	VulkanSetup *_vulkanSetup,
 				IndexData *indexData)
 				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
 {
-	mat4 A, B;
+	mat4 S, T, Rx, tmp;
 	vertexShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/vs_default.spv");
 	fragmentShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/fs_schachbrett.spv");
 	vertexOffset = vertexData->getOffset(0);
@@ -526,9 +526,11 @@ Plane::Plane(	VulkanSetup *_vulkanSetup,
 	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 100.0f);
 	color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
-	getScale4(A, 10.0f, 1.0f, 10.0f);
-	getRotX4(B, PI / 2.0f);
-	mult4(mModel, A, B);
+	getScale4(S, 10.0f, 1.0f, 10.0f);
+	getRotX4(Rx, PI / 2.0f);
+	getTrans4(T, 0.0f, 0.0f, 0.0f);
+	mult4(tmp, S, Rx);
+	mult4(mModel, T, tmp);
 	createUniformBuffer();
 	createPipelineLayout();
 	createGraphicsPipeline();
@@ -566,6 +568,7 @@ Sphere::Sphere(	VulkanSetup *_vulkanSetup,
 	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 100.0f);
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
+	//getScale4(mModel, 50.0f, 50.0f, 50.0f);
 	getTrans4(mModel, 0.0f, 1.5f, 0.0f);
 	createUniformBuffer();
 	createPipelineLayout();

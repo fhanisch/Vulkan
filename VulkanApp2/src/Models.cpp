@@ -225,29 +225,28 @@ FilledCircle::~FilledCircle() {}
 void FilledCircle::motion()
 {
 	mat4 T, tmp;
-
-	if (key[VK_LEFT] == true)
+	if (key[0x56] == true)
 	{
 		dup4(tmp, mModel);
 		getTrans4(T, -0.1f, 0.0f, 0.0f);
 		mult4(mModel, T, tmp);
 	}
 
-	if (key[VK_RIGHT] == true)
+	if (key[0x4e] == true)
 	{
 		dup4(tmp, mModel);
 		getTrans4(T, 0.1f, 0.0f, 0.0f);
 		mult4(mModel, T, tmp);
 	}
 
-	if (key[VK_UP] == true)
+	if (key[0x47] == true)
 	{
 		dup4(tmp, mModel);
 		getTrans4(T, 0.0f, -0.1f, 0.0f);
 		mult4(mModel, T, tmp);
 	}
 
-	if (key[VK_DOWN] == true)
+	if (key[0x42] == true)
 	{
 		dup4(tmp, mModel);
 		getTrans4(T, 0.0f, 0.1f, 0.0f);
@@ -528,7 +527,7 @@ Plane::Plane(	VulkanSetup *_vulkanSetup,
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
 	getScale4(S, 10.0f, 1.0f, 10.0f);
 	getRotX4(Rx, PI / 2.0f);
-	getTrans4(T, 0.0f, 0.0f, 0.0f);
+	getTrans4(T, 0.0f, 100.0f, 0.0f);
 	mult4(tmp, S, Rx);
 	mult4(mModel, T, tmp);
 	createUniformBuffer();
@@ -568,8 +567,8 @@ Sphere::Sphere(	VulkanSetup *_vulkanSetup,
 	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 100.0f);
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
-	//getScale4(mModel, 50.0f, 50.0f, 50.0f);
-	getTrans4(mModel, 0.0f, 1.5f, 0.0f);
+	getScale4(mModel, 100.0f, 100.0f, 100.0f);
+	//getTrans4(mModel, 0.0f, 1.5f, 0.0f);
 	createUniformBuffer();
 	createPipelineLayout();
 	createGraphicsPipeline();

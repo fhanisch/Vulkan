@@ -85,8 +85,8 @@ void getRotY4(mat4 M, float phi)
 	float c = cosf(phi);
 
 	identity4(M);
-	M[0][0] = c; M[2][0] = -s;
-	M[0][2] = s; M[2][2] = c;
+	M[0][0] = c; M[2][0] = s;
+	M[0][2] = -s; M[2][2] = c;
 }
 
 void getRotZ4(mat4 M, float phi)

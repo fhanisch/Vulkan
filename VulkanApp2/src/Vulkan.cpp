@@ -1604,8 +1604,8 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	identity4(mView);
 	identity4(mView2);
 	identity4(cam.M);
-	cam.yPos = 2.0f;
-	cam.zPos = 2.0f;
+	cam.yPos = 101.0f;
+	cam.zPos = 0.0f;
 	vertexData = new VertexData;
 	indexData = new IndexData;
 	// Vertex Data
@@ -1793,7 +1793,7 @@ void RenderScene::updateUniformBuffers()
 
 void RenderScene::camMotion()
 {
-	//for (uint32_t i = 0; i < objectCount; i++) obj[i]->motion();
+	for (uint32_t i = 0; i < objectCount; i++) obj[i]->motion();
 
 	//2d cam motion
 	mat4 A, B, T, dT, R, Rx, Ry, Rz, tmp;
@@ -1827,6 +1827,7 @@ void RenderScene::camMotion()
 	}
 
 	//3d cam motion
+	/* translatorisch
 	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f, v = 0.02f, w = 0.05f;
 	if (key[0x57]) dz -= v;
 	if (key[0x53]) dz += v;
@@ -1834,8 +1835,8 @@ void RenderScene::camMotion()
 	if (key[0x44]) dx += v;
 	if (key[0x58]) dy -= v;
 	if (key[0x59]) dy += v;
-	if (key[VK_LEFT]) dphi -= w;
-	if (key[VK_RIGHT]) dphi += w;
+	if (key[VK_LEFT]) dphi += w;
+	if (key[VK_RIGHT]) dphi -= w;
 	if (key[VK_UP]) dtheta -= w;
 	if (key[VK_DOWN]) dtheta += w;
 
@@ -1844,11 +1845,32 @@ void RenderScene::camMotion()
 	mult4(R, Ry, Rx);
 	getTrans4(T, cam.xPos, cam.yPos, cam.zPos);
 	getTrans4(dT, dx, dy, dz);
-	mult4(cam.M, T, R);
-	dup4(tmp, cam.M);
-	mult4(cam.M, tmp, dT);
+	mult4(A, T, R);
+	mult4(cam.M, A, dT);
 	cam.xPos = cam.M[3][0]; cam.yPos = cam.M[3][1]; cam.zPos = cam.M[3][2];
-	invert4(mView, cam.M);
+	invert4(mView, cam.M); // --> Todo: invertieren durch teilw. transponieren
+	*/
+
+	// rotatorisch
+	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f, v = 0.01f, w = 0.05f;
+	if (key[0x57]) dtheta -= v;
+	if (key[0x53]) dtheta += v;
+	if (key[0x41]) dphi += v;
+	if (key[0x44]) dphi -= v;
+	if (key[VK_LEFT]) dpsi += v;
+	if (key[VK_RIGHT]) dpsi -= v;
+	//if (key[VK_UP]) dtheta -= w;
+	//if (key[VK_DOWN]) dtheta += w;
+
+	getRotX4(Rx, cam.xAngle += dtheta);
+	getRotY4(Ry, cam.yAngle += dpsi);
+	getRotZ4(Rz, cam.zAngle += dphi);
+	getTrans4(T, cam.xPos, cam.yPos, cam.zPos);
+	mult4(A, Rz, Rx);
+	mult4(R, Ry, A);
+	mult4(cam.M, R, T);
+	//cam.xPos = cam.M[3][0]; cam.yPos = cam.M[3][1]; cam.zPos = cam.M[3][2];
+	invert4(mView, cam.M); // --> Todo: invertieren durch teilw. transponieren
 }
 
 void RenderScene::updateTextOverlay(uint32_t fps)

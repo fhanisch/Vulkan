@@ -485,12 +485,12 @@ public:
 
 		if (key[VK_LEFT] == true)
 		{
-			dphi = w;
+			dphi = -w;
 			phi += dphi;
 		}
 		if (key[VK_RIGHT] == true)
 		{
-			dphi = -w;
+			dphi = w;
 			phi += dphi;
 		}
 		if (key[VK_UP] == true)
@@ -508,8 +508,7 @@ public:
 		getRotY4(Ry, phi);
 		mult4(R, Rx, Ry);
 		getTrans4(T, -cam[3][0], -cam[3][1], -cam[3][2]);
-		mult4(mView, R, T);
-		dup4(A, mView);
+		mult4(A, R, T);
 		getTrans4(B, dx, dy, dz);
 		mult4(mView, B, A);
 		invert4(cam, mView);

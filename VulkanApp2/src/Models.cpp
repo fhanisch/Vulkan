@@ -538,7 +538,7 @@ Plane::Plane(	VulkanSetup *_vulkanSetup,
 
 Plane::~Plane() {}
 
-Sphere::Sphere(	VulkanSetup *_vulkanSetup,
+Planet::Planet(	VulkanSetup *_vulkanSetup,
 				VkDescriptorPool _descriptorPool,
 				TextOverlay *_textOverlay,
 				mat4 *_mView,
@@ -569,6 +569,45 @@ Sphere::Sphere(	VulkanSetup *_vulkanSetup,
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
 	getScale4(mModel, 100.0f, 100.0f, 100.0f);
 	//getTrans4(mModel, 0.0f, 1.5f, 0.0f);
+	createUniformBuffer();
+	createPipelineLayout();
+	createGraphicsPipeline();
+	createDescriptorSet();
+}
+
+Planet::~Planet() {}
+
+Sphere::Sphere(	VulkanSetup *_vulkanSetup,
+				VkDescriptorPool _descriptorPool,
+				TextOverlay *_textOverlay,
+				mat4 *_mView,
+				bool *_key,
+				VertexData *vertexData,
+				IndexData *indexData)
+				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+{
+	vertexShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/vs_sphere.spv");
+	fragmentShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/fs_test2.spv");
+	vertexOffset = vertexData->getOffset(5);
+	indexCount = indexData->getIndexCount(5);
+	firstIndex = indexData->getFirstIndex(5);
+	stageCount = 2;
+	attributeDescriptionCount = 1;
+	VkFormat formats[] = { VK_FORMAT_R32G32_SFLOAT };
+	uint32_t offsets[] = { 0 };
+	pAttributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
+	topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	bindingDescription = getBindingDescription(2 * sizeof(float));
+	pTessellationStateCreateInfo = nullptr;
+	pushConstantRangeCount = 0;
+	pPushConstantRange = nullptr;
+	uboBufferSize = 0x200;
+	identity4(mModel);
+	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 100.0f);
+	color[0] = 1.0f; color[1] = 0.0f; color[2] = 1.0f; color[3] = 1.0f;
+	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
+	//getScale4(mModel, 100.0f, 100.0f, 100.0f);
+	getTrans4(mModel, 0.0f, 101.5f, 0.0f);
 	createUniformBuffer();
 	createPipelineLayout();
 	createGraphicsPipeline();

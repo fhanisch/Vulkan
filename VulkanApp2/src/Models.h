@@ -157,6 +157,19 @@ public:
 	~Plane();
 };
 
+class Planet : public RenderObject
+{
+public:
+	Planet(	VulkanSetup *_vulkanSetup,
+			VkDescriptorPool _descriptorPool,
+			TextOverlay *_textOverlay,
+			mat4 *_mView,
+			bool *_key,
+			VertexData *vertexData,
+			IndexData *indexData);
+	~Planet();
+};
+
 class Sphere : public RenderObject
 {
 public:

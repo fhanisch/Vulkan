@@ -1637,7 +1637,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	createMeshGridIndices(&meshGridIndices, &meshGridIndicesSize, 101, 101, 0);
 	indexData->addData(meshGridIndices, meshGridIndicesSize);
 	// Objects
-	objectCount = 12;
+	objectCount = 13;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
 	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
@@ -1651,7 +1651,8 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	obj[8] = new CurveTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
 	obj[9] = new Perlin1dTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
 	obj[10] = new Plane(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
-	obj[11] = new Sphere(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
+	obj[11] = new Planet(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
+	obj[12] = new Sphere(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
 	textOverlay = new TextOverlay(vulkanSetup);
 	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &mView2, key, vertexData, indexData);
 	char str[32];

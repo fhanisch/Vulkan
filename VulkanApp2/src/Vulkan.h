@@ -265,6 +265,18 @@ public:
 	VkSampler getTextureSampler();
 };
 
+class ObjectModel
+{
+protected:
+	const char *filename;
+	VertexData *vertexData;
+	IndexData *indexData;
+	void loadModel();
+public:
+	ObjectModel(const char *_filename, VertexData *_vertexData, IndexData *_indexData);
+	~ObjectModel();
+};
+
 class RenderObject
 {
 protected:

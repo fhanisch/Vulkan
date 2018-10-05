@@ -547,7 +547,7 @@ Planet::Planet(	VulkanSetup *_vulkanSetup,
 				IndexData *indexData)
 				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
 {
-	vertexShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/vs_sphere.spv");
+	vertexShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/vs_perlinSphere.spv");
 	fragmentShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/fs_schachbrett_ADSperFrag.spv");
 	vertexOffset = vertexData->getOffset(5);
 	indexCount = indexData->getIndexCount(5);
@@ -615,6 +615,44 @@ Sphere::Sphere(	VulkanSetup *_vulkanSetup,
 }
 
 Sphere::~Sphere() {}
+
+Cube::Cube(	VulkanSetup *_vulkanSetup,
+			VkDescriptorPool _descriptorPool,
+			TextOverlay *_textOverlay,
+			mat4 *_mView,
+			bool *_key,
+			VertexData *vertexData,
+			IndexData *indexData)
+			:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+{
+	vertexShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/vs_default.spv");
+	fragmentShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/fs_test.spv");
+	vertexOffset = vertexData->getOffset(6);
+	indexCount = indexData->getIndexCount(6);
+	firstIndex = indexData->getFirstIndex(6);
+	stageCount = 2;
+	attributeDescriptionCount = 3;
+	VkFormat formats[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
+	uint32_t offsets[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
+	pAttributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
+	topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	bindingDescription = getBindingDescription(sizeof(Vertex));
+	pTessellationStateCreateInfo = nullptr;
+	pushConstantRangeCount = 0;
+	pPushConstantRange = nullptr;
+	uboBufferSize = 0x200;
+	identity4(mModel);
+	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 100.0f);
+	color[0] = 1.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
+	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
+	getTrans4(mModel, 0.0f, 110.0f, 0.0f);
+	createUniformBuffer();
+	createPipelineLayout();
+	createGraphicsPipeline();
+	createDescriptorSet();
+}
+
+Cube::~Cube() {}
 
 TxtObj::TxtObj(	VulkanSetup *_vulkanSetup,
 				VkDescriptorPool _descriptorPool,

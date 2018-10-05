@@ -3,6 +3,8 @@
 // stb_image.h --> muss hier inkludiert werden statt in Header-Datei, da sonst doppelter Code
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
 #include "stb_font_consolas_24_latin1.inl"
 
 // Max. number of chars the text overlay buffer can hold
@@ -1151,6 +1153,48 @@ VkImageView Texture::getTextureImageView() { return textureImage->getImageView()
 
 VkSampler Texture::getTextureSampler() { return textureSampler; }
 
+ObjectModel::ObjectModel(const char *_filename, VertexData *_vertexData, IndexData *_indexData)
+{
+	filename = _filename;
+	vertexData = _vertexData;
+	indexData = _indexData;
+	loadModel();
+}
+
+ObjectModel::~ObjectModel() {}
+
+void ObjectModel::loadModel()
+{
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string err;
+	Vertex *vertices;
+	uint16_t *indices;
+
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename))
+	{
+		std::cout << "Failed to load object model!" << std::endl;
+		exit(1);
+	}
+	vertices = new Vertex[shapes[0].mesh.indices.size()];
+	indices = new uint16_t[shapes[0].mesh.indices.size()];
+	for (uint16_t i = 0; i < shapes[0].mesh.indices.size(); i++)
+	{
+		vertices[i].pos[0] = attrib.vertices[3 * shapes[0].mesh.indices[i].vertex_index + 0];
+		vertices[i].pos[1] = attrib.vertices[3 * shapes[0].mesh.indices[i].vertex_index + 1];
+		vertices[i].pos[2] = attrib.vertices[3 * shapes[0].mesh.indices[i].vertex_index + 2];
+		vertices[i].texCoords[0] = attrib.texcoords[2 * shapes[0].mesh.indices[i].texcoord_index + 0];
+		vertices[i].texCoords[1] = attrib.texcoords[2 * shapes[0].mesh.indices[i].texcoord_index + 1];
+		vertices[i].color[0] = 1.0; vertices[i].color[1] = 0.0; vertices[i].color[2] = 0.0;
+		indices[i] = i;
+	}
+	vertexData->addData((float*)vertices, shapes[0].mesh.indices.size() *sizeof(Vertex));
+	indexData->addData(indices, shapes[0].mesh.indices.size() * sizeof(uint16_t));
+	delete[] vertices;
+	delete[] indices;
+}
+
 RenderObject::RenderObject(	VulkanSetup *_vulkanSetup,
 							VkDescriptorPool _descriptorPool,
 							TextOverlay *_textOverlay,
@@ -1636,8 +1680,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	indexData->addData(indicesPatches2, indicesPatches2Size);
 	createMeshGridIndices(&meshGridIndices, &meshGridIndicesSize, 101, 101, 0);
 	indexData->addData(meshGridIndices, meshGridIndicesSize);
+	// Load Object Models from file
+	ObjectModel cube("C:/Home/Entwicklung/Vulkan/objects/cube.obj", vertexData, indexData);
 	// Objects
-	objectCount = 13;
+	objectCount = 14;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
 	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
@@ -1653,6 +1699,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	obj[10] = new Plane(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
 	obj[11] = new Planet(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
 	obj[12] = new Sphere(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
+	obj[13] = new Cube(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
 	textOverlay = new TextOverlay(vulkanSetup);
 	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &mView2, key, vertexData, indexData);
 	char str[32];

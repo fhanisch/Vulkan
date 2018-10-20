@@ -93,8 +93,7 @@ public:
 };
 
 //Entry Function
-#define CONSOLE
-#ifndef CONSOLE
+#ifdef WINAPP
 #define argc __argc
 #define argv __argv
 int WinMain(HINSTANCE , HINSTANCE , LPSTR , int )

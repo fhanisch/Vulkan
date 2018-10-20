@@ -488,7 +488,10 @@ bool VulkanSetup::isDeviceSuitable(VkPhysicalDevice physDevice)
 		swapChainAdequate = swapChainSupport.formatCount && swapChainSupport.presentModeCount;
 	}
 
-	return index >= 0 && extensionsSupported && swapChainAdequate;
+	VkSurfaceCapabilitiesKHR capabilities;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physDevice, surface, &capabilities);
+
+	return index >= 0 && extensionsSupported && swapChainAdequate && (capabilities.maxImageCount>2);
 }
 
 VkSurfaceFormatKHR VulkanSetup::chooseSwapSurfaceFormat(uint32_t formatCount, VkSurfaceFormatKHR *availableFormats)

@@ -548,7 +548,7 @@ Planet::Planet(	VulkanSetup *_vulkanSetup,
 				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
 {
 	vertexShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/vs_perlinSphere.spv");
-	fragmentShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/fs_schachbrett_ADSperFrag.spv");
+	fragmentShader.load("C:/Home/Entwicklung/Vulkan/build/VulkanApp2/fs_defaultTex.spv");
 	vertexOffset = vertexData->getOffset(5);
 	indexCount = indexData->getIndexCount(5);
 	firstIndex = indexData->getFirstIndex(5);
@@ -566,7 +566,7 @@ Planet::Planet(	VulkanSetup *_vulkanSetup,
 	identity4(mModel);
 	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 100.0f);
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/moon.png");
 	getScale4(mModel, 100.0f, 100.0f, 100.0f);
 	//getTrans4(mModel, 0.0f, 1.5f, 0.0f);
 	createUniformBuffer();

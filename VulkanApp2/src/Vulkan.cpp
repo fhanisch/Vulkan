@@ -1192,6 +1192,9 @@ void ObjectModel::loadModel()
 		vertices[i].color[0] = 1.0; vertices[i].color[1] = 0.0; vertices[i].color[2] = 0.0;
 		indices[i] = i;
 	}
+	/*
+			Todo: reduce multiple vertices
+	*/
 	vertexData->addData((float*)vertices, shapes[0].mesh.indices.size() *sizeof(Vertex));
 	indexData->addData(indices, shapes[0].mesh.indices.size() * sizeof(uint16_t));
 	delete[] vertices;
@@ -1880,7 +1883,7 @@ void RenderScene::camMotion()
 
 	//3d cam motion
 	
-	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f, v = 0.002f, w = 0.05f;
+	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f, v = 0.2f, w = 0.05f;
 	if (key[0x57]) dz = -v;
 	if (key[0x53]) dz =  v;
 	if (key[0x41]) dx = -v;
@@ -1892,7 +1895,7 @@ void RenderScene::camMotion()
 	if (key[VK_UP])		dtheta = -w;
 	if (key[VK_DOWN])	dtheta =  w;
 
-	/* translatorisch
+	// translatorisch
 	getRotX4(Rx, cam.xAngle += dtheta);
 	getRotY4(Ry, cam.yAngle += dphi);
 	mult4(R, Ry, Rx);
@@ -1902,9 +1905,9 @@ void RenderScene::camMotion()
 	mult4(cam.M, A, dT);
 	cam.xPos = cam.M[3][0]; cam.yPos = cam.M[3][1]; cam.zPos = cam.M[3][2];
 	invert4(mView, cam.M); // --> Todo: invertieren durch teilw. transponieren
-	*/
+	//
 
-	// rotatorisch
+	/* rotatorisch
 	getRotY4(Ry, cam.yAngle += dphi);
 	getRotX4(Rx, cam.xAngle += cos(cam.yAngle)*dz - sin(cam.yAngle)*dx);
 	getRotZ4(Rz, cam.zAngle += -sin(cam.yAngle)*dz - cos(cam.yAngle)*dx);
@@ -1913,7 +1916,7 @@ void RenderScene::camMotion()
 	mult4(A, R, T);
 	mult4(cam.M, A, Ry);
 	invert4(mView, cam.M); // --> Todo: invertieren durch teilw. transponieren
-	//
+	*/
 }
 
 void RenderScene::updateTextOverlay(uint32_t fps)

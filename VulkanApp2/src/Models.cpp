@@ -522,7 +522,7 @@ Plane::Plane(	VulkanSetup *_vulkanSetup,
 	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
-	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 100.0f);
+	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 1000.0f);
 	color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
 	getScale4(S, 10.0f, 1.0f, 10.0f);
@@ -603,7 +603,7 @@ Sphere::Sphere(	VulkanSetup *_vulkanSetup,
 	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
-	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 100.0f);
+	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 1000.0f);
 	color[0] = 1.0f; color[1] = 0.0f; color[2] = 1.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
 	//getScale4(mModel, 100.0f, 100.0f, 100.0f);
@@ -642,7 +642,7 @@ Cube::Cube(	VulkanSetup *_vulkanSetup,
 	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
-	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 100.0f);
+	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 1000.0f);
 	color[0] = 1.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, "C:/Home/Entwicklung/Vulkan/textures/texture.jpg");
 	getTrans4(mModel, 0.0f, 110.0f, 0.0f);

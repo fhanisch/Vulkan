@@ -1792,7 +1792,7 @@ void RenderScene::createCommandBuffers()
 		beginInfo.pInheritanceInfo = nullptr; // Optional
 
 		vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
-
+		{
 			VkRenderPassBeginInfo renderPassInfo = {};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			renderPassInfo.renderPass = vulkanSetup->getRenderPass();
@@ -1830,7 +1830,7 @@ void RenderScene::createCommandBuffers()
 				}
 			}
 			vkCmdEndRenderPass(commandBuffers[i]);
-
+		}
 		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
 			std::cout << "failed to record command buffer!" <<  std::endl;
 			exit(1);

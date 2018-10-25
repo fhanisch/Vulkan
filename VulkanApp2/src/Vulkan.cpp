@@ -1806,7 +1806,7 @@ void RenderScene::createCommandBuffers()
 			renderPassInfo.pClearValues = clearValues;
 
 			vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
+			{
 				VkBuffer vB[] = { vertexBuffer->getBuffer() };
 				vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
@@ -1818,7 +1818,7 @@ void RenderScene::createCommandBuffers()
 					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[j]->getPipelineLayout(), 0, 1, obj[j]->getDescriptorSetPtr(), 0, nullptr);
 					vkCmdDrawIndexed(commandBuffers[i], obj[j]->getIndexCount(), 1, obj[j]->getFirstIndex(), 0, 0);
 				}
-				
+
 				vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, txtObj->getGraphicsPipeline());
 				vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, txtObj->getPipelineLayout(), 0, 1, txtObj->getDescriptorSetPtr(), 0, nullptr);
 				VkDeviceSize offsets1 = 0;
@@ -1828,7 +1828,7 @@ void RenderScene::createCommandBuffers()
 				{
 					vkCmdDraw(commandBuffers[i], 4, 1, j * 4, 0);
 				}
-
+			}
 			vkCmdEndRenderPass(commandBuffers[i]);
 
 		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
@@ -1851,7 +1851,7 @@ void RenderScene::camMotion()
 	for (uint32_t i = 0; i < objectCount; i++) obj[i]->motion();
 
 	//2d cam motion
-	mat4 A, B, T, dT, R, Rx, Ry, Rz, tmp;
+	mat4 A, /*B,*/ T, dT, R, Rx, Ry, /*Rz,*/ tmp;
 
 	if (key[0x4a] == true)
 	{
@@ -1883,7 +1883,7 @@ void RenderScene::camMotion()
 
 	//3d cam motion
 	
-	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f, v = 0.2f, w = 0.05f;
+	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, /*dpsi = 0.0f,*/ v = 0.2f, w = 0.05f;
 	if (key[0x57]) dz = -v;
 	if (key[0x53]) dz =  v;
 	if (key[0x41]) dx = -v;

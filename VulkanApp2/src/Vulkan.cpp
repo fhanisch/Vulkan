@@ -11,6 +11,8 @@
 #define TEXTOVERLAY_MAX_CHAR_COUNT 2048
 stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
 
+extern "C" { void mul4x4(mat4, mat4, mat4); }
+
 VertexData::VertexData()
 {
 	data = nullptr;
@@ -1898,11 +1900,14 @@ void RenderScene::camMotion()
 	// translatorisch
 	getRotX4(Rx, cam.xAngle += dtheta);
 	getRotY4(Ry, cam.yAngle += dphi);
-	mult4(R, Ry, Rx);
+	//mult4(R, Ry, Rx);
+	mul4x4(Ry, Rx, R);
 	getTrans4(T, cam.xPos, cam.yPos, cam.zPos);
 	getTrans4(dT, dx, dy, dz);
-	mult4(A, T, R);
-	mult4(cam.M, A, dT);
+	//mult4(A, T, R);
+	mul4x4(T, R, A);
+	//mult4(cam.M, A, dT);
+	mul4x4(A, dT, cam.M);
 	cam.xPos = cam.M[3][0]; cam.yPos = cam.M[3][1]; cam.zPos = cam.M[3][2];
 	invert4(mView, cam.M); // --> Todo: invertieren durch teilw. transponieren
 	//

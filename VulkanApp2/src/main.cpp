@@ -81,7 +81,7 @@ public:
 			renderScene->updateUniformBuffers();
 			renderScene->camMotion();
 			renderScene->drawFrame();
-			while ((t2.QuadPart - t1.QuadPart) * 120 <= frequency.QuadPart) QueryPerformanceCounter(&t2); // Achtung: für genaue FPS-Vorgabe hohe Zeitauflösung notwendig.
+			while ((t2.QuadPart - t1.QuadPart) * 75 <= frequency.QuadPart) QueryPerformanceCounter(&t2); // Achtung: für genaue FPS-Vorgabe hohe Zeitauflösung notwendig.
 			if ((clock() - start_t) >= CLOCKS_PER_SEC)
 			{
 				fps = framecount;

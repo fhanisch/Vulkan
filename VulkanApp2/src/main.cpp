@@ -49,9 +49,11 @@ class App
 	Window *window;
 	VulkanSetup *vulkanSetup;
 	RenderScene *renderScene;
-	clock_t start_t, sync_t;
+	clock_t start_t;
 	uint32_t framecount = 0;
 	uint32_t fps = 0;
+	LARGE_INTEGER frequency;
+	LARGE_INTEGER t1, t2;
 public:
 	App(const char *_appDir)
 	{
@@ -72,13 +74,14 @@ public:
 	{
 		window->showWindow();
 		start_t = clock(); //FPS
-		sync_t = start_t;
+		QueryPerformanceFrequency(&frequency);
+		QueryPerformanceCounter(&t1);
 		while (!window->checkMessage())
 		{
 			renderScene->updateUniformBuffers();
 			renderScene->camMotion();
 			renderScene->drawFrame();
-			while ((clock() - sync_t) * 125 < CLOCKS_PER_SEC); // Achtung: Auflösung von <1ms scheinbar nicht möglich --> nicht jede FPS-Vorgabe funktioniert daher genau
+			while ((t2.QuadPart - t1.QuadPart) * 120 <= frequency.QuadPart) QueryPerformanceCounter(&t2); // Achtung: für genaue FPS-Vorgabe hohe Zeitauflösung notwendig.
 			if ((clock() - start_t) >= CLOCKS_PER_SEC)
 			{
 				fps = framecount;
@@ -86,7 +89,7 @@ public:
 				framecount = 0;
 			}
 			renderScene->updateTextOverlay(fps);
-			sync_t = clock();
+			QueryPerformanceCounter(&t1);
 			framecount++;
 		}
 	}

@@ -122,7 +122,7 @@ TextOverlay::TextOverlay(Vulkan* _vulkan)
 	pixels = &font24pixels[0][0];
 
 	// Vertex buffer
-	VkDeviceSize bufferSize = TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(vec4);
+	VkDeviceSize bufferSize = TEXTOVERLAY_MAX_CHAR_COUNT * sizeof(float) * 4;
 	vertexBuffer = new Buffer(vulkan);
 	vertexBuffer->createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 }
@@ -132,7 +132,7 @@ TextOverlay::~TextOverlay() {}
 // Map buffer 
 void TextOverlay::beginTextUpdate()
 {
-	vkMapMemory(vulkan->getDevice(), vertexBuffer->getBufferMemory(), 0, VK_WHOLE_SIZE, 0, (void**)& charVertices);
+	vkMapMemory(vulkan->getDevice(), vertexBuffer->getBufferMemory(), 0, VK_WHOLE_SIZE, 0, (void**)charVertices);
 	numLetters = 0;
 }
 
@@ -141,50 +141,51 @@ void TextOverlay::addText(std::string text, float x, float y)
 {
 	const uint32_t firstChar = STB_SOMEFONT_FIRST_CHAR;
 
-	const float charW = 5.0f / vulkan->getSwapChainExtent().width;
-	const float charH = 5.0f / vulkan->getSwapChainExtent().height;
-
 	float fbW = (float)vulkan->getSwapChainExtent().width;
 	float fbH = (float)vulkan->getSwapChainExtent().height;
+
+	const float charW = 5.0f / fbW;
+	const float charH = 5.0f / fbH;
+
 	x = (x / fbW * 2.0f) - 1.0f;
 	y = (y / fbH * 2.0f) - 1.0f;
 
 	// Calculate text width
 	float textWidth = 0;
-	for (auto letter : text)
+	for (uint32_t i = 0; text[i]; i++)
 	{
-		stb_fontchar* charData = &stbFontData[(uint32_t)letter - firstChar];
+		stb_fontchar* charData = &stbFontData[(uint32_t)text[i] - firstChar];
 		textWidth += charData->advance * charW;
 	}
-
+	std::cout << "TextWidth: " << textWidth << std::endl;
 	// Generate a uv mapped quad per char in the new text
-	for (auto letter : text)
+	for (uint32_t i = 0; text[i]; i++)
 	{
-		stb_fontchar* charData = &stbFontData[(uint32_t)letter - firstChar];
+		stb_fontchar* charData = &stbFontData[(uint32_t)text[i] - firstChar];
 
 		(*charVertices)[0] = (x + (float)charData->x0 * charW);
 		(*charVertices)[1] = (y + (float)charData->y0 * charH);
 		(*charVertices)[2] = charData->s0;
 		(*charVertices)[3] = charData->t0;
-		charVertices++;
+		(*charVertices)+=4;
 
 		(*charVertices)[0] = (x + (float)charData->x1 * charW);
 		(*charVertices)[1] = (y + (float)charData->y0 * charH);
 		(*charVertices)[2] = charData->s1;
 		(*charVertices)[3] = charData->t0;
-		charVertices++;
+		(*charVertices)+=4;
 
 		(*charVertices)[0] = (x + (float)charData->x0 * charW);
 		(*charVertices)[1] = (y + (float)charData->y1 * charH);
 		(*charVertices)[2] = charData->s0;
 		(*charVertices)[3] = charData->t1;
-		charVertices++;
+		(*charVertices)+=4;
 
 		(*charVertices)[0] = (x + (float)charData->x1 * charW);
 		(*charVertices)[1] = (y + (float)charData->y1 * charH);
 		(*charVertices)[2] = charData->s1;
 		(*charVertices)[3] = charData->t1;
-		charVertices++;
+		(*charVertices)+=4;
 
 		x += charData->advance * charW;
 
@@ -196,5 +197,5 @@ void TextOverlay::addText(std::string text, float x, float y)
 void TextOverlay::endTextUpdate()
 {
 	vkUnmapMemory(vulkan->getDevice(), vertexBuffer->getBufferMemory());
-	charVertices = nullptr;
+	*charVertices = nullptr;
 }

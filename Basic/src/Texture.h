@@ -6,7 +6,7 @@ class TextOverlay
 {
 protected:
 	Vulkan* vulkan;
-	vec4* charVertices;
+	float* charVertices[4];
 public:
 	TextOverlay(Vulkan* _vulkan);
 	~TextOverlay();

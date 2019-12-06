@@ -13,7 +13,7 @@ Vulkan::Vulkan(const char* _appName, const char* _engineName, Window* _window)
 	printInstanceExtensions();
 	createInstance();
 	createSurface();
-	//printPhysicalDevices();
+	printPhysicalDevices();
 	choosePhysicalDevice();
 	createLogicalDevice();
 	createCommandPool();

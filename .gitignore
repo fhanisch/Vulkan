@@ -8,3 +8,6 @@ log.txt
 *.user
 *.obj
 *.exe
+*.apk
+*.o
+*.so

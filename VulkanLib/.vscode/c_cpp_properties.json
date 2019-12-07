@@ -1,0 +1,13 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "defines": ["ANDROID", "LOG"],
+            "includePath": [
+                "${default}",
+                "/home/felix/Entwicklung/android-ndk-r20b/sysroot/usr/include"
+            ]
+        }
+    ],
+    "version": 4
+}

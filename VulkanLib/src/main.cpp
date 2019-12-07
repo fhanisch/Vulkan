@@ -8,6 +8,7 @@
 #ifdef ANDROID
 #include "android_native_app_glue.h"
 #define LOGFILE "/storage/emulated/0/Dokumente/VulkanApp.log.txt"
+static int initialized_ = 0;
 #else
 #define LOGFILE "VulkanApp.log.txt"
 #endif
@@ -23,14 +24,17 @@ printf(__VA_ARGS__);
 #endif
 
 static FILE* file = NULL;
-static int initialized_ = 0;
 
 class App
 {
+    const char *appName = "VulkanApp";
+	const char *engineName = "MyVulkanEngine";
+    void* window;
 #ifdef DYNAMIC
-    VulkanSetup* (*create_object)(FILE* file_);
+    VulkanSetup* (*create_object)(const char *_appNAme, const char *_engineName, FILE* _file);
 #endif
     VulkanSetup *vkSetup;
+    RenderScene *renderScene;
 public:
     App()
     {
@@ -42,15 +46,15 @@ public:
             PRINT("Loading libVulkan.so failed!\n")
             exit(1);
         }
-        create_object = (VulkanSetup*(*)(FILE* file_))dlsym(libVulkan, "create_object");
+        create_object = (VulkanSetup*(*)(const char *_appNAme, const char *_engineName, FILE* _file))dlsym(libVulkan, "create_object");
         if (!create_object)
         {
             PRINT("Find Symbol create_object failed!\n")
             exit(1);
         }
-        vkSetup = create_object(file);
+        vkSetup = create_object(appName, engineName, file);
 #else
-        vkSetup = new VulkanSetup(file);
+        vkSetup = new VulkanSetup(appName, engineName, file);
 #endif
     }
 
@@ -63,9 +67,11 @@ public:
 #endif
     }
 
-    void init()
+    void init(void* _window)
     {
-        vkSetup->init();
+        window = _window;
+        vkSetup->init(window);
+        renderScene = new RenderScene(vkSetup, NULL);
     }
 
     void run()
@@ -81,7 +87,7 @@ void handle_cmd(android_app* a_app, int32_t cmd) {
   switch (cmd) {
     case APP_CMD_INIT_WINDOW:
       // The window is being shown, get it ready.
-      ((App*)a_app->userData)->init();
+      ((App*)a_app->userData)->init(a_app->window);
       ((App*)a_app->userData)->run();
       initialized_ = 1;
       break;
@@ -115,7 +121,8 @@ int main(int argc, char **argv)
     PRINT("%s\n", c_time_string)
 
     app = new App();
-    
+
+#ifdef ANDROID
     a_app->userData = app;
 
     // Set the callback to process system events
@@ -139,7 +146,7 @@ int main(int argc, char **argv)
 
     delete app;
 
-#ifndef ANDROID
+#else
     app->init();
     app->run();
     delete app;

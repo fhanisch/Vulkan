@@ -390,7 +390,7 @@ public:
 	~RenderScene();
 	void updateUniformBuffers();
 	void camMotion();
-	void updateTextOverlay(uint32_t fps);
+	void updateTextOverlay(uint32_t fps, int xMotionPos, int yMotionPos);
 	void drawFrame();
 };
 

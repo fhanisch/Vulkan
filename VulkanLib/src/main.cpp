@@ -23,8 +23,10 @@ fwrite(buf, strlen(buf), 1, file);
 printf(__VA_ARGS__);
 #endif
 
+// TODO: zu userdata hinzufügen
 static FILE* file = NULL;
 static bool key[256];
+int xMotionPos, yMotionPos;
 
 class App
 {
@@ -36,7 +38,7 @@ class App
     timespec tStart, tEnd;
     clock_t start_t;
 #ifdef DYNAMIC
-    VulkanSetup* (*create_object)(const char *_appNAme, const char *_engineName, FILE* _file);
+    VulkanSetup* (*create_object)(const char *_appName, const char *_engineName, FILE* _file);
 #endif
     VulkanSetup *vkSetup;
     RenderScene *renderScene;
@@ -51,7 +53,7 @@ public:
             PRINT("Loading libVulkan.so failed!\n")
             exit(1);
         }
-        create_object = (VulkanSetup*(*)(const char *_appNAme, const char *_engineName, FILE* _file))dlsym(libVulkan, "create_object");
+        create_object = (VulkanSetup*(*)(const char *_appName, const char *_engineName, FILE* _file))dlsym(libVulkan, "create_object");
         if (!create_object)
         {
             PRINT("Find Symbol create_object failed!\n")
@@ -78,9 +80,8 @@ public:
         memset(key, 0, sizeof(key));
         vkSetup->init(window);
         renderScene = new RenderScene(vkSetup, key);
-        //key[VK_SPACE] = true;
-        key[0x4a] = true;
-        key[0x53] = true;
+        key[VK_SPACE] = true;
+        key[VK_DOWN] = true;
         start_t = clock();
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
     }
@@ -99,15 +100,35 @@ public:
             start_t = clock();
 			framecount = 0;
         }
-        renderScene->updateTextOverlay(fps);
+        renderScene->updateTextOverlay(fps, xMotionPos, yMotionPos);
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
     }
 };
 
 #ifdef ANDROID
 
+static int32_t handle_input(struct android_app* app, AInputEvent* event)
+{
+    if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
+        
+        xMotionPos = AMotionEvent_getX(event, 0);
+        yMotionPos = AMotionEvent_getY(event, 0);
+
+        if(xMotionPos<200) key[0x4a] = true; else key[0x4a] = false;
+        if(xMotionPos>2000) key[0x4c] = true; else key[0x4c] = false;
+
+        if(yMotionPos<200) key[0x49] = true; else key[0x49] = false;
+        if(yMotionPos>1300) key[0x4b] = true; else key[0x4b] = false;
+        
+        PRINT("Position: %d,%d\n", xMotionPos, yMotionPos);
+        return 1;
+    }
+    return 0;
+}
+
 // Process the next main command.
-void handle_cmd(android_app* a_app, int32_t cmd) {
+void handle_cmd(android_app* a_app, int32_t cmd)
+{
   switch (cmd) {
     case APP_CMD_INIT_WINDOW:
       // The window is being shown, get it ready.
@@ -150,6 +171,7 @@ int main(int argc, char **argv)
 
     // Set the callback to process system events
     a_app->onAppCmd = handle_cmd;
+    a_app->onInputEvent = handle_input;
 
     // Used to poll the events in the main loop
     int events;

@@ -1856,6 +1856,8 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->addText(str, 5.0f, 5.0f);
 	printMatrix(cam.M, 5.0, 35.0);
+	sprintf(str, "Position: %-4d | %-4d", 0, 0);
+	textOverlay->addText(str, 5.0f, 200.0f);
 	textOverlay->endTextUpdate();
 	createVertexBuffer();
 	createIndexBuffer();
@@ -1998,8 +2000,6 @@ void RenderScene::camMotion()
 	//2d cam motion
 	mat4 A, /*B,*/ T, dT, R, Rx, Ry, /*Rz,*/ tmp;
 
-	//getTrans4(mView2, 0.0f, 5.0f, 0.0f);
-
 	if (key[0x4a] == true)
 	{
 		dup4(tmp, mView2);
@@ -2030,7 +2030,7 @@ void RenderScene::camMotion()
 
 	//3d cam motion
 	
-	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, /*dpsi = 0.0f,*/ v = 0.2f, w = 0.05f;
+	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, /*dpsi = 0.0f,*/ v = 0.2f, w = 0.002f;
 
 	if (key[0x57]) dz = -v;
 	if (key[0x53]) dz =  v;
@@ -2043,7 +2043,11 @@ void RenderScene::camMotion()
 	if (key[VK_UP])		dtheta = -w;
 	if (key[VK_DOWN])	dtheta =  w;
 
-	// translatorisch
+	getTrans4(T, 0, -105.0f, 0);
+	getRotX4(Rx, cam.xAngle += dtheta);
+	mult4(mView, T, Rx);
+
+	/* translatorisch
 	getRotX4(Rx, cam.xAngle += dtheta);
 	getRotY4(Ry, cam.yAngle += dphi);
 	mult4(R, Ry, Rx);
@@ -2056,7 +2060,7 @@ void RenderScene::camMotion()
 	//mul4x4(A, dT, cam.M);
 	cam.xPos = cam.M[3][0]; cam.yPos = cam.M[3][1]; cam.zPos = cam.M[3][2];
 	invert4(mView, cam.M); // --> Todo: invertieren durch teilw. transponieren
-	//
+	*/
 
 	/* rotatorisch
 	getRotY4(Ry, cam.yAngle += dphi);
@@ -2070,13 +2074,15 @@ void RenderScene::camMotion()
 	*/
 }
 
-void RenderScene::updateTextOverlay(uint32_t fps)
+void RenderScene::updateTextOverlay(uint32_t fps, int xMotionPos, int yMotionPos)
 {
 	char str[32];
 	textOverlay->beginTextUpdate();
 	sprintf(str, "FPS: %-4u", fps);
 	textOverlay->addText(str, 5.0f, 5.0f);
 	printMatrix(cam.M, 5.0, 35.0);
+	sprintf(str, "Position: %-4d | %-4d", xMotionPos, yMotionPos);
+	textOverlay->addText(str, 5.0f, 200.0f);
 	textOverlay->endTextUpdate();
 }
 
@@ -2119,9 +2125,9 @@ void RenderScene::drawFrame()
 }
 
 /* Funktion für dynamisches Laden */
-extern "C" VulkanSetup* create_object(const char *_appNAme, const char *_engineName, FILE* _file)
+extern "C" VulkanSetup* create_object(const char *_appName, const char *_engineName, FILE* _file)
 {
-    return new VulkanSetup(_appNAme, _engineName, _file);
+    return new VulkanSetup(_appName, _engineName, _file);
 }
 
 /* Vulkan Function Pointer */

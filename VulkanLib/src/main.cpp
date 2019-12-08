@@ -74,9 +74,11 @@ public:
         renderScene = new RenderScene(vkSetup, NULL);
     }
 
-    void run()
+    void draw()
     {
-        PRINT("Run App ...\n")
+        renderScene->updateUniformBuffers();
+		//renderScene->camMotion();
+		renderScene->drawFrame();
     }
 };
 
@@ -88,12 +90,11 @@ void handle_cmd(android_app* a_app, int32_t cmd) {
     case APP_CMD_INIT_WINDOW:
       // The window is being shown, get it ready.
       ((App*)a_app->userData)->init(a_app->window);
-      ((App*)a_app->userData)->run();
       initialized_ = 1;
       break;
     case APP_CMD_TERM_WINDOW:
       // The window is being hidden or closed, clean it up.
-      //delete (App*)a_app->userData;
+      initialized_ = 0;
       break;
     default:
       PRINT("Event not handled: %d\n", cmd)
@@ -139,9 +140,8 @@ int main(int argc, char **argv)
         }
 
         // render if vulkan is ready
-        /*if (IsVulkanReady()) {
-            VulkanDrawFrame();
-        }*/
+        if (initialized_) app->draw();
+
     } while (a_app->destroyRequested == 0);
 
     delete app;

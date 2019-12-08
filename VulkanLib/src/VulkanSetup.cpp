@@ -19,7 +19,7 @@ stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
 static char buf[128];
 #define PRINT(...) \
 sprintf(buf, __VA_ARGS__); \
-fwrite(buf, strlen(buf), 1, file);
+fwrite(buf, strlen(buf), 1, logfile);
 #else
 #define PRINT(...) \
 printf(__VA_ARGS__);
@@ -33,7 +33,7 @@ if (!fun) \
     exit(1); \
 }
 
-static FILE* file;
+static FILE* logfile;
 void* libvulkan;
 
 //extern "C" { void mul4x4(mat4, mat4, mat4); } //für Assembler Funktion
@@ -809,7 +809,7 @@ VulkanSetup::VulkanSetup(const char *_appNAme, const char *_engineName, FILE* _f
 {
     appName = _appNAme;
     engineName = _engineName;
-    file = _file;
+    logfile = _file;
     PRINT("Get Vulkan Functions.\n")
     libvulkan = dlopen(libName, RTLD_NOW | RTLD_LOCAL);
     if (!libvulkan)
@@ -1325,12 +1325,12 @@ Texture::~Texture() {}
 void Texture::loadTexture()
 {
 	pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-	imageSize = texWidth * texHeight * 4;
-	imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
 	if (!pixels) {
 		PRINT("Failed to load texture image!\n")
 		exit(1);
 	}
+	imageSize = texWidth * texHeight * 4;
+	imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
 }
 
 void Texture::createTextureImage()
@@ -1830,7 +1830,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	createMeshGridIndices(&meshGridIndices, &meshGridIndicesSize, 101, 101, 0);
 	indexData->addData(meshGridIndices, meshGridIndicesSize);
 	// Load Object Models from file
-	ObjectModel cube("C:/Home/Entwicklung/Vulkan/objects/cube.obj", vertexData, indexData);
+	ObjectModel cube("/storage/emulated/0/Dokumente/cube.x", vertexData, indexData);
 	// Objects
 	objectCount = 14;
 	obj = new RenderObject*[objectCount];
@@ -1852,11 +1852,13 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	textOverlay = new TextOverlay(vulkanSetup);
 	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &mView2, key, vertexData, indexData);
 	char str[32];
+	/*
 	textOverlay->beginTextUpdate();
 	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->addText(str, 5.0f, 5.0f);
 	printMatrix(cam.M, 5.0, 35.0);
 	textOverlay->endTextUpdate();
+	*/
 	createVertexBuffer();
 	createIndexBuffer();
 	createCommandBuffers();
@@ -1911,6 +1913,7 @@ void RenderScene::createDescriptorPool()
 		PRINT("Failed to create descriptor pool!\n")
 		exit(1);
 	}
+	PRINT("Descriptor pool created.\n")
 }
 
 void RenderScene::createCommandBuffers()
@@ -1961,7 +1964,7 @@ void RenderScene::createCommandBuffers()
 					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[j]->getPipelineLayout(), 0, 1, obj[j]->getDescriptorSetPtr(), 0, nullptr);
 					vkCmdDrawIndexed(commandBuffers[i], obj[j]->getIndexCount(), 1, obj[j]->getFirstIndex(), 0, 0);
 				}
-
+				/*
 				vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, txtObj->getGraphicsPipeline());
 				vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, txtObj->getPipelineLayout(), 0, 1, txtObj->getDescriptorSetPtr(), 0, nullptr);
 				VkDeviceSize offsets1 = 0;
@@ -1971,6 +1974,7 @@ void RenderScene::createCommandBuffers()
 				{
 					vkCmdDraw(commandBuffers[i], 4, 1, j * 4, 0);
 				}
+				*/
 			}
 			vkCmdEndRenderPass(commandBuffers[i]);
 		}
@@ -1979,6 +1983,7 @@ void RenderScene::createCommandBuffers()
 			exit(1);
 		}
 	}
+	PRINT("Command buffers created.\n")
 }
 
 void RenderScene::updateUniformBuffers()

@@ -300,21 +300,16 @@ PerlinCircle::~PerlinCircle() {}
 
 void PerlinCircle::motion()
 {
-	if (key)
+	if (key[VK_SPACE] == true)
 	{
-#ifndef ANDROID
-		if (key[VK_SPACE] == true)
-#endif
-		{
-			pushConsts.seed_u = (float)(clock() - startTime) / CLOCKS_PER_SEC;
-			pushConsts.seed_v = (float)(clock() - startTime) / CLOCKS_PER_SEC + 245.0f;
-			
-			commandBuffer->beginSingleTimeCommands();
+		pushConsts.seed_u = (float)(clock() - startTime) / CLOCKS_PER_SEC;
+		pushConsts.seed_v = (float)(clock() - startTime) / CLOCKS_PER_SEC + 245.0f;
+		
+		commandBuffer->beginSingleTimeCommands();
 
-			vkCmdPushConstants(commandBuffer->getCommandBuffer(), pipelineLayout, pPushConstantRange->stageFlags, pPushConstantRange->offset, pPushConstantRange->size, &pushConsts);
+		vkCmdPushConstants(commandBuffer->getCommandBuffer(), pipelineLayout, pPushConstantRange->stageFlags, pPushConstantRange->offset, pPushConstantRange->size, &pushConsts);
 
-			commandBuffer->endSingleTimeCommands();
-		}
+		commandBuffer->endSingleTimeCommands();
 	}
 }
 

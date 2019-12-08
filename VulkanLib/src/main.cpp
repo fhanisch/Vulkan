@@ -8,7 +8,7 @@
 #ifdef ANDROID
 #include "android_native_app_glue.h"
 #define LOGFILE "/storage/emulated/0/Dokumente/VulkanApp.log.txt"
-static int initialized_ = 0;
+static bool initialized_ = false;
 #else
 #define LOGFILE "VulkanApp.log.txt"
 #endif
@@ -24,12 +24,17 @@ printf(__VA_ARGS__);
 #endif
 
 static FILE* file = NULL;
+static bool key[256];
 
 class App
 {
     const char *appName = "VulkanApp";
 	const char *engineName = "MyVulkanEngine";
     void* window;
+    uint32_t framecount = 0;
+	uint32_t fps = 0;
+    timespec tStart, tEnd;
+    clock_t start_t;
 #ifdef DYNAMIC
     VulkanSetup* (*create_object)(const char *_appNAme, const char *_engineName, FILE* _file);
 #endif
@@ -70,15 +75,32 @@ public:
     void init(void* _window)
     {
         window = _window;
+        memset(key, 0, sizeof(key));
         vkSetup->init(window);
-        renderScene = new RenderScene(vkSetup, NULL);
+        renderScene = new RenderScene(vkSetup, key);
+        //key[VK_SPACE] = true;
+        key[0x4a] = true;
+        key[0x53] = true;
+        start_t = clock();
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
     }
 
     void draw()
     {
+        framecount++;
         renderScene->updateUniformBuffers();
-		//renderScene->camMotion();
+		renderScene->camMotion();
 		renderScene->drawFrame();
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tEnd);
+        while (((tEnd.tv_sec - tStart.tv_sec) * (long)1e9 + (tEnd.tv_nsec - tStart.tv_nsec)) < (long)(1000000000/60)) clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tEnd);
+        if ((clock() - start_t) > CLOCKS_PER_SEC)
+        {
+            fps = framecount;
+            start_t = clock();
+			framecount = 0;
+        }
+        renderScene->updateTextOverlay(fps);
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
     }
 };
 
@@ -90,11 +112,11 @@ void handle_cmd(android_app* a_app, int32_t cmd) {
     case APP_CMD_INIT_WINDOW:
       // The window is being shown, get it ready.
       ((App*)a_app->userData)->init(a_app->window);
-      initialized_ = 1;
+      initialized_ = true;
       break;
     case APP_CMD_TERM_WINDOW:
       // The window is being hidden or closed, clean it up.
-      initialized_ = 0;
+      initialized_ = false;
       break;
     default:
       PRINT("Event not handled: %d\n", cmd)

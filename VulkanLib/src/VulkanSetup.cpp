@@ -1249,14 +1249,14 @@ void TextOverlay::addText(char* text, float x, float y)
 	float textWidth = 0;
 	for (uint32_t letter=0; letter<strlen(text); letter++)
 	{
-		stb_fontchar *charData = &stbFontData[(uint32_t)letter - firstChar];
+		stb_fontchar *charData = &stbFontData[(uint32_t)(text[letter]) - firstChar];
 		textWidth += charData->advance * charW;
 	}
 
 	// Generate a uv mapped quad per char in the new text
 	for (uint32_t letter=0; letter<strlen(text); letter++)
 	{
-		stb_fontchar *charData = &stbFontData[(uint32_t)letter - firstChar];
+		stb_fontchar *charData = &stbFontData[(uint32_t)(text[letter]) - firstChar];
 
 		(*charVertices)[0] = (x + (float)charData->x0 * charW);
 		(*charVertices)[1] = (y + (float)charData->y0 * charH);
@@ -1852,13 +1852,11 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	textOverlay = new TextOverlay(vulkanSetup);
 	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &mView2, key, vertexData, indexData);
 	char str[32];
-	/*
 	textOverlay->beginTextUpdate();
 	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->addText(str, 5.0f, 5.0f);
 	printMatrix(cam.M, 5.0, 35.0);
 	textOverlay->endTextUpdate();
-	*/
 	createVertexBuffer();
 	createIndexBuffer();
 	createCommandBuffers();
@@ -1964,7 +1962,7 @@ void RenderScene::createCommandBuffers()
 					vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, obj[j]->getPipelineLayout(), 0, 1, obj[j]->getDescriptorSetPtr(), 0, nullptr);
 					vkCmdDrawIndexed(commandBuffers[i], obj[j]->getIndexCount(), 1, obj[j]->getFirstIndex(), 0, 0);
 				}
-				/*
+				
 				vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, txtObj->getGraphicsPipeline());
 				vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, txtObj->getPipelineLayout(), 0, 1, txtObj->getDescriptorSetPtr(), 0, nullptr);
 				VkDeviceSize offsets1 = 0;
@@ -1974,7 +1972,6 @@ void RenderScene::createCommandBuffers()
 				{
 					vkCmdDraw(commandBuffers[i], 4, 1, j * 4, 0);
 				}
-				*/
 			}
 			vkCmdEndRenderPass(commandBuffers[i]);
 		}
@@ -2000,6 +1997,8 @@ void RenderScene::camMotion()
 
 	//2d cam motion
 	mat4 A, /*B,*/ T, dT, R, Rx, Ry, /*Rz,*/ tmp;
+
+	//getTrans4(mView2, 0.0f, 5.0f, 0.0f);
 
 	if (key[0x4a] == true)
 	{
@@ -2033,7 +2032,6 @@ void RenderScene::camMotion()
 	
 	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, /*dpsi = 0.0f,*/ v = 0.2f, w = 0.05f;
 
-#ifndef ANDROID
 	if (key[0x57]) dz = -v;
 	if (key[0x53]) dz =  v;
 	if (key[0x41]) dx = -v;
@@ -2044,7 +2042,6 @@ void RenderScene::camMotion()
 	if (key[VK_RIGHT])	dphi = -w;
 	if (key[VK_UP])		dtheta = -w;
 	if (key[VK_DOWN])	dtheta =  w;
-#endif
 
 	// translatorisch
 	getRotX4(Rx, cam.xAngle += dtheta);

@@ -13,6 +13,12 @@
 #include <vulkan/vulkan.h>
 #include "matrix.h"
 
+#define VK_SPACE 0
+#define VK_LEFT 1
+#define VK_RIGHT 2
+#define VK_UP 3
+#define VK_DOWN 4
+
 struct Vertex {
 	vec3 pos;
 	vec3 normal;

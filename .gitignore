@@ -11,3 +11,9 @@ log.txt
 *.apk
 *.o
 *.so
+*.jks
+VulkanApp.log.txt
+app
+app2
+app3
+*.spv

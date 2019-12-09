@@ -1689,7 +1689,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	createMeshGridIndices(&meshGridIndices, &meshGridIndicesSize, 101, 101, 0);
 	indexData->addData(meshGridIndices, meshGridIndicesSize);
 	// Load Object Models from file
-	ObjectModel cube("C:/Home/Entwicklung/Vulkan/objects/cube.obj", vertexData, indexData);
+	ObjectModel cube("C:/Home/Entwicklung/Vulkan/objects/cube.x", vertexData, indexData);
 	// Objects
 	objectCount = 14;
 	obj = new RenderObject*[objectCount];

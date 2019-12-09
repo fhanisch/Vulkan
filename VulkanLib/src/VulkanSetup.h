@@ -7,10 +7,10 @@
 #ifdef ANDROID
 #define VK_USE_PLATFORM_ANDROID_KHR
 #else
-#define VK_USE_PLATFORM_XCB_KHR
-
+#define VK_USE_PLATFORM_XLIB_KHR
 #endif
-#include <vulkan/vulkan.h>
+
+#include "/home/felix/Entwicklung/vulkan-sdk/1.1.126.0/source/Vulkan-Headers/include/vulkan/vulkan.h"
 #include "matrix.h"
 
 #define VK_SPACE 0
@@ -18,6 +18,11 @@
 #define VK_RIGHT 2
 #define VK_UP 3
 #define VK_DOWN 4
+
+struct XLibWindow {
+	Display *d;
+	Window w;
+};
 
 struct Vertex {
 	vec3 pos;
@@ -149,7 +154,7 @@ protected:
     const char* appName;
 	const char* engineName;
     void* window;
-    const char* libName = "libvulkan.so";
+    const char* libName = "libvulkan.so.1";
 
     struct SwapChainSupportDetails {
 		VkSurfaceCapabilitiesKHR capabilities;
@@ -161,7 +166,7 @@ protected:
 
     VkInstance instance;
 	VkSurfaceKHR surface;
-    VkPhysicalDevice physicalDevice;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
 	VkQueue queue;
     VkSwapchainKHR swapChain;
@@ -402,7 +407,7 @@ extern PFN_vkEnumerateInstanceExtensionProperties vkEnumerateInstanceExtensionPr
 #ifdef ANDROID
 extern PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR;
 #else
-extern PFN_vkCreateXcbSurfaceKHR vkCreateXcbSurfaceKHR;
+extern PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR;
 #endif
 extern PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices;
 extern PFN_vkEnumerateDeviceExtensionProperties vkEnumerateDeviceExtensionProperties;

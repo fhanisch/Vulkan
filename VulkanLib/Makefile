@@ -33,9 +33,17 @@ VulkanSetup_android: src/VulkanSetup.cpp src/VulkanSetup.h
 	mkdir -p build/android
 	aarch64-linux-android28-clang++ -o build/android/VulkanSetup.o -c src/VulkanSetup.cpp -Wall -fpic -DANDROID -DLOG
 
+Models: src/Models.cpp src/Models.h
+	mkdir -p build/linux
+	clang++ -o build/linux/Models.o -c src/Models.cpp -Wall -I $(VK_INC)
+
 Models_android: src/Models.cpp src/Models.h
 	mkdir -p build/android
 	aarch64-linux-android28-clang++ -o build/android/Models.o -c src/Models.cpp -Wall -fpic -DANDROID -DLOG
+
+matrix: src/matrix.c src/matrix.h
+	mkdir -p build/linux
+	clang -o build/linux/matrix.o -c src/matrix.c -Wall
 
 matrix_android: src/matrix.c src/matrix.h
 	mkdir -p build/android
@@ -44,8 +52,8 @@ matrix_android: src/matrix.c src/matrix.h
 libVulkan: VulkanSetup
 	clang++ -shared -o libVulkan.so build/linux/VulkanSetup.o -Wall
 
-app: main VulkanSetup
-	clang++ -o app build/linux/main.o build/linux/VulkanSetup.o -Wall -ldl
+app: main VulkanSetup matrix Models
+	clang++ -o app build/linux/main.o build/linux/VulkanSetup.o build/linux/Models.o build/linux/matrix.o -Wall -ldl -lX11
 
 app2: main libVulkan
 	clang++ -o app2 build/linux/main.o ./libVulkan.so -Wall

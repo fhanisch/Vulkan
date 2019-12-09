@@ -5,6 +5,9 @@
 #include <dlfcn.h>
 #include "VulkanSetup.h"
 
+#define APP_NAME "VulkanApp"
+#define ENGINE_NAME "MyVulkanEngine"
+
 #ifdef ANDROID
 #include "android_native_app_glue.h"
 #define LOGFILE "/storage/emulated/0/Dokumente/VulkanApp.log.txt"
@@ -30,8 +33,8 @@ int xMotionPos, yMotionPos;
 
 class App
 {
-    const char *appName = "VulkanApp";
-	const char *engineName = "MyVulkanEngine";
+    const char *appName = APP_NAME;
+	const char *engineName = ENGINE_NAME;
     void* window;
     uint32_t framecount = 0;
 	uint32_t fps = 0;
@@ -146,6 +149,31 @@ void handle_cmd(android_app* a_app, int32_t cmd)
 
 void android_main(struct android_app* a_app)
 #else
+
+int createXLibWindow(XLibWindow* xWin) {
+   Display *d;
+   Window w;
+   XEvent e;
+   const char *msg = "Hello, World!";
+   int s;
+ 
+   d = XOpenDisplay(NULL);
+   if (d == NULL) {
+      fprintf(stderr, "Cannot open display\n");
+      exit(1);
+   }
+ 
+   s = DefaultScreen(d);
+   w = XCreateSimpleWindow(d, RootWindow(d, s), 10, 10, 500, 500, 1,
+                           BlackPixel(d, s), WhitePixel(d, s));
+   XSelectInput(d, w, ExposureMask | KeyPressMask);
+   XMapWindow(d, w);
+ 
+   xWin->d = d;
+   xWin->w = w;
+   return 0;
+}
+
 int main(int argc, char **argv)
 #endif
 {
@@ -191,8 +219,10 @@ int main(int argc, char **argv)
     delete app;
 
 #else
-    app->init();
-    app->run();
+    XLibWindow xLibWindow;
+    createXLibWindow(&xLibWindow);
+    app->init(&xLibWindow);
+    //app->draw();
     delete app;
     return 0;
 #endif

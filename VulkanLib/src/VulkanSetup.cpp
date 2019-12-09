@@ -466,11 +466,16 @@ void VulkanSetup::createInstance()
 	const char **validationLayers = nullptr;
 	const unsigned int globalExtensionCount = 2;
     const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_ANDROID_SURFACE_EXTENSION_NAME };
-#else
+#elif WINDOWS
     const unsigned int validationLayerCount = 1;
 	const char *validationLayers[] = { "VK_LAYER_LUNARG_standard_validation" };
     const unsigned int globalExtensionCount = 2;
     const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME };
+#else
+	const unsigned int validationLayerCount = 1;
+	const char *validationLayers[] = { "VK_LAYER_LUNARG_standard_validation" };
+	const unsigned int globalExtensionCount = 2;
+    const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XLIB_SURFACE_EXTENSION_NAME };
 #endif
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -502,13 +507,23 @@ void VulkanSetup::createSurface()
 		PRINT("Failed to create window surface!\n")
 		exit(1);
 	}
-#else
+#elif WINDOWS
 	VkWin32SurfaceCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 	createInfo.hwnd = window->getWindow();
 	createInfo.hinstance = window->getInstance();
 
 	if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
+		PRINT("Failed to create window surface!\n")
+		exit(1);
+	}
+#else
+	VkXlibSurfaceCreateInfoKHR createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+	createInfo.dpy = ((XLibWindow*)window)->d;
+	createInfo.window = ((XLibWindow*)window)->w;
+
+	if (vkCreateXlibSurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
 		PRINT("Failed to create window surface!\n")
 		exit(1);
 	}
@@ -571,7 +586,7 @@ void VulkanSetup::createLogicalDevice()
 	createInfo.enabledExtensionCount = deviceExtensionCount;
 	createInfo.ppEnabledExtensionNames = deviceExtensions;
 	createInfo.pEnabledFeatures = &deviceFeatures;
-
+	
 	if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
 		PRINT("Failed to create logical device!\n")
 		exit(1);
@@ -821,7 +836,11 @@ VulkanSetup::VulkanSetup(const char *_appNAme, const char *_engineName, FILE* _f
     GET_FCN_PTR(vkCreateInstance)
     GET_FCN_PTR(vkEnumerateInstanceLayerProperties)
     GET_FCN_PTR(vkEnumerateInstanceExtensionProperties)
+#ifdef ANDROID
     GET_FCN_PTR(vkCreateAndroidSurfaceKHR)
+#else
+	GET_FCN_PTR(vkCreateXlibSurfaceKHR)
+#endif
     GET_FCN_PTR(vkEnumeratePhysicalDevices)
     GET_FCN_PTR(vkEnumerateDeviceExtensionProperties)
     GET_FCN_PTR(vkGetPhysicalDeviceProperties)
@@ -926,6 +945,7 @@ void VulkanSetup::printPhysicalDevices()
 	VkPhysicalDevice *devices = new VkPhysicalDevice[deviceCount];
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices);
 
+	PRINT("Physical devices found: %u\n", deviceCount);
 	for (uint32_t i = 0; i < deviceCount; i++) {
 		uint32_t extensionCount;
 		vkEnumerateDeviceExtensionProperties(devices[i], nullptr, &extensionCount, nullptr);
@@ -1025,7 +1045,7 @@ int VulkanSetup::findQueueFamilies(VkPhysicalDevice physDevice)
 	vkGetPhysicalDeviceQueueFamilyProperties(physDevice, &queueFamilyCount, nullptr);
 	VkQueueFamilyProperties *queueFamilies = new VkQueueFamilyProperties[queueFamilyCount];
 	vkGetPhysicalDeviceQueueFamilyProperties(physDevice, &queueFamilyCount, queueFamilies);
-
+	
 	for (unsigned int i = 0; i < queueFamilyCount; i++) {
 		VkBool32 presentSupport = false;
 		vkGetPhysicalDeviceSurfaceSupportKHR(physDevice, i, surface, &presentSupport);
@@ -1120,8 +1140,8 @@ VkPresentModeKHR VulkanSetup::chooseSwapPresentMode(uint32_t presentModeCount, V
 VkExtent2D VulkanSetup::chooseSwapExtent(VkSurfaceCapabilitiesKHR *capabilities)
 {
 #ifdef ANDROID
-    return capabilities->currentExtent;
-#else
+    return capabilities->currentExtent; //TODO: Echte Windows-Dimension zurückgeben.
+#elif WINDOWS
 	if (capabilities->currentExtent.width != std::numeric_limits<uint32_t>::max())
 		return capabilities->currentExtent;
 	else {
@@ -1131,6 +1151,8 @@ VkExtent2D VulkanSetup::chooseSwapExtent(VkSurfaceCapabilitiesKHR *capabilities)
 
 		return actualExtent;
 	}
+#else
+	return capabilities->currentExtent;
 #endif
 }
 
@@ -2138,7 +2160,7 @@ PFN_vkEnumerateInstanceExtensionProperties vkEnumerateInstanceExtensionPropertie
 #ifdef ANDROID
 PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR;
 #else
-PFN_vkCreateXcbSurfaceKHR vkCreateXcbSurfaceKHR;
+PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR;
 #endif
 PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices;
 PFN_vkEnumerateDeviceExtensionProperties vkEnumerateDeviceExtensionProperties;

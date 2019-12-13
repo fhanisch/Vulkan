@@ -14,9 +14,9 @@
 // Max. number of chars the text overlay buffer can hold
 #define TEXTOVERLAY_MAX_CHAR_COUNT 2048
 stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
+static char buf[128];
 
 #ifdef LOG
-static char buf[128];
 #define PRINT(...) \
 sprintf(buf, __VA_ARGS__); \
 fwrite(buf, strlen(buf), 1, logfile);
@@ -602,7 +602,7 @@ void VulkanSetup::createSwapChain()
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formatCount, swapChainSupport.formats);
 	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModeCount, swapChainSupport.presentModes);
 	VkExtent2D extent = chooseSwapExtent(&swapChainSupport.capabilities);
-#ifdef ANDROID
+#if ANDROID || LINUX
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount;
 #else
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -1108,7 +1108,7 @@ bool VulkanSetup::isDeviceSuitable(VkPhysicalDevice physDevice)
 	VkSurfaceCapabilitiesKHR capabilities;
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physDevice, surface, &capabilities);
 
-	return index >= 0 && extensionsSupported && swapChainAdequate && (capabilities.maxImageCount>2);
+	return index >= 0 && extensionsSupported && swapChainAdequate && (capabilities.maxImageCount>=0); // Eigentlich sollte maxImageCount>2 sein. Ist in manchen Fällen aber maxImageCount=0.
 }
 
 VkSurfaceFormatKHR VulkanSetup::chooseSwapSurfaceFormat(uint32_t formatCount, VkSurfaceFormatKHR *availableFormats)
@@ -1463,8 +1463,10 @@ RenderObject::RenderObject(	VulkanSetup *_vulkanSetup,
 							VkDescriptorPool _descriptorPool,
 							TextOverlay *_textOverlay,
 							mat4 *_mView,
-							bool *_key)
+							bool *_key,
+							const char* resPath)
 {
+	resourcesPath = resPath;
 	vulkanSetup = _vulkanSetup;
 	descriptorPool = _descriptorPool;
 	textOverlay = _textOverlay;
@@ -1812,16 +1814,18 @@ uint64_t RenderObject::getVertexOffset() { return vertexOffset; }
 uint32_t RenderObject::getIndexCount() { return indexCount; }
 uint32_t RenderObject::getFirstIndex() { return firstIndex; }
 
-RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
+RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, const char* resPath)
 {
 	vulkanSetup = _vulkanSetup;
 	key = _key;
+	resourcesPath = resPath;
 	identity4(mView);
 	identity4(mView2);
 	identity4(cam.M);
 	//getTrans4(cam.M, 0.0f, 101.0f, 0.0f);
 	cam.yPos = 101.0f;
 	cam.zPos = 0.0f;
+	cam.xAngle = 0.0f;
 	vertexData = new VertexData;
 	indexData = new IndexData;
 	// Vertex Data
@@ -1852,27 +1856,28 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key)
 	createMeshGridIndices(&meshGridIndices, &meshGridIndicesSize, 101, 101, 0);
 	indexData->addData(meshGridIndices, meshGridIndicesSize);
 	// Load Object Models from file
-	ObjectModel cube("/storage/emulated/0/Dokumente/cube.x", vertexData, indexData);
+	sprintf(buf, "%s%s", resourcesPath, "/3dmodels/cube.x");
+	ObjectModel cube(buf, vertexData, indexData);
 	// Objects
 	objectCount = 14;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
-	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
-	obj[1] = new Tacho(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
-	obj[2] = new FlatPerlin2d(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
-	obj[3] = new Star(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
-	obj[4] = new FilledCircle(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
-	obj[5] = new PerlinCircle(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
-	obj[6] = new Wave(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
-	obj[7] = new Perlin1d(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
-	obj[8] = new CurveTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
-	obj[9] = new Perlin1dTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData);
-	obj[10] = new Plane(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
-	obj[11] = new Planet(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
-	obj[12] = new Sphere(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
-	obj[13] = new Cube(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData);
+	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[1] = new Tacho(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[2] = new FlatPerlin2d(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[3] = new Star(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[4] = new FilledCircle(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[5] = new PerlinCircle(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[6] = new Wave(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[7] = new Perlin1d(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[8] = new CurveTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[9] = new Perlin1dTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[10] = new Plane(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
+	obj[11] = new Planet(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
+	obj[12] = new Sphere(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
+	obj[13] = new Cube(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
 	textOverlay = new TextOverlay(vulkanSetup);
-	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &mView2, key, vertexData, indexData);
+	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &mView2, key, vertexData, indexData, resourcesPath);
 	char str[32];
 	textOverlay->beginTextUpdate();
 	sprintf(str, "FPS: %-4u", 0);

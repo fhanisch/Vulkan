@@ -7,6 +7,7 @@
 
 #define APP_NAME "VulkanApp"
 #define ENGINE_NAME "MyVulkanEngine"
+#define RESOURCES_PATH "/home/felix/Entwicklung/Vulkan/VulkanLib/res"  // /storage/emulated/0/Dokumente
 
 #ifdef ANDROID
 #include "android_native_app_glue.h"
@@ -35,6 +36,7 @@ class App
 {
     const char *appName = APP_NAME;
 	const char *engineName = ENGINE_NAME;
+    const char *resourcesPath = RESOURCES_PATH;
     void* window;
     uint32_t framecount = 0;
 	uint32_t fps = 0;
@@ -82,7 +84,8 @@ public:
         window = _window;
         memset(key, 0, sizeof(key));
         vkSetup->init(window);
-        renderScene = new RenderScene(vkSetup, key);
+        renderScene = new RenderScene(vkSetup, key, resourcesPath);
+        key[0x4a] = true;
         key[VK_SPACE] = true;
         key[VK_DOWN] = true;
         start_t = clock();
@@ -154,19 +157,18 @@ int createXLibWindow(XLibWindow* xWin) {
    Display *d;
    Window w;
    XEvent e;
-   const char *msg = "Hello, World!";
    int s;
  
    d = XOpenDisplay(NULL);
    if (d == NULL) {
-      fprintf(stderr, "Cannot open display\n");
+      PRINT("Cannot open display\n");
       exit(1);
    }
  
    s = DefaultScreen(d);
-   w = XCreateSimpleWindow(d, RootWindow(d, s), 10, 10, 500, 500, 1,
-                           BlackPixel(d, s), WhitePixel(d, s));
+   w = XCreateSimpleWindow(d, RootWindow(d, s), 10, 10, 1500, 1500, 1, BlackPixel(d, s), WhitePixel(d, s));
    XSelectInput(d, w, ExposureMask | KeyPressMask);
+   XStoreName(d, w, "My Vulkan App");
    XMapWindow(d, w);
  
    xWin->d = d;
@@ -222,7 +224,10 @@ int main(int argc, char **argv)
     XLibWindow xLibWindow;
     createXLibWindow(&xLibWindow);
     app->init(&xLibWindow);
-    //app->draw();
+    while(1)
+    {
+        app->draw();
+    }
     delete app;
     return 0;
 #endif

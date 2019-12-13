@@ -27,7 +27,7 @@ main_dl: src/main.cpp
 
 VulkanSetup: src/VulkanSetup.cpp src/VulkanSetup.h
 	mkdir -p build/linux
-	clang++ -o build/linux/VulkanSetup.o -c src/VulkanSetup.cpp -Wall -fpic -I $(VK_INC)
+	clang++ -o build/linux/VulkanSetup.o -c src/VulkanSetup.cpp -Wall -fpic -I $(VK_INC) -DLINUX
 
 VulkanSetup_android: src/VulkanSetup.cpp src/VulkanSetup.h
 	mkdir -p build/android

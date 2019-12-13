@@ -1,6 +1,14 @@
 #include "Models.h"
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+char* strCat(const char* dest, const char* src)
+{
+	char* str = (char*)malloc(strlen(dest) + strlen(src) + 1);
+	sprintf(str, "%s%s", dest, src);
+	return str;
+}
 
 Square::Square(	VulkanSetup *_vulkanSetup,
 				VkDescriptorPool _descriptorPool,
@@ -8,11 +16,12 @@ Square::Square(	VulkanSetup *_vulkanSetup,
 				mat4 *_mView,
 				bool *_key,
 				VertexData *vertexData,
-				IndexData *indexData)
-				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+				IndexData *indexData,
+				const char* resPath)
+				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/default.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/test.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/default.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/test.frag.spv"));
 	vertexOffset = vertexData->getOffset(0);
 	indexCount = indexData->getIndexCount(0);
 	firstIndex = indexData->getFirstIndex(0);
@@ -31,7 +40,7 @@ Square::Square(	VulkanSetup *_vulkanSetup,
 	identity4(mProj);
 	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getTrans4(mModel, 0.0f, 0.0f, 0.5f);
 	createUniformBuffer();
 	createPipelineLayout();
@@ -63,11 +72,12 @@ Tacho::Tacho(	VulkanSetup *_vulkanSetup,
 				mat4 *_mView,
 				bool *_key,
 				VertexData *vertexData,
-				IndexData *indexData)
-				: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+				IndexData *indexData,
+				const char* resPath)
+				: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/default.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/powermeter.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/default.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/powermeter.frag.spv"));
 	vertexOffset = vertexData->getOffset(0);
 	indexCount = indexData->getIndexCount(0);
 	firstIndex = indexData->getFirstIndex(0);
@@ -86,7 +96,7 @@ Tacho::Tacho(	VulkanSetup *_vulkanSetup,
 	identity4(mProj);
 	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getTrans4(mModel, 0.0f, -5.0f, 0.5f);
 	createUniformBuffer();
 	createPipelineLayout();
@@ -102,11 +112,12 @@ FlatPerlin2d::FlatPerlin2d(	VulkanSetup *_vulkanSetup,
 							mat4 *_mView,
 							bool *_key,
 							VertexData *vertexData,
-							IndexData *indexData)
-							: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+							IndexData *indexData,
+							const char* resPath)
+							: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/default.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/perlin2d.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/default.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/perlin2d.frag.spv"));
 	vertexOffset = vertexData->getOffset(0);
 	indexCount = indexData->getIndexCount(0);
 	firstIndex = indexData->getFirstIndex(0);
@@ -125,7 +136,7 @@ FlatPerlin2d::FlatPerlin2d(	VulkanSetup *_vulkanSetup,
 	identity4(mProj);
 	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getTrans4(mModel, -5.0f, -5.0f, 0.5f);
 	createUniformBuffer();
 	createPipelineLayout();
@@ -141,11 +152,12 @@ Star::Star(	VulkanSetup *_vulkanSetup,
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData)
-			: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+			IndexData *indexData,
+			const char* resPath)
+			: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/default.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/default.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/default.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/default.frag.spv"));
 	vertexOffset = vertexData->getOffset(1);
 	indexCount = indexData->getIndexCount(1);
 	firstIndex = indexData->getFirstIndex(1);
@@ -164,7 +176,7 @@ Star::Star(	VulkanSetup *_vulkanSetup,
 	identity4(mProj);
 	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getTrans4(mModel, 5.0f, 5.0f, 0.2f);
 	createUniformBuffer();
 	createPipelineLayout();
@@ -191,11 +203,12 @@ FilledCircle::FilledCircle(	VulkanSetup *_vulkanSetup,
 							mat4 *_mView,
 							bool *_key,
 							VertexData *vertexData,
-							IndexData *indexData)
-							: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+							IndexData *indexData,
+							const char* resPath)
+							: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/default.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/circleFilled.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/default.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/circleFilled.frag.spv"));
 	vertexOffset = vertexData->getOffset(0);
 	indexCount = indexData->getIndexCount(0);
 	firstIndex = indexData->getFirstIndex(0);
@@ -214,7 +227,7 @@ FilledCircle::FilledCircle(	VulkanSetup *_vulkanSetup,
 	identity4(mProj);
 	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getTrans4(mModel, 5.0f, 5.0f, 0.1f);
 	createUniformBuffer();
 	createPipelineLayout();
@@ -262,11 +275,12 @@ PerlinCircle::PerlinCircle(	VulkanSetup *_vulkanSetup,
 							mat4 *_mView,
 							bool *_key,
 							VertexData *vertexData,
-							IndexData *indexData)
-							: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+							IndexData *indexData,
+							const char* resPath)
+							: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/perlinCircle.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/default.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/perlinCircle.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/default.frag.spv"));
 	vertexOffset = vertexData->getOffset(2);
 	indexCount = indexData->getIndexCount(2);
 	firstIndex = indexData->getFirstIndex(2);
@@ -287,7 +301,7 @@ PerlinCircle::PerlinCircle(	VulkanSetup *_vulkanSetup,
 	identity4(mProj);
 	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getScale4(mModel, 1.5f, 1.5f, 1.0f);
 	commandBuffer = new Buffer(vulkanSetup->getPhysicalDevice(), vulkanSetup->getDevice(), vulkanSetup->getCommandPool(), vulkanSetup->getQueue());
 	createUniformBuffer();
@@ -319,12 +333,13 @@ Wave::Wave(	VulkanSetup *_vulkanSetup,
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData)
-			: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+			IndexData *indexData,
+			const char* resPath)
+			: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
 	mat4 A, B;
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/welle.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/default.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/welle.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/default.frag.spv"));
 	vertexOffset = vertexData->getOffset(2);
 	indexCount = indexData->getIndexCount(2);
 	firstIndex = indexData->getFirstIndex(2);
@@ -343,7 +358,7 @@ Wave::Wave(	VulkanSetup *_vulkanSetup,
 	identity4(mProj);
 	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getScale4(A, 2.0f, 1.0f, 1.0f);
 	getTrans4(B, 0.0f, 2.0f, 0.0f);
 	mult4(mModel, B, A);
@@ -373,12 +388,13 @@ Perlin1d::Perlin1d(	VulkanSetup *_vulkanSetup,
 					mat4 *_mView,
 					bool *_key,
 					VertexData *vertexData,
-					IndexData *indexData)
-					: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+					IndexData *indexData,
+					const char* resPath)
+					: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
 	mat4 A, B;
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/perlin1d.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/default.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/perlin1d.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/default.frag.spv"));
 	vertexOffset = vertexData->getOffset(2);
 	indexCount = indexData->getIndexCount(2);
 	firstIndex = indexData->getFirstIndex(2);
@@ -397,7 +413,7 @@ Perlin1d::Perlin1d(	VulkanSetup *_vulkanSetup,
 	identity4(mProj);
 	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getScale4(A, 2.0f, 1.0f, 1.0f);
 	getTrans4(B, 2.0f, 0.0f, 0.0f);
 	mult4(mModel, B, A);
@@ -415,14 +431,15 @@ CurveTessellator::CurveTessellator(	VulkanSetup *_vulkanSetup,
 									mat4 *_mView,
 									bool *_key,
 									VertexData *vertexData,
-									IndexData *indexData)
-									: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+									IndexData *indexData,
+									const char* resPath)
+									: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
 	mat4 A, B;
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/curveTessellator.vert.spv");
-	tessellationControlShader.load("/storage/emulated/0/Dokumente/shader/curveTessellator.tesc.spv");
-	tessellationEvaluationShader.load("/storage/emulated/0/Dokumente/shader/curveTessellator.tese.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/curveTessellator.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/curveTessellator.vert.spv"));
+	tessellationControlShader.load(strCat(resourcesPath, "/shader/curveTessellator.tesc.spv"));
+	tessellationEvaluationShader.load(strCat(resourcesPath, "/shader/curveTessellator.tese.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/curveTessellator.frag.spv"));
 	vertexOffset = vertexData->getOffset(3);
 	indexCount = indexData->getIndexCount(3);
 	firstIndex = indexData->getFirstIndex(3);
@@ -441,7 +458,7 @@ CurveTessellator::CurveTessellator(	VulkanSetup *_vulkanSetup,
 	identity4(mProj);
 	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 1.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getScale4(A, 2.0f, 1.0f, 1.0f);
 	getTrans4(B, -5.0f, 0.0f, 0.0f);
 	mult4(mModel, B, A);
@@ -459,14 +476,15 @@ Perlin1dTessellator::Perlin1dTessellator(	VulkanSetup *_vulkanSetup,
 											mat4 *_mView,
 											bool *_key,
 											VertexData *vertexData,
-											IndexData *indexData)
-											: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+											IndexData *indexData,
+											const char* resPath)
+											: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
 	mat4 A, B;
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/curveTessellator.vert.spv");
-	tessellationControlShader.load("/storage/emulated/0/Dokumente/shader/perlin1dTessellator.tesc.spv");
-	tessellationEvaluationShader.load("/storage/emulated/0/Dokumente/shader/perlin1dTessellator.tese.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/curveTessellator.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/curveTessellator.vert.spv"));
+	tessellationControlShader.load(strCat(resourcesPath, "/shader/perlin1dTessellator.tesc.spv"));
+	tessellationEvaluationShader.load(strCat(resourcesPath, "/shader/perlin1dTessellator.tese.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/curveTessellator.frag.spv"));
 	vertexOffset = vertexData->getOffset(4);
 	indexCount = indexData->getIndexCount(4);
 	firstIndex = indexData->getFirstIndex(4);
@@ -485,7 +503,7 @@ Perlin1dTessellator::Perlin1dTessellator(	VulkanSetup *_vulkanSetup,
 	identity4(mProj);
 	mProj[0][0] = (float)vulkanSetup->getSwapChainExtent().height / (float)vulkanSetup->getSwapChainExtent().width;
 	color[0] = 1.0f; color[1] = 0.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getScale4(A, 2.0f, 1.0f, 1.0f);
 	getTrans4(B, 0.0f, 10.0f, 0.0f);
 	mult4(mModel, B, A);
@@ -503,12 +521,13 @@ Plane::Plane(	VulkanSetup *_vulkanSetup,
 				mat4 *_mView,
 				bool *_key,
 				VertexData *vertexData,
-				IndexData *indexData)
-				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+				IndexData *indexData,
+				const char* resPath)
+				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
 	mat4 S, T, Rx, tmp;
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/default.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/schachbrett.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/default.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/schachbrett.frag.spv"));
 	vertexOffset = vertexData->getOffset(0);
 	indexCount = indexData->getIndexCount(0);
 	firstIndex = indexData->getFirstIndex(0);
@@ -526,7 +545,7 @@ Plane::Plane(	VulkanSetup *_vulkanSetup,
 	identity4(mModel);
 	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 1000.0f);
 	color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getScale4(S, 10.0f, 1.0f, 10.0f);
 	getRotX4(Rx, PI / 2.0f);
 	getTrans4(T, 0.0f, 100.0f, 0.0f);
@@ -546,11 +565,12 @@ Planet::Planet(	VulkanSetup *_vulkanSetup,
 				mat4 *_mView,
 				bool *_key,
 				VertexData *vertexData,
-				IndexData *indexData)
-				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+				IndexData *indexData,
+				const char* resPath)
+				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/perlinSphere.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/defaultTex.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/perlinSphere.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/defaultTex.frag.spv"));
 	vertexOffset = vertexData->getOffset(5);
 	indexCount = indexData->getIndexCount(5);
 	firstIndex = indexData->getFirstIndex(5);
@@ -568,7 +588,7 @@ Planet::Planet(	VulkanSetup *_vulkanSetup,
 	identity4(mModel);
 	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 1000.0f);
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/moon.png");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/moon.png"));
 	getScale4(mModel, 100.0f, 100.0f, 100.0f);
 	//getTrans4(mModel, 0.0f, 1.5f, 0.0f);
 	createUniformBuffer();
@@ -585,11 +605,12 @@ Sphere::Sphere(	VulkanSetup *_vulkanSetup,
 				mat4 *_mView,
 				bool *_key,
 				VertexData *vertexData,
-				IndexData *indexData)
-				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+				IndexData *indexData,
+				const char* resPath)
+				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/sphere.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/test2.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/sphere.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/test2.frag.spv"));
 	vertexOffset = vertexData->getOffset(5);
 	indexCount = indexData->getIndexCount(5);
 	firstIndex = indexData->getFirstIndex(5);
@@ -607,7 +628,7 @@ Sphere::Sphere(	VulkanSetup *_vulkanSetup,
 	identity4(mModel);
 	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 1000.0f);
 	color[0] = 1.0f; color[1] = 0.0f; color[2] = 1.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	//getScale4(mModel, 100.0f, 100.0f, 100.0f);
 	getTrans4(mModel, 0.0f, 101.5f, 0.0f);
 	createUniformBuffer();
@@ -624,11 +645,12 @@ Cube::Cube(	VulkanSetup *_vulkanSetup,
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData)
-			:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+			IndexData *indexData,
+			const char* resPath)
+			:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/default.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/test.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/default.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/test.frag.spv"));
 	vertexOffset = vertexData->getOffset(6);
 	indexCount = indexData->getIndexCount(6);
 	firstIndex = indexData->getFirstIndex(6);
@@ -646,7 +668,7 @@ Cube::Cube(	VulkanSetup *_vulkanSetup,
 	identity4(mModel);
 	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 1000.0f);
 	color[0] = 1.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, "/storage/emulated/0/Dokumente/textures/texture.jpg");
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getTrans4(mModel, 0.0f, 110.0f, 0.0f);
 	createUniformBuffer();
 	createPipelineLayout();
@@ -662,11 +684,12 @@ TxtObj::TxtObj(	VulkanSetup *_vulkanSetup,
 				mat4 *_mView,
 				bool *_key,
 				VertexData *vertexData,
-				IndexData *indexData)
-				: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key)
+				IndexData *indexData,
+				const char* resPath)
+				: RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
 {
-	vertexShader.load("/storage/emulated/0/Dokumente/shader/text.vert.spv");
-	fragmentShader.load("/storage/emulated/0/Dokumente/shader/text.frag.spv");
+	vertexShader.load(strCat(resourcesPath, "/shader/text.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/text.frag.spv"));
 	vertexOffset = vertexData->getOffset(0);
 	indexCount = indexData->getIndexCount(0);
 	firstIndex = indexData->getFirstIndex(0);

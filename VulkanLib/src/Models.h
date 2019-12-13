@@ -12,7 +12,8 @@ public:
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData);
+			IndexData *indexData,
+			const char* resPath);
 	~Square();
 	void motion();
 };
@@ -26,7 +27,8 @@ public:
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData);
+			IndexData *indexData,
+			const char* resPath);
 	~Tacho();
 };
 
@@ -39,7 +41,8 @@ public:
 					mat4 *_mView,
 					bool *_key,
 					VertexData *vertexData,
-					IndexData *indexData);
+					IndexData *indexData,
+					const char* resPath);
 	~FlatPerlin2d();
 };
 
@@ -52,7 +55,8 @@ public:
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData);
+			IndexData *indexData,
+			const char* resPath);
 	~Star();
 	void motion();
 };
@@ -66,7 +70,8 @@ public:
 					mat4 *_mView,
 					bool *_key,
 					VertexData *vertexData,
-					IndexData *indexData);
+					IndexData *indexData,
+					const char* resPath);
 	~FilledCircle();
 	void motion();
 };
@@ -87,7 +92,8 @@ public:
 					mat4 *_mView,
 					bool *_key,
 					VertexData *vertexData,
-					IndexData *indexData);
+					IndexData *indexData,
+					const char* resPath);
 	~PerlinCircle();
 	void motion();
 };
@@ -101,7 +107,8 @@ public:
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData);
+			IndexData *indexData,
+			const char* resPath);
 	~Wave();
 	void updateUniformBuffer();
 };
@@ -115,7 +122,8 @@ public:
 				mat4 *_mView,
 				bool *_key,
 				VertexData *vertexData,
-				IndexData *indexData);
+				IndexData *indexData,
+				const char* resPath);
 	~Perlin1d();
 };
 
@@ -128,7 +136,8 @@ public:
 						mat4 *_mView,
 						bool *_key,
 						VertexData *vertexData,
-						IndexData *indexData);
+						IndexData *indexData,
+						const char* resPath);
 	~CurveTessellator();
 };
 
@@ -141,7 +150,8 @@ public:
 						mat4 *_mView,
 						bool *_key,
 						VertexData *vertexData,
-						IndexData *indexData);
+						IndexData *indexData,
+						const char* resPath);
 	~Perlin1dTessellator();
 };
 
@@ -154,7 +164,8 @@ public:
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData);
+			IndexData *indexData,
+			const char* resPath);
 	~Plane();
 };
 
@@ -167,7 +178,8 @@ public:
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData);
+			IndexData *indexData,
+			const char* resPath);
 	~Planet();
 };
 
@@ -180,7 +192,8 @@ public:
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData);
+			IndexData *indexData,
+			const char* resPath);
 	~Sphere();
 };
 
@@ -193,7 +206,8 @@ public:
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData);
+			IndexData *indexData,
+			const char* resPath);
 	~Cube();
 };
 
@@ -206,7 +220,8 @@ public:
 			mat4 *_mView,
 			bool *_key,
 			VertexData *vertexData,
-			IndexData *indexData);
+			IndexData *indexData,
+			const char* resPath);
 	~TxtObj();
 };
 

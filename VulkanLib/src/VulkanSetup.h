@@ -301,7 +301,7 @@ public:
 class RenderObject
 {
 protected:
-	// Attributs
+	const char* resourcesPath;
 	VulkanSetup *vulkanSetup;
 	VkDeviceSize uboBufferSize;
 	Buffer *uniformBuffer;
@@ -348,7 +348,8 @@ public:
 					VkDescriptorPool _descriptorPool,
 					TextOverlay *_textOverlay,
 					mat4 *_mView,
-					bool *_key);
+					bool *_key,
+					const char* resPath);
 	~RenderObject();
 	virtual void updateUniformBuffer();
 	virtual void motion();
@@ -367,6 +368,7 @@ public:
 class RenderScene
 {
 protected:
+	const char* resourcesPath;
 	struct Camera {
 		float xPos, yPos, zPos;
 		float xAngle, yAngle, zAngle;
@@ -391,7 +393,7 @@ protected:
 	void createDescriptorPool();
 	void createCommandBuffers();
 public:
-	RenderScene(VulkanSetup *_vulkanSetup, bool *_key);
+	RenderScene(VulkanSetup *_vulkanSetup, bool *_key, const char* resPath);
 	~RenderScene();
 	void updateUniformBuffers();
 	void camMotion();

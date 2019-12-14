@@ -53,7 +53,7 @@ libVulkan: VulkanSetup
 	clang++ -shared -o libVulkan.so build/linux/VulkanSetup.o -Wall
 
 app: main VulkanSetup matrix Models
-	clang++ -o app build/linux/main.o build/linux/VulkanSetup.o build/linux/Models.o build/linux/matrix.o -Wall -ldl -lX11
+	clang++ -o app build/linux/main.o build/linux/VulkanSetup.o build/linux/Models.o build/linux/matrix.o -Wall -ldl -lX11 -lpthread
 
 app2: main libVulkan
 	clang++ -o app2 build/linux/main.o ./libVulkan.so -Wall

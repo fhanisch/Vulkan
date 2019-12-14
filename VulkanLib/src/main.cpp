@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <dlfcn.h>
+#include <pthread.h>
 #include "VulkanSetup.h"
 
 #define APP_NAME "VulkanApp"
@@ -30,6 +31,7 @@ printf(__VA_ARGS__);
 // TODO: zu userdata hinzufügen
 static FILE* file = NULL;
 static bool key[256];
+static bool quit = false;
 int xMotionPos, yMotionPos;
 
 class App
@@ -85,9 +87,6 @@ public:
         memset(key, 0, sizeof(key));
         vkSetup->init(window);
         renderScene = new RenderScene(vkSetup, key, resourcesPath);
-        key[0x4a] = true;
-        key[VK_SPACE] = true;
-        key[VK_DOWN] = true;
         start_t = clock();
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
     }
@@ -153,26 +152,56 @@ void handle_cmd(android_app* a_app, int32_t cmd)
 void android_main(struct android_app* a_app)
 #else
 
+void eventHandler(void* args)
+{
+    XLibWindow* xWin = (XLibWindow*)args;
+    XEvent e;
+
+    while (1) {
+        XNextEvent(xWin->d, &e);
+        if (e.type == Expose) {
+            
+        }
+        else if (e.type == KeyPress)
+        {
+            PRINT("KeyPress Event: %x\n", e.xkey.keycode)
+            key[e.xkey.keycode] = true;
+            if (key[KEY_ESC]) break;
+        }
+        else if (e.type == KeyRelease)
+        {
+            PRINT("KeyRelease Event: %x\n", e.xkey.keycode)
+            key[e.xkey.keycode] = false;
+        }
+        else if (e.type == MotionNotify)
+        {
+            xMotionPos = e.xmotion.x;
+            yMotionPos = e.xmotion.y;
+        }
+    }
+    quit = true;
+}
+
 int createXLibWindow(XLibWindow* xWin) {
    Display *d;
    Window w;
-   XEvent e;
    int s;
  
    d = XOpenDisplay(NULL);
    if (d == NULL) {
-      PRINT("Cannot open display\n");
+      PRINT("Cannot open display!\n");
       exit(1);
    }
  
    s = DefaultScreen(d);
    w = XCreateSimpleWindow(d, RootWindow(d, s), 10, 10, 1500, 1500, 1, BlackPixel(d, s), WhitePixel(d, s));
-   XSelectInput(d, w, ExposureMask | KeyPressMask);
+   XSelectInput(d, w, ExposureMask | KeyPressMask | KeyReleaseMask | PointerMotionMask);
    XStoreName(d, w, "My Vulkan App");
    XMapWindow(d, w);
  
    xWin->d = d;
    xWin->w = w;
+
    return 0;
 }
 
@@ -223,12 +252,16 @@ int main(int argc, char **argv)
 #else
     XLibWindow xLibWindow;
     createXLibWindow(&xLibWindow);
+    pthread_t threadID;
+    pthread_create(&threadID, NULL, (void *(*)(void *))eventHandler, &xLibWindow);
     app->init(&xLibWindow);
-    while(1)
+    while(!quit)
     {
         app->draw();
     }
     delete app;
+    XDestroyWindow(xLibWindow.d, xLibWindow.w);
+    XCloseDisplay(xLibWindow.d);
     return 0;
 #endif
 }

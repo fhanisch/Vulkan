@@ -314,7 +314,7 @@ PerlinCircle::~PerlinCircle() {}
 
 void PerlinCircle::motion()
 {
-	if (key[VK_SPACE] == true)
+	if (key[KEY_SPACE] == true)
 	{
 		pushConsts.seed_u = (float)(clock() - startTime) / CLOCKS_PER_SEC;
 		pushConsts.seed_v = (float)(clock() - startTime) / CLOCKS_PER_SEC + 245.0f;

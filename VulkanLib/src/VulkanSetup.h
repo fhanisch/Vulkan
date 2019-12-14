@@ -13,11 +13,20 @@
 #include "/home/felix/Entwicklung/vulkan-sdk/1.1.126.0/source/Vulkan-Headers/include/vulkan/vulkan.h"
 #include "matrix.h"
 
-#define VK_SPACE 0
-#define VK_LEFT 1
-#define VK_RIGHT 2
-#define VK_UP 3
-#define VK_DOWN 4
+#ifdef WINDOWS
+#define KEY_SPACE VK_SPACE
+#define KEY_LEFT VK_LEFT
+#define KEY_RIGHT VK_RIGHT
+#define KEY_UP VK_UP
+#define KEY_DOWN VK_DOWN
+#else
+#define KEY_ESC 0x9
+#define KEY_SPACE 0x41
+#define KEY_LEFT 1
+#define KEY_RIGHT 2
+#define KEY_UP 0x27
+#define KEY_DOWN 0x19
+#endif
 
 struct XLibWindow {
 	Display *d;
@@ -165,6 +174,7 @@ protected:
 	};
 
     VkInstance instance;
+	VkDebugUtilsMessengerEXT debugMessenger;
 	VkSurfaceKHR surface;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
@@ -186,6 +196,7 @@ protected:
     void printLayers();
     void printExtensions();
     void createInstance();
+	void setupDebugMessenger();
 	void createSurface();
     void choosePhysicalDevice();
     void createLogicalDevice();
@@ -199,6 +210,7 @@ protected:
 	void createSemaphores();
 
     /* Helper Functions */
+	void getDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT* createInfo);
     void printPhysicalDevices();
     int findQueueFamilies(VkPhysicalDevice device);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -470,5 +482,8 @@ extern PFN_vkCmdDraw vkCmdDraw;
 extern PFN_vkCmdEndRenderPass vkCmdEndRenderPass;
 extern PFN_vkAcquireNextImageKHR vkAcquireNextImageKHR;
 extern PFN_vkQueuePresentKHR vkQueuePresentKHR;
+extern PFN_vkDestroyInstance vkDestroyInstance;
+extern PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
+extern PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
 
 #endif /* VULKAN_SETUP_H */

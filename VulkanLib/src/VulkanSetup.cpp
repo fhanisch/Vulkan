@@ -33,10 +33,33 @@ if (!fun) \
     exit(1); \
 }
 
+#define GET_INSTANCE_FCN_PTR(fun) \
+fun = (PFN_##fun)vkGetInstanceProcAddr(instance, #fun); \
+if (!fun) \
+{ \
+    PRINT("Find Symbol '%s' failed!\n", #fun) \
+    exit(1); \
+}
+
 static FILE* logfile;
 void* libvulkan;
 
 //extern "C" { void mul4x4(mat4, mat4, mat4); } //für Assembler Funktion
+
+
+
+static VkBool32 debugCallback(	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+								VkDebugUtilsMessageTypeFlagsEXT messageType,
+								const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+								void* pUserData)
+{
+
+    PRINT("Validation layer: %s\n", pCallbackData->pMessage)
+
+    return VK_FALSE;
+}
+
+
 
 VertexData::VertexData()
 {
@@ -473,13 +496,15 @@ void VulkanSetup::createInstance()
     const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME };
 #else
 	const unsigned int validationLayerCount = 1;
-	const char *validationLayers[] = { "VK_LAYER_LUNARG_standard_validation" };
-	const unsigned int globalExtensionCount = 2;
-    const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XLIB_SURFACE_EXTENSION_NAME };
+	const char *validationLayers[] = { "VK_LAYER_KHRONOS_validation" };
+	const unsigned int globalExtensionCount = 3;
+    const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XLIB_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
 #endif
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+	getDebugMessengerCreateInfo(&debugCreateInfo);
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	createInfo.pNext = NULL;
+	createInfo.pNext = &debugCreateInfo;
 	createInfo.flags = 0;
 	createInfo.pApplicationInfo = &appInfo;
 	createInfo.enabledLayerCount = validationLayerCount;
@@ -492,6 +517,18 @@ void VulkanSetup::createInstance()
 		exit(1);
 	}
     PRINT("Instance created.\n")
+}
+
+void VulkanSetup::setupDebugMessenger()
+{
+	VkDebugUtilsMessengerCreateInfoEXT createInfo;
+	getDebugMessengerCreateInfo(&createInfo);
+
+	if (vkCreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+	{
+		PRINT("Failed to set up debug messenger!\n")
+		exit(1);
+	}
 }
 
 void VulkanSetup::createSurface()
@@ -571,7 +608,9 @@ void VulkanSetup::createLogicalDevice()
 	VkPhysicalDeviceFeatures deviceFeatures = {};
 	deviceFeatures.tessellationShader = VK_TRUE;
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
-	//deviceFeatures.wideLines = VK_TRUE;
+#ifndef ANDROID
+	deviceFeatures.wideLines = VK_TRUE;
+#endif
 
 	const unsigned int deviceExtensionCount = 1;
 	const char *deviceExtensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -900,11 +939,14 @@ VulkanSetup::VulkanSetup(const char *_appNAme, const char *_engineName, FILE* _f
     GET_FCN_PTR(vkCmdEndRenderPass)
     GET_FCN_PTR(vkAcquireNextImageKHR)
     GET_FCN_PTR(vkQueuePresentKHR)
+	GET_FCN_PTR(vkDestroyInstance)
+	GET_FCN_PTR(vkGetInstanceProcAddr)
 }
 
 VulkanSetup::~VulkanSetup()
 {
     PRINT("Close Vulkan.\n")
+	vkDestroyInstance(instance, nullptr);
 }
 
 void VulkanSetup::init(void* _window)
@@ -915,6 +957,8 @@ void VulkanSetup::init(void* _window)
     printLayers();
     printExtensions();
     createInstance();
+	GET_INSTANCE_FCN_PTR(vkCreateDebugUtilsMessengerEXT)
+	setupDebugMessenger();
 	createSurface();
     printPhysicalDevices();
     choosePhysicalDevice();
@@ -930,6 +974,15 @@ void VulkanSetup::init(void* _window)
 }
 
 /* Helper Functions */
+void VulkanSetup::getDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT* createInfo)
+{
+    *createInfo = {};
+    createInfo->sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo->messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo->messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo->pfnUserCallback = debugCallback;
+}
+
 void VulkanSetup::printPhysicalDevices()
 {
 	if (instance == VK_NULL_HANDLE) {
@@ -2027,28 +2080,32 @@ void RenderScene::camMotion()
 	//2d cam motion
 	mat4 A, /*B,*/ T, dT, R, Rx, Ry, /*Rz,*/ tmp;
 
-	if (key[0x4a] == true)
+	//if (key[0x4a] == true)
+	if (key[0x71] == true)
 	{
 		dup4(tmp, mView2);
 		getTrans4(T, 0.1f, 0.0f, 0.0f);
 		mult4(mView2, T, tmp);
 	}
 
-	if (key[0x4c] == true)
+	//if (key[0x4c] == true)
+	if (key[0x72] == true)
 	{
 		dup4(tmp, mView2);
 		getTrans4(T, -0.1f, 0.0f, 0.0f);
 		mult4(mView2, T, tmp);
 	}
 
-	if (key[0x4b] == true)
+	//if (key[0x4b] == true)
+	if (key[0x74] == true)
 	{
 		dup4(tmp, mView2);
 		getTrans4(T, 0.0f, -0.1f, 0.0f);
 		mult4(mView2, T, tmp);
 	}
 
-	if (key[0x49] == true)
+	//if (key[0x49] == true)
+	if (key[0x6f] == true)
 	{
 		dup4(tmp, mView2);
 		getTrans4(T, 0.0f, 0.1f, 0.0f);
@@ -2065,10 +2122,10 @@ void RenderScene::camMotion()
 	if (key[0x44]) dx =  v;
 	if (key[0x58]) dy = -w;
 	if (key[0x59]) dy =  w;
-	if (key[VK_LEFT])	dphi =  w;
-	if (key[VK_RIGHT])	dphi = -w;
-	if (key[VK_UP])		dtheta = -w;
-	if (key[VK_DOWN])	dtheta =  w;
+	if (key[KEY_LEFT])	dphi =  w;
+	if (key[KEY_RIGHT])	dphi = -w;
+	if (key[KEY_UP])	dtheta = -w;
+	if (key[KEY_DOWN])	dtheta =  w;
 
 	getTrans4(T, 0, -105.0f, 0);
 	getRotX4(Rx, cam.xAngle += dtheta);
@@ -2226,3 +2283,6 @@ PFN_vkCmdDraw vkCmdDraw;
 PFN_vkCmdEndRenderPass vkCmdEndRenderPass;
 PFN_vkAcquireNextImageKHR vkAcquireNextImageKHR;
 PFN_vkQueuePresentKHR vkQueuePresentKHR;
+PFN_vkDestroyInstance vkDestroyInstance;
+PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
+PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;

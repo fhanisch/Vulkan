@@ -13,10 +13,12 @@
 #include "android_native_app_glue.h"
 #define LOGFILE "/storage/emulated/0/Dokumente/VulkanApp.log.txt"
 #define RESOURCES_PATH "/storage/emulated/0/Dokumente/Resources"
+#define LIB_NAME "libvulkan.so"
 static bool initialized_ = false;
 #else
 #define LOGFILE "VulkanApp.log.txt"
 #define RESOURCES_PATH "/home/felix/Entwicklung/Vulkan/VulkanLib/res"
+#define LIB_NAME "libvulkan.so.1"
 #endif
 
 #ifdef LOG
@@ -39,13 +41,14 @@ class App
     const char *appName = APP_NAME;
 	const char *engineName = ENGINE_NAME;
     const char *resourcesPath = RESOURCES_PATH;
+    const char *libName = LIB_NAME;
     void* window;
     uint32_t framecount = 0;
 	uint32_t fps = 0;
     timespec tStart, tEnd;
     clock_t start_t;
 #ifdef DYNAMIC
-    VulkanSetup* (*create_object)(const char *_appName, const char *_engineName, FILE* _file);
+    VulkanSetup* (*create_object)(const char* _appName, const char* _engineName, const char* _libName, FILE* _file);
 #endif
     VulkanSetup *vkSetup;
     RenderScene *renderScene;
@@ -60,15 +63,15 @@ public:
             PRINT("Loading libVulkan.so failed!\n")
             exit(1);
         }
-        create_object = (VulkanSetup*(*)(const char *_appName, const char *_engineName, FILE* _file))dlsym(libVulkan, "create_object");
+        create_object = (VulkanSetup*(*)(const char* _appName, const char* _engineName, const char* _libName, FILE* _file))dlsym(libVulkan, "create_object");
         if (!create_object)
         {
             PRINT("Find Symbol create_object failed!\n")
             exit(1);
         }
-        vkSetup = create_object(appName, engineName, file);
+        vkSetup = create_object(appName, engineName, libName, file);
 #else
-        vkSetup = new VulkanSetup(appName, engineName, file);
+        vkSetup = new VulkanSetup(appName, engineName, libName, file);
 #endif
     }
 
@@ -118,11 +121,11 @@ static int32_t handle_input(struct android_app* app, AInputEvent* event)
         xMotionPos = AMotionEvent_getX(event, 0);
         yMotionPos = AMotionEvent_getY(event, 0);
 
-        if(xMotionPos<200) key[0x4a] = true; else key[0x4a] = false;
-        if(xMotionPos>2000) key[0x4c] = true; else key[0x4c] = false;
+        if(xMotionPos<200) key[KEY_LEFT] = true; else key[KEY_LEFT] = false;
+        if(xMotionPos>2000) key[KEY_RIGHT] = true; else key[KEY_RIGHT] = false;
 
-        if(yMotionPos<200) key[0x49] = true; else key[0x49] = false;
-        if(yMotionPos>1300) key[0x4b] = true; else key[0x4b] = false;
+        if(yMotionPos<200) key[KEY_UP] = true; else key[KEY_UP] = false;
+        if(yMotionPos>1300) key[KEY_DOWN] = true; else key[KEY_DOWN] = false;
         
         PRINT("Position: %d,%d\n", xMotionPos, yMotionPos);
         return 1;
@@ -139,6 +142,7 @@ void handle_cmd(android_app* a_app, int32_t cmd)
             // The window is being shown, get it ready.
             ((App*)a_app->userData)->init(a_app->window);
             initialized_ = true;
+            key[KEY_W] = true;
             break;
         case APP_CMD_TERM_WINDOW:
             // The window is being hidden or closed, clean it up.

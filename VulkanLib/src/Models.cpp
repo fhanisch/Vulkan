@@ -3,13 +3,6 @@
 #include <string.h>
 #include <time.h>
 
-char* strCat(const char* dest, const char* src)
-{
-	char* str = (char*)malloc(strlen(dest) + strlen(src) + 1);
-	sprintf(str, "%s%s", dest, src);
-	return str;
-}
-
 Square::Square(	VulkanSetup *_vulkanSetup,
 				VkDescriptorPool _descriptorPool,
 				TextOverlay *_textOverlay,

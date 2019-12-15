@@ -28,11 +28,15 @@ struct XLibWindow {
 #else
 #define KEY_ESC 0x9
 #define KEY_SPACE 0x41
-#define KEY_LEFT 1
-#define KEY_RIGHT 2
-#define KEY_UP 0x27
-#define KEY_DOWN 0x19
+#define KEY_LEFT 0x71
+#define KEY_RIGHT 0x72
+#define KEY_UP 0x6f
+#define KEY_DOWN 0x74
+#define KEY_W 0x19
+#define KEY_S 0x27
 #endif
+
+char* strCat(const char* dest, const char* src);
 
 struct Vertex {
 	vec3 pos;
@@ -164,7 +168,7 @@ protected:
     const char* appName;
 	const char* engineName;
     void* window;
-    const char* libName = "libvulkan.so";
+    const char* libName;
 
     struct SwapChainSupportDetails {
 		VkSurfaceCapabilitiesKHR capabilities;
@@ -227,7 +231,7 @@ protected:
 	VkFormat findDepthFormat();
 
 public:
-    VulkanSetup(const char *_appNAme, const char *_engineName, FILE* _file);
+    VulkanSetup(const char* _appNAme, const char* _engineName, const char* _libName, FILE* _file);
     /* 'virtual' ermöglicht dynamisches Laden der Klasse in einem shared object */
     virtual ~VulkanSetup();
     virtual void init(void* _window);

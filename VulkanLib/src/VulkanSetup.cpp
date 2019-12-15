@@ -14,9 +14,9 @@
 // Max. number of chars the text overlay buffer can hold
 #define TEXTOVERLAY_MAX_CHAR_COUNT 2048
 stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
-static char buf[128];
 
 #ifdef LOG
+static char buf[128];
 #define PRINT(...) \
 sprintf(buf, __VA_ARGS__); \
 fwrite(buf, strlen(buf), 1, logfile);
@@ -46,7 +46,12 @@ void* libvulkan;
 
 //extern "C" { void mul4x4(mat4, mat4, mat4); } //für Assembler Funktion
 
-
+char* strCat(const char* dest, const char* src)
+{
+	char* str = (char*)malloc(strlen(dest) + strlen(src) + 1);
+	sprintf(str, "%s%s", dest, src);
+	return str;
+}
 
 static VkBool32 debugCallback(	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 								VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -497,8 +502,8 @@ void VulkanSetup::createInstance()
 	appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_1;
 #ifdef ANDROID
-    const unsigned int validationLayerCount = 1;
-	const char *validationLayers[] = { "VK_LAYER_GOOGLE_threading" };
+    const unsigned int validationLayerCount = 2;
+	const char *validationLayers[] = { "VK_LAYER_GOOGLE_threading", /*"VK_LAYER_LUNARG_parameter_validation", "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_core_validation",*/ "VK_LAYER_GOOGLE_unique_objects" };
 	const unsigned int globalExtensionCount = 3;
     const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME };
 #elif WINDOWS
@@ -518,7 +523,7 @@ void VulkanSetup::createInstance()
 	getDebugReportCreateInfo(&debugCreateInfo);
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	//createInfo.pNext = &debugCreateInfo;
+	createInfo.pNext = &debugCreateInfo;
 	createInfo.flags = 0;
 	createInfo.pApplicationInfo = &appInfo;
 	createInfo.enabledLayerCount = validationLayerCount;
@@ -887,11 +892,12 @@ void VulkanSetup::createSemaphores()
     PRINT("Semaphores created.\n")
 }
 
-VulkanSetup::VulkanSetup(const char *_appNAme, const char *_engineName, FILE* _file)
+VulkanSetup::VulkanSetup(const char* _appNAme, const char* _engineName, const char* _libName, FILE* _file)
 {
     appName = _appNAme;
     engineName = _engineName;
     logfile = _file;
+	libName = _libName;
     PRINT("Get Vulkan Functions.\n")
     libvulkan = dlopen(libName, RTLD_NOW | RTLD_LOCAL);
     if (!libvulkan)
@@ -1947,8 +1953,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, const char* resP
 	createMeshGridIndices(&meshGridIndices, &meshGridIndicesSize, 101, 101, 0);
 	indexData->addData(meshGridIndices, meshGridIndicesSize);
 	// Load Object Models from file
-	sprintf(buf, "%s%s", resourcesPath, "/3dmodels/cube.x");
-	ObjectModel cube(buf, vertexData, indexData);
+	ObjectModel cube(strCat(resourcesPath, "/3dmodels/cube.x"), vertexData, indexData);
 	// Objects
 	objectCount = 14;
 	obj = new RenderObject*[objectCount];
@@ -2119,7 +2124,7 @@ void RenderScene::camMotion()
 	mat4 A, /*B,*/ T, dT, R, Rx, Ry, /*Rz,*/ tmp;
 
 	//if (key[0x4a] == true)
-	if (key[0x71] == true)
+	if (key[KEY_LEFT] == true)
 	{
 		dup4(tmp, mView2);
 		getTrans4(T, 0.1f, 0.0f, 0.0f);
@@ -2127,7 +2132,7 @@ void RenderScene::camMotion()
 	}
 
 	//if (key[0x4c] == true)
-	if (key[0x72] == true)
+	if (key[KEY_RIGHT] == true)
 	{
 		dup4(tmp, mView2);
 		getTrans4(T, -0.1f, 0.0f, 0.0f);
@@ -2135,7 +2140,7 @@ void RenderScene::camMotion()
 	}
 
 	//if (key[0x4b] == true)
-	if (key[0x74] == true)
+	if (key[KEY_DOWN] == true)
 	{
 		dup4(tmp, mView2);
 		getTrans4(T, 0.0f, -0.1f, 0.0f);
@@ -2143,7 +2148,7 @@ void RenderScene::camMotion()
 	}
 
 	//if (key[0x49] == true)
-	if (key[0x6f] == true)
+	if (key[KEY_UP] == true)
 	{
 		dup4(tmp, mView2);
 		getTrans4(T, 0.0f, 0.1f, 0.0f);
@@ -2162,8 +2167,8 @@ void RenderScene::camMotion()
 	if (key[0x59]) dy =  w;
 	if (key[KEY_LEFT])	dphi =  w;
 	if (key[KEY_RIGHT])	dphi = -w;
-	if (key[KEY_UP])	dtheta = -w;
-	if (key[KEY_DOWN])	dtheta =  w;
+	if (key[KEY_W])	dtheta =  w;
+	if (key[KEY_S])	dtheta = -w;
 
 	getTrans4(T, 0, -105.0f, 0);
 	getRotX4(Rx, cam.xAngle += dtheta);
@@ -2247,9 +2252,9 @@ void RenderScene::drawFrame()
 }
 
 /* Funktion für dynamisches Laden */
-extern "C" VulkanSetup* create_object(const char *_appName, const char *_engineName, FILE* _file)
+extern "C" VulkanSetup* create_object(const char* _appName, const char* _engineName, const char* _libName, FILE* _file)
 {
-    return new VulkanSetup(_appName, _engineName, _file);
+    return new VulkanSetup(_appName, _engineName, _libName, _file);
 }
 
 /* Vulkan Function Pointer */

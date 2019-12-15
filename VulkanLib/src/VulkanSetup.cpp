@@ -59,7 +59,19 @@ static VkBool32 debugCallback(	VkDebugUtilsMessageSeverityFlagBitsEXT messageSev
     return VK_FALSE;
 }
 
+static VkBool32 debugReportCallback(	VkDebugReportFlagsEXT                       flags,
+										VkDebugReportObjectTypeEXT                  objectType,
+										uint64_t                                    object,
+										size_t                                      location,
+										int32_t                                     messageCode,
+										const char*                                 pLayerPrefix,
+										const char*                                 pMessage,
+										void*                                       pUserData)
+{
+	PRINT("Validation layer: %s\n", pMessage)
 
+    return VK_FALSE;
+}
 
 VertexData::VertexData()
 {
@@ -485,10 +497,10 @@ void VulkanSetup::createInstance()
 	appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_1;
 #ifdef ANDROID
-    const unsigned int validationLayerCount = 0;
-	const char **validationLayers = nullptr;
-	const unsigned int globalExtensionCount = 2;
-    const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_ANDROID_SURFACE_EXTENSION_NAME };
+    const unsigned int validationLayerCount = 1;
+	const char *validationLayers[] = { "VK_LAYER_GOOGLE_threading" };
+	const unsigned int globalExtensionCount = 3;
+    const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME };
 #elif WINDOWS
     const unsigned int validationLayerCount = 1;
 	const char *validationLayers[] = { "VK_LAYER_LUNARG_standard_validation" };
@@ -498,13 +510,15 @@ void VulkanSetup::createInstance()
 	const unsigned int validationLayerCount = 1;
 	const char *validationLayers[] = { "VK_LAYER_KHRONOS_validation" };
 	const unsigned int globalExtensionCount = 3;
-    const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XLIB_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
+    const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XLIB_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME };
 #endif
-	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
-	getDebugMessengerCreateInfo(&debugCreateInfo);
+	//VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+	VkDebugReportCallbackCreateInfoEXT debugCreateInfo;
+	//getDebugMessengerCreateInfo(&debugCreateInfo);
+	getDebugReportCreateInfo(&debugCreateInfo);
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	createInfo.pNext = &debugCreateInfo;
+	//createInfo.pNext = &debugCreateInfo;
 	createInfo.flags = 0;
 	createInfo.pApplicationInfo = &appInfo;
 	createInfo.enabledLayerCount = validationLayerCount;
@@ -529,6 +543,20 @@ void VulkanSetup::setupDebugMessenger()
 		PRINT("Failed to set up debug messenger!\n")
 		exit(1);
 	}
+	PRINT("Debug Messenger created.\n")
+}
+
+void VulkanSetup::setupDebugReport()
+{
+	VkDebugReportCallbackCreateInfoEXT createInfo;
+	getDebugReportCreateInfo(&createInfo);
+
+	if (vkCreateDebugReportCallbackEXT(instance, &createInfo, nullptr, &debugReport) != VK_SUCCESS)
+	{
+		PRINT("Failed to set up debug report!\n")
+		exit(1);
+	}
+	PRINT("Debug Report created.\n")
 }
 
 void VulkanSetup::createSurface()
@@ -957,8 +985,10 @@ void VulkanSetup::init(void* _window)
     printLayers();
     printExtensions();
     createInstance();
-	GET_INSTANCE_FCN_PTR(vkCreateDebugUtilsMessengerEXT)
-	setupDebugMessenger();
+	//GET_INSTANCE_FCN_PTR(vkCreateDebugUtilsMessengerEXT)
+	GET_INSTANCE_FCN_PTR(vkCreateDebugReportCallbackEXT)
+	//setupDebugMessenger();
+	setupDebugReport();
 	createSurface();
     printPhysicalDevices();
     choosePhysicalDevice();
@@ -981,6 +1011,14 @@ void VulkanSetup::getDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT
     createInfo->messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     createInfo->messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo->pfnUserCallback = debugCallback;
+}
+
+void VulkanSetup::getDebugReportCreateInfo(VkDebugReportCallbackCreateInfoEXT* createInfo)
+{
+	*createInfo = {};
+	createInfo->sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
+	createInfo->pfnCallback = debugReportCallback;
+	createInfo->flags = VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT | VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_DEBUG_BIT_EXT;
 }
 
 void VulkanSetup::printPhysicalDevices()
@@ -2286,3 +2324,4 @@ PFN_vkQueuePresentKHR vkQueuePresentKHR;
 PFN_vkDestroyInstance vkDestroyInstance;
 PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
 PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
+PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT;

@@ -8,14 +8,15 @@
 
 #define APP_NAME "VulkanApp"
 #define ENGINE_NAME "MyVulkanEngine"
-#define RESOURCES_PATH "/home/felix/Entwicklung/Vulkan/VulkanLib/res"  // /storage/emulated/0/Dokumente
 
 #ifdef ANDROID
 #include "android_native_app_glue.h"
 #define LOGFILE "/storage/emulated/0/Dokumente/VulkanApp.log.txt"
+#define RESOURCES_PATH "/storage/emulated/0/Dokumente/Resources"
 static bool initialized_ = false;
 #else
 #define LOGFILE "VulkanApp.log.txt"
+#define RESOURCES_PATH "/home/felix/Entwicklung/Vulkan/VulkanLib/res"
 #endif
 
 #ifdef LOG
@@ -31,7 +32,6 @@ printf(__VA_ARGS__);
 // TODO: zu userdata hinzufügen
 static FILE* file = NULL;
 static bool key[256];
-static bool quit = false;
 int xMotionPos, yMotionPos;
 
 class App
@@ -111,7 +111,6 @@ public:
 };
 
 #ifdef ANDROID
-
 static int32_t handle_input(struct android_app* app, AInputEvent* event)
 {
     if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
@@ -134,24 +133,25 @@ static int32_t handle_input(struct android_app* app, AInputEvent* event)
 // Process the next main command.
 void handle_cmd(android_app* a_app, int32_t cmd)
 {
-  switch (cmd) {
-    case APP_CMD_INIT_WINDOW:
-      // The window is being shown, get it ready.
-      ((App*)a_app->userData)->init(a_app->window);
-      initialized_ = true;
-      break;
-    case APP_CMD_TERM_WINDOW:
-      // The window is being hidden or closed, clean it up.
-      initialized_ = false;
-      break;
-    default:
-      PRINT("Event not handled: %d\n", cmd)
-  }
+    switch (cmd)
+    {
+        case APP_CMD_INIT_WINDOW:
+            // The window is being shown, get it ready.
+            ((App*)a_app->userData)->init(a_app->window);
+            initialized_ = true;
+            break;
+        case APP_CMD_TERM_WINDOW:
+            // The window is being hidden or closed, clean it up.
+            initialized_ = false;
+            break;
+        default:
+            PRINT("Event not handled: %d\n", cmd)
+    }
 }
 
 void android_main(struct android_app* a_app)
 #else
-
+static bool quit = false;
 void eventHandler(void* args)
 {
     XLibWindow* xWin = (XLibWindow*)args;

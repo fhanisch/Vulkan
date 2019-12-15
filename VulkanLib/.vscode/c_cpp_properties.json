@@ -1,11 +1,19 @@
 {
     "configurations": [
         {
-            "name": "Linux",
-            "defines": ["ANDROID_", "LOG_"],
+            "name": "Android",
+            "defines": ["ANDROID", "LOG"],
             "includePath": [
                 "${default}",
                 "/home/felix/Entwicklung/android-ndk-r20b/sysroot/usr/include"
+            ]
+        },
+        {
+            "name": "Linux",
+            "defines": ["LINUX"],
+            "includePath": [
+                "${default}",
+                "/home/felix/Entwicklung/vulkan-sdk/1.1.126.0/source/Vulkan-Headers/include"
             ]
         }
     ],

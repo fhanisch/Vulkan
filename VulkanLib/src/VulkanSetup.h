@@ -1,8 +1,6 @@
 #ifndef VULKAN_SETUP_H
 #define VULKAN_SETUP_H
 
-#include <stdio.h>
-
 #define VK_NO_PROTOTYPES
 #ifdef ANDROID
 #define VK_USE_PLATFORM_ANDROID_KHR
@@ -10,8 +8,16 @@
 #define VK_USE_PLATFORM_XLIB_KHR
 #endif
 
-#include "/home/felix/Entwicklung/vulkan-sdk/1.1.126.0/source/Vulkan-Headers/include/vulkan/vulkan.h"
+#include <stdio.h>
+#include <vulkan/vulkan.h>
 #include "matrix.h"
+
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+struct XLibWindow {
+	Display *d;
+	Window w;
+};
+#endif
 
 #ifdef WINDOWS
 #define KEY_SPACE VK_SPACE
@@ -27,11 +33,6 @@
 #define KEY_UP 0x27
 #define KEY_DOWN 0x19
 #endif
-
-struct XLibWindow {
-	Display *d;
-	Window w;
-};
 
 struct Vertex {
 	vec3 pos;
@@ -163,7 +164,7 @@ protected:
     const char* appName;
 	const char* engineName;
     void* window;
-    const char* libName = "libvulkan.so.1";
+    const char* libName = "libvulkan.so";
 
     struct SwapChainSupportDetails {
 		VkSurfaceCapabilitiesKHR capabilities;
@@ -175,6 +176,7 @@ protected:
 
     VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
+	VkDebugReportCallbackEXT debugReport;
 	VkSurfaceKHR surface;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
@@ -197,6 +199,7 @@ protected:
     void printExtensions();
     void createInstance();
 	void setupDebugMessenger();
+	void setupDebugReport();
 	void createSurface();
     void choosePhysicalDevice();
     void createLogicalDevice();
@@ -211,6 +214,7 @@ protected:
 
     /* Helper Functions */
 	void getDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT* createInfo);
+	void getDebugReportCreateInfo(VkDebugReportCallbackCreateInfoEXT* createInfo);
     void printPhysicalDevices();
     int findQueueFamilies(VkPhysicalDevice device);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -485,5 +489,6 @@ extern PFN_vkQueuePresentKHR vkQueuePresentKHR;
 extern PFN_vkDestroyInstance vkDestroyInstance;
 extern PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
 extern PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
+extern PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT;
 
 #endif /* VULKAN_SETUP_H */

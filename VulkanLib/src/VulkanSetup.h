@@ -6,23 +6,18 @@
 #define VK_USE_PLATFORM_ANDROID_KHR
 #elif LINUX
 #define VK_USE_PLATFORM_XLIB_KHR
-#else
+#elif WINDOWS
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
 #include <stdio.h>
 #include <time.h>
 #include <vulkan/vulkan.h>
+#include "Window.h"
 #include "matrix.h"
 
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-struct XLibWindow {
-	Display *d;
-	Window w;
-};
-#endif
-
 #ifdef WINDOWS
+#define KEY_ESC VK_ESCAPE
 #define KEY_SPACE VK_SPACE
 #define KEY_LEFT VK_LEFT
 #define KEY_RIGHT VK_RIGHT
@@ -172,7 +167,7 @@ class VulkanSetup
 protected:
     const char* appName;
 	const char* engineName;
-    void* window;
+    Window0* window;
     const char* libName;
 
     struct SwapChainSupportDetails {
@@ -239,7 +234,7 @@ public:
     VulkanSetup(const char* _appNAme, const char* _engineName, const char* _libName, FILE* _file);
     /* 'virtual' ermöglicht dynamisches Laden der Klasse in einem shared object */
     virtual ~VulkanSetup();
-    virtual void init(void* _window);
+    virtual void init(Window0* _window);
 
     /* Getter */
     VkDevice getDevice();

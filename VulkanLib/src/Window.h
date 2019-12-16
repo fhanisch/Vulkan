@@ -1,13 +1,17 @@
-#pragma once
-#include <Windows.h>
-#include <ShellScalingApi.h> // notwendig f�r high dpi scaling
+#ifndef WINDOW_H
+#define WINDOW_H
 
 struct MotionPos {
 	int x;
 	int y;
 };
 
-class Window
+#ifdef WINDOWS
+
+#include <Windows.h>
+#include <ShellScalingApi.h> // notwendig f�r high dpi scaling
+
+class Window0
 {
 protected:
 	HWND window;
@@ -19,8 +23,8 @@ protected:
 	int height;
 	bool isFullScreen;
 public:
-	Window(const char *_windowName, int _width, int _height, bool _isFullScreen);
-	~Window();
+	Window0(const char *_windowName, int _width, int _height, bool _isFullScreen);
+	~Window0();
 	void createWindow();
 	void showWindow();
 	bool* getKey();
@@ -31,3 +35,35 @@ public:
 	int getWidth();
 	int getHeight();
 };
+
+#elif LINUX
+
+#include <X11/Xlib.h>
+
+class Window0
+{
+protected:
+	Display *display;
+	Window window;
+	const char *windowName;
+	int width;
+	int height;
+	bool isFullScreen;
+public:
+	bool isQuit = false;
+	Window0(const char *_windowName, int _width, int _height, bool _isFullScreen);
+	~Window0();
+	int createWindow();
+	void showWindow();
+	bool* getKey();
+	MotionPos* getMotionPosition();
+	bool checkMessage();
+	Display* getDisplay();
+	Window getWindow();
+	int getWidth();
+	int getHeight();
+};
+
+#endif
+
+#endif /* WINDOW_H */

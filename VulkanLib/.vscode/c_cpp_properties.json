@@ -2,7 +2,7 @@
     "configurations": [
         {
             "name": "Android",
-            "defines": ["ANDROID", "LOG"],
+            "defines": ["ANDROID_", "LOG_"],
             "includePath": [
                 "${default}",
                 "/home/felix/Entwicklung/android-ndk-r20b/sysroot/usr/include"

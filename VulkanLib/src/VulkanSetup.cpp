@@ -608,8 +608,8 @@ void VulkanSetup::createSurface()
 #else
 	VkXlibSurfaceCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-	createInfo.dpy = ((XLibWindow*)window)->d;
-	createInfo.window = ((XLibWindow*)window)->w;
+	createInfo.dpy = window->getDisplay();
+	createInfo.window = window->getWindow();
 
 	if (vkCreateXlibSurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
 		PRINT("Failed to create window surface!\n")
@@ -1007,7 +1007,7 @@ VulkanSetup::~VulkanSetup()
 	vkDestroyInstance(instance, nullptr);
 }
 
-void VulkanSetup::init(void* _window)
+void VulkanSetup::init(Window0* _window)
 {
     window = _window;
     PRINT("Init VulkanSetup.\n")

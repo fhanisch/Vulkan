@@ -6,11 +6,10 @@
 #include <time.h>
 #if defined(LINUX) || defined(ANDROID)
 #include <dlfcn.h>
-#include <pthread.h>
-#elif defined(WINDOWS)
-#include <windows.h>
-#include "Window.h"
+#elif defined(WINDOWS) //TODO: notwendig?
+//#include <windows.h>
 #endif
+#include "Window.h"
 #include "VulkanSetup.h"
 
 #define APP_NAME "VulkanApp"
@@ -48,7 +47,6 @@ printf(__VA_ARGS__);
 
 // TODO: zu userdata hinzufügen
 static FILE* file = NULL;
-static bool key[256];
 MotionPos* motionPos;
 
 class App
@@ -57,7 +55,7 @@ class App
 	const char *engineName = ENGINE_NAME;
     const char *resourcesPath = RESOURCES_PATH;
     const char *libName = LIB_NAME;
-    void* window;
+    Window0* window;
     uint32_t framecount = 0;
 	uint32_t fps = 0;
     timespec tStart, tEnd;
@@ -99,11 +97,11 @@ public:
 #endif
     }
 
-    void init(void* _window)
+    void init(Window0* _window)
     {
         window = _window;
         vkSetup->init(window);
-        renderScene = new RenderScene(vkSetup, ((Window*)window)->getKey(), resourcesPath);
+        renderScene = new RenderScene(vkSetup, window->getKey(), resourcesPath);
         start_t = clock();
 #ifndef WINDOWS
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
@@ -172,61 +170,6 @@ void handle_cmd(android_app* a_app, int32_t cmd)
             PRINT("Event not handled: %d\n", cmd)
     }
 }
-
-#elif LINUX
-static bool quit = false;
-void eventHandler(void* args)
-{
-    XLibWindow* xWin = (XLibWindow*)args;
-    XEvent e;
-
-    while (1) {
-        XNextEvent(xWin->d, &e);
-        if (e.type == Expose) {
-            
-        }
-        else if (e.type == KeyPress)
-        {
-            PRINT("KeyPress Event: %x\n", e.xkey.keycode)
-            key[e.xkey.keycode] = true;
-            if (key[KEY_ESC]) break;
-        }
-        else if (e.type == KeyRelease)
-        {
-            PRINT("KeyRelease Event: %x\n", e.xkey.keycode)
-            key[e.xkey.keycode] = false;
-        }
-        else if (e.type == MotionNotify)
-        {
-            xMotionPos = e.xmotion.x;
-            yMotionPos = e.xmotion.y;
-        }
-    }
-    quit = true;
-}
-
-int createXLibWindow(XLibWindow* xWin) {
-   Display *d;
-   Window w;
-   int s;
- 
-   d = XOpenDisplay(NULL);
-   if (d == NULL) {
-      PRINT("Cannot open display!\n");
-      exit(1);
-   }
- 
-   s = DefaultScreen(d);
-   w = XCreateSimpleWindow(d, RootWindow(d, s), 10, 10, WND_WIDTH, WND_HEIGHT, 1, BlackPixel(d, s), WhitePixel(d, s));
-   XSelectInput(d, w, ExposureMask | KeyPressMask | KeyReleaseMask | PointerMotionMask);
-   XStoreName(d, w, WINDOW_NAME);
-   XMapWindow(d, w);
- 
-   xWin->d = d;
-   xWin->w = w;
-
-   return 0;
-}
 #endif
 
 #ifdef ANDROID
@@ -276,33 +219,19 @@ int main(int argc, char **argv)
 
     delete app;
 
-#elif LINUX
-	if (argc>1) PRINT(argv[1])
-    XLibWindow xLibWindow;
-    createXLibWindow(&xLibWindow);
-    pthread_t threadID;
-    pthread_create(&threadID, NULL, (void *(*)(void *))eventHandler, &xLibWindow);
-    app->init(&xLibWindow);
-    while(!quit)
-    {
-        app->draw();
-    }
-    delete app;
-    XDestroyWindow(xLibWindow.d, xLibWindow.w);
-    XCloseDisplay(xLibWindow.d);
-    return 0;
 #else
-	if (argc>1) PRINT(argv[1])
-	Window* window = new Window(WINDOW_NAME, WND_WIDTH, WND_HEIGHT, FULLSCREEN);
+	if (argc>1) PRINT("%s", argv[1])
+    Window0* window = new Window0(WINDOW_NAME, WND_WIDTH, WND_HEIGHT, FULLSCREEN);
 	window->createWindow();
-	app->init(window);
-	window->showWindow();
-	motionPos = window->getMotionPosition();
-	while(!window->checkMessage())
+    app->init(window);
+    window->showWindow();
+    motionPos = window->getMotionPosition();
+    while(!window->checkMessage())
     {
         app->draw();
     }
     delete app;
-	return 0;
+    delete window;
+    return 0;
 #endif
 }

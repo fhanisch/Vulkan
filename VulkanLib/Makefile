@@ -1,5 +1,4 @@
 ANDROID_JAR=/home/felix/Android/Sdk/platforms/android-28/android.jar
-VK_INC=/home/felix/Entwicklung/vulkan-sdk/1.1.126.0/source/Vulkan-Headers/include
 VK_INC_WIN = C:/VulkanSDK/1.1.126.0/Include
 
 all: exe shared dynamic
@@ -12,7 +11,7 @@ dynamic: app3
 
 main: src/main.cpp
 	mkdir -p build/linux
-	clang++ -o build/linux/main.o -c src/main.cpp -Wall -I $(VK_INC)
+	clang++ -o build/linux/main.o -c src/main.cpp -Wall -I $(VK_INC) -DLINUX
 
 main_android: src/main.cpp
 	mkdir -p build/android
@@ -26,9 +25,7 @@ main_dl: src/main.cpp
 	mkdir -p build/linux
 	clang++ -o build/linux/main_dl.o -c src/main.cpp -DDYNAMIC -Wall -DLOG
 
-VulkanSetup: src/VulkanSetup.cpp src/VulkanSetup.h
-	mkdir -p build/linux
-	clang++ -o build/linux/VulkanSetup.o -c src/VulkanSetup.cpp -Wall -fpic -I $(VK_INC) -DLINUX
+
 
 VulkanSetup_android: src/VulkanSetup.cpp src/VulkanSetup.h
 	mkdir -p build/android
@@ -53,8 +50,7 @@ matrix_android: src/matrix.c src/matrix.h
 libVulkan: VulkanSetup
 	clang++ -shared -o libVulkan.so build/linux/VulkanSetup.o -Wall
 
-app: main VulkanSetup matrix Models
-	clang++ -o app build/linux/main.o build/linux/VulkanSetup.o build/linux/Models.o build/linux/matrix.o -Wall -ldl -lX11 -lpthread
+
 
 app2: main libVulkan
 	clang++ -o app2 build/linux/main.o ./libVulkan.so -Wall
@@ -83,16 +79,22 @@ app_win:
 	cl /nologo /EHsc /W3 /c src/main.cpp src/Window.cpp src/VulkanSetup.cpp src/Models.cpp /I$(VK_INC_WIN) /DWINDOWS
 	link /nologo /out:test.exe *.obj user32.lib Shcore.lib
 
-#shader: src/shader/*
-#	glslc -c $?
 
+
+# *** Linux ***
+include app.mk
+
+# *** Shader ***
 shader: src/shader/*
 
-#src/shader/*:
-#	glslc -c $@ -o res/shader/$(@F).spv
-
 src/shader/*:
-	glslangValidator -V $@ -o res/shader/$(@F).spv
+	glslc -c $@ -o res/shader/$(@F).spv
+#alternativ:
+#src/shader/*:
+#	glslangValidator -V $@ -o res/shader/$(@F).spv
+
+#shader: src/shader/*
+#	glslc -c $?
 
 clean:
 	rm -f -r build lib *.apk

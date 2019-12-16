@@ -1,8 +1,10 @@
 #include "Window.h"
-#include <windowsx.h>
 
 static bool key[256];
 static MotionPos motionPos;
+
+#ifdef WINDOWS
+#include <windowsx.h>
 
 LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -47,7 +49,11 @@ Window::Window(const char *_windowName, int _width, int _height, bool _isFullScr
 	SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE); // notwendig f�r high dpi scaling
 }
 
-Window::~Window() { if (window) DestroyWindow(window); }
+Window::~Window()
+{ 
+	printf("Close Window.\n");
+	if (window) DestroyWindow(window);
+}
 
 void Window::createWindow()
 {
@@ -106,7 +112,7 @@ bool Window::checkMessage()
 		}
 	}
 	else {
-		if (key[27]) return TRUE;
+		if (key[VK_ESCAPE]) return TRUE;
 	}
 	return FALSE;
 }
@@ -118,3 +124,96 @@ HINSTANCE Window::getInstance() { return hInstance; }
 int Window::getWidth() { return width; }
 
 int Window::getHeight() { return height; }
+
+#elif LINUX
+
+#include <stdio.h>
+#include <string.h>
+#include <pthread.h>
+
+void eventHandler(void* args)
+{
+    Window0* xWin = (Window0*)args;
+    XEvent e;
+
+    while (1) {
+        XNextEvent(xWin->getDisplay(), &e);
+        if (e.type == Expose) {
+            
+        }
+        else if (e.type == KeyPress)
+        {
+            printf("KeyPress Event: %x\n", e.xkey.keycode);
+            key[e.xkey.keycode] = true;
+            if (key[0x9]) break;
+        }
+        else if (e.type == KeyRelease)
+        {
+            printf("KeyRelease Event: %x\n", e.xkey.keycode);
+            key[e.xkey.keycode] = false;
+        }
+        else if (e.type == MotionNotify)
+        {
+            motionPos.x = e.xmotion.x;
+            motionPos.y = e.xmotion.y;
+        }
+    }
+	xWin->isQuit = true;
+}
+
+Window0::Window0(const char *_windowName, int _width, int _height, bool _isFullScreen)
+{
+	windowName = _windowName;
+	width = _width;
+	height = _height;
+	isFullScreen = _isFullScreen;
+	memset(key, 0, sizeof(key));
+}
+
+Window0::~Window0()
+{
+	printf("Close Window.\n");
+	XDestroyWindow(display, window);
+    XCloseDisplay(display);
+}
+
+int Window0::createWindow()
+{
+	int s;
+
+	display = XOpenDisplay(NULL);
+	if (display == NULL) return 1;
+
+	s = DefaultScreen(display);
+	window = XCreateSimpleWindow(display, RootWindow(display, s), 10, 10, width, height, 1, BlackPixel(display, s), WhitePixel(display, s));
+	XSelectInput(display, window, ExposureMask | KeyPressMask | KeyReleaseMask | PointerMotionMask);
+	XStoreName(display, window, windowName);
+
+	pthread_t threadID;
+    pthread_create(&threadID, NULL, (void *(*)(void *))eventHandler, this);
+
+	return 0;
+}
+
+void Window0::showWindow()
+{
+	XMapWindow(display, window);
+}
+
+bool Window0::checkMessage() { return isQuit; }
+
+Display* Window0::getDisplay() { return display; }
+
+Window Window0::getWindow() { return window; }
+
+bool *Window0::getKey()
+{
+	return &key[0];
+}
+
+MotionPos* Window0::getMotionPosition()
+{
+	return &motionPos;
+}
+
+#endif

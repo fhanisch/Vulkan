@@ -1,5 +1,6 @@
 ANDROID_JAR=/home/felix/Android/Sdk/platforms/android-28/android.jar
 VK_INC=/home/felix/Entwicklung/vulkan-sdk/1.1.126.0/source/Vulkan-Headers/include
+VK_INC_WIN = C:/VulkanSDK/1.1.126.0/Include
 
 all: exe shared dynamic
 
@@ -75,6 +76,23 @@ VulkanApp_unsigned-aligned.apk: output.apk
 
 VulkanApp: VulkanApp_unsigned-aligned.apk
 	apksigner sign --ks my-release-key.jks --out VulkanApp.apk VulkanApp_unsigned-aligned.apk
+
+#TODO: Warnings auf W4 umstellen
+app_win:
+	cl /nologo /W3 /c src/matrix.c
+	cl /nologo /EHsc /W3 /c src/main.cpp src/Window.cpp src/VulkanSetup.cpp src/Models.cpp /I$(VK_INC_WIN) /DWINDOWS
+	link /nologo /out:test.exe *.obj user32.lib Shcore.lib
+
+#shader: src/shader/*
+#	glslc -c $?
+
+shader: src/shader/*
+
+#src/shader/*:
+#	glslc -c $@ -o res/shader/$(@F).spv
+
+src/shader/*:
+	glslangValidator -V $@ -o res/shader/$(@F).spv
 
 clean:
 	rm -f -r build lib *.apk

@@ -4,11 +4,14 @@
 #define VK_NO_PROTOTYPES
 #ifdef ANDROID
 #define VK_USE_PLATFORM_ANDROID_KHR
-#else
+#elif LINUX
 #define VK_USE_PLATFORM_XLIB_KHR
+#else
+#define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
 #include <stdio.h>
+#include <time.h>
 #include <vulkan/vulkan.h>
 #include "matrix.h"
 
@@ -25,6 +28,8 @@ struct XLibWindow {
 #define KEY_RIGHT VK_RIGHT
 #define KEY_UP VK_UP
 #define KEY_DOWN VK_DOWN
+#define KEY_W 0x57
+#define KEY_S 0x53
 #else
 #define KEY_ESC 0x9
 #define KEY_SPACE 0x41
@@ -428,8 +433,10 @@ extern PFN_vkEnumerateInstanceLayerProperties vkEnumerateInstanceLayerProperties
 extern PFN_vkEnumerateInstanceExtensionProperties vkEnumerateInstanceExtensionProperties;
 #ifdef ANDROID
 extern PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR;
-#else
+#elif LINUX
 extern PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR;
+#elif WINDOWS
+extern PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
 #endif
 extern PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices;
 extern PFN_vkEnumerateDeviceExtensionProperties vkEnumerateDeviceExtensionProperties;

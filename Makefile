@@ -5,12 +5,12 @@ SrcPath2DAction = 2DAction\src
 SrcPathWorld = World3D\src
 SrcPathMathLib = mathlib\src
 SrcVA = VulkanApp2\src
-INC_VULKAN = C:\VulkanSDK\1.1.77.0\Include
+INC_VULKAN = C:\VulkanSDK\1.1.126.0\Include
 INC_GLFW = C:\Home\Entwicklung\glfw-3.2.1.bin.WIN64\include
 INC_DEV = C:\Home\Entwicklung\inc
 INC_STB = C:\Home\Entwicklung\stb
 INC_USB = C:\Home\Entwicklung\libusb-1.0.21\include
-LIB_VULKAN = C:\VulkanSDK\1.1.77.0\Lib
+LIB_VULKAN = C:\VulkanSDK\1.1.126.0\Lib
 LIB_GLFW = C:\Home\Entwicklung\glfw-3.2.1.bin.WIN64\lib-vc2015
 LIB_DEV = C:\Home\Entwicklung\lib
 LIB_USB = C:\Home\Entwicklung\libusb-1.0.21\MS64\dll
@@ -21,9 +21,9 @@ LIBS_WORLD = vulkan-1.lib mathlib.lib user32.lib Shcore.lib libusb-1.0.lib
 all: App T1 T2 World ML Shader1 Shader2 Tex
 
 VA: build build\VulkanApp2
-	cl /nologo /EHsc /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link math.obj user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2a.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib /LARGEADDRESSAWARE:NO
-	clang-cl /DWINAPP /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp /I C:\VulkanSDK\1.1.82.0\Include /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link math.obj user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2b.exe /LIBPATH:C:\VulkanSDK\1.1.82.0\Lib /LIBPATH:C:\Home\Entwicklung\lib /LARGEADDRESSAWARE:NO
-	clang -Wall $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp -I C:\VulkanSDK\1.1.82.0\Include -I C:\Home\Entwicklung\inc -I C:\Home\Entwicklung\stb math.obj -l user32 -l Shcore -l vulkan-1 -l mathlib -o VulkanApp2c.exe -L C:\VulkanSDK\1.1.82.0\Lib -L C:\Home\Entwicklung\lib /LARGEADDRESSAWARE:NO
+	cl /nologo /EHsc /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp /I $(INC_VULKAN) /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link math.obj user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2a.exe /LIBPATH:$(LIB_VULKAN) /LIBPATH:C:\Home\Entwicklung\lib /LARGEADDRESSAWARE:NO
+	clang-cl /DWINAPP /W4 $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp /I $(INC_VULKAN) /I C:\Home\Entwicklung\inc /I C:\Home\Entwicklung\stb /link math.obj user32.lib Shcore.lib vulkan-1.lib mathlib.lib /out:VulkanApp2b.exe /LIBPATH:$(LIB_VULKAN) /LIBPATH:C:\Home\Entwicklung\lib /LARGEADDRESSAWARE:NO
+	clang -Wall $(SrcVA)\main.cpp $(SrcVA)\Window.cpp $(SrcVA)\Vulkan.cpp $(SrcVA)\Models.cpp -I $(INC_VULKAN) -I C:\Home\Entwicklung\inc -I C:\Home\Entwicklung\stb math.obj -l user32 -l Shcore -l vulkan-1 -l mathlib -o VulkanApp2c.exe -L $(LIB_VULKAN) -L C:\Home\Entwicklung\lib /LARGEADDRESSAWARE:NO
 
 VAS: build build\VulkanApp2
 	glslangValidator -V $(SrcVA)\shader\default.vert -o build\VulkanApp2\vs_default.spv

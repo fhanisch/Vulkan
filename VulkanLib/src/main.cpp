@@ -1,13 +1,24 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#if defined(LINUX) || defined(ANDROID)
 #include <dlfcn.h>
 #include <pthread.h>
+#elif defined(WINDOWS)
+#include <windows.h>
+#include "Window.h"
+#endif
 #include "VulkanSetup.h"
 
 #define APP_NAME "VulkanApp"
 #define ENGINE_NAME "MyVulkanEngine"
+#define WINDOW_NAME "My Vulkan App"
+#define WND_WIDTH 1500
+#define WND_HEIGHT 1500
+#define FULLSCREEN false
 
 #ifdef ANDROID
 #include "android_native_app_glue.h"
@@ -15,10 +26,14 @@
 #define RESOURCES_PATH "/storage/emulated/0/Dokumente/Resources"
 #define LIB_NAME "libvulkan.so"
 static bool initialized_ = false;
-#else
+#elif LINUX
 #define LOGFILE "VulkanApp.log.txt"
 #define RESOURCES_PATH "/home/felix/Entwicklung/Vulkan/VulkanLib/res"
 #define LIB_NAME "libvulkan.so.1"
+#elif WINDOWS
+#define LOGFILE "VulkanApp.log.txt"
+#define RESOURCES_PATH "C:/Home/Entwicklung/Vulkan/VulkanLib/res"
+#define LIB_NAME "vulkan-1.dll"
 #endif
 
 #ifdef LOG
@@ -34,7 +49,7 @@ printf(__VA_ARGS__);
 // TODO: zu userdata hinzufügen
 static FILE* file = NULL;
 static bool key[256];
-int xMotionPos, yMotionPos;
+MotionPos* motionPos;
 
 class App
 {
@@ -87,11 +102,12 @@ public:
     void init(void* _window)
     {
         window = _window;
-        memset(key, 0, sizeof(key));
         vkSetup->init(window);
-        renderScene = new RenderScene(vkSetup, key, resourcesPath);
+        renderScene = new RenderScene(vkSetup, ((Window*)window)->getKey(), resourcesPath);
         start_t = clock();
+#ifndef WINDOWS
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
+#endif
     }
 
     void draw()
@@ -100,16 +116,20 @@ public:
         renderScene->updateUniformBuffers();
 		renderScene->camMotion();
 		renderScene->drawFrame();
+#ifndef WINDOWS
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tEnd);
         while (((tEnd.tv_sec - tStart.tv_sec) * (long)1e9 + (tEnd.tv_nsec - tStart.tv_nsec)) < (long)(1000000000/60)) clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tEnd);
-        if ((clock() - start_t) > CLOCKS_PER_SEC)
+#endif        
+		if ((clock() - start_t) > CLOCKS_PER_SEC)
         {
             fps = framecount;
             start_t = clock();
 			framecount = 0;
         }
-        renderScene->updateTextOverlay(fps, xMotionPos, yMotionPos);
+        renderScene->updateTextOverlay(fps, motionPos->x, motionPos->y);
+#ifndef WINDOWS
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
+#endif
     }
 };
 
@@ -153,8 +173,7 @@ void handle_cmd(android_app* a_app, int32_t cmd)
     }
 }
 
-void android_main(struct android_app* a_app)
-#else
+#elif LINUX
 static bool quit = false;
 void eventHandler(void* args)
 {
@@ -198,9 +217,9 @@ int createXLibWindow(XLibWindow* xWin) {
    }
  
    s = DefaultScreen(d);
-   w = XCreateSimpleWindow(d, RootWindow(d, s), 10, 10, 1500, 1500, 1, BlackPixel(d, s), WhitePixel(d, s));
+   w = XCreateSimpleWindow(d, RootWindow(d, s), 10, 10, WND_WIDTH, WND_HEIGHT, 1, BlackPixel(d, s), WhitePixel(d, s));
    XSelectInput(d, w, ExposureMask | KeyPressMask | KeyReleaseMask | PointerMotionMask);
-   XStoreName(d, w, "My Vulkan App");
+   XStoreName(d, w, WINDOW_NAME);
    XMapWindow(d, w);
  
    xWin->d = d;
@@ -208,7 +227,11 @@ int createXLibWindow(XLibWindow* xWin) {
 
    return 0;
 }
+#endif
 
+#ifdef ANDROID
+void android_main(struct android_app* a_app)
+#else
 int main(int argc, char **argv)
 #endif
 {
@@ -253,7 +276,8 @@ int main(int argc, char **argv)
 
     delete app;
 
-#else
+#elif LINUX
+	if (argc>1) PRINT(argv[1])
     XLibWindow xLibWindow;
     createXLibWindow(&xLibWindow);
     pthread_t threadID;
@@ -267,5 +291,18 @@ int main(int argc, char **argv)
     XDestroyWindow(xLibWindow.d, xLibWindow.w);
     XCloseDisplay(xLibWindow.d);
     return 0;
+#else
+	if (argc>1) PRINT(argv[1])
+	Window* window = new Window(WINDOW_NAME, WND_WIDTH, WND_HEIGHT, FULLSCREEN);
+	window->createWindow();
+	app->init(window);
+	window->showWindow();
+	motionPos = window->getMotionPosition();
+	while(!window->checkMessage())
+    {
+        app->draw();
+    }
+    delete app;
+	return 0;
 #endif
 }

@@ -1,8 +1,16 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "VulkanSetup.h"
 #include "Models.h"
 #include <string.h>
 #include <stdlib.h>
+#if defined(LINUX) || defined(ANDROID)
 #include <dlfcn.h>
+#elif defined(WINDOWS)
+#include "Window.h"
+#include <algorithm>
+#undef min
+#undef max
+#endif
 
 // stb_image.h --> muss hier inkludiert werden statt in Header-Datei, da sonst doppelter Code
 #define STB_IMAGE_IMPLEMENTATION
@@ -25,6 +33,7 @@ fwrite(buf, strlen(buf), 1, logfile);
 printf(__VA_ARGS__);
 #endif
 
+#if defined(LINUX) || defined(ANDROID)
 #define GET_FCN_PTR(fun) \
 fun = (PFN_##fun)dlsym(libvulkan, #fun); \
 if (!fun) \
@@ -32,6 +41,15 @@ if (!fun) \
     PRINT("Find Symbol '%s' failed!\n", #fun) \
     exit(1); \
 }
+#elif defined(WINDOWS)
+#define GET_FCN_PTR(fun) \
+fun = (PFN_##fun)GetProcAddress((HMODULE)libvulkan, #fun); \
+if (!fun) \
+{ \
+    PRINT("Find Symbol '%s' failed!\n", #fun) \
+    exit(1); \
+}
+#endif
 
 #define GET_INSTANCE_FCN_PTR(fun) \
 fun = (PFN_##fun)vkGetInstanceProcAddr(instance, #fun); \
@@ -509,8 +527,8 @@ void VulkanSetup::createInstance()
 #elif WINDOWS
     const unsigned int validationLayerCount = 1;
 	const char *validationLayers[] = { "VK_LAYER_LUNARG_standard_validation" };
-    const unsigned int globalExtensionCount = 2;
-    const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME };
+    const unsigned int globalExtensionCount = 3;
+    const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME };
 #else
 	const unsigned int validationLayerCount = 1;
 	const char *validationLayers[] = { "VK_LAYER_KHRONOS_validation" };
@@ -580,8 +598,8 @@ void VulkanSetup::createSurface()
 #elif WINDOWS
 	VkWin32SurfaceCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	createInfo.hwnd = window->getWindow();
-	createInfo.hinstance = window->getInstance();
+	createInfo.hwnd = ((Window*)window)->getWindow();
+	createInfo.hinstance = ((Window*)window)->getInstance();
 
 	if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
 		PRINT("Failed to create window surface!\n")
@@ -899,7 +917,11 @@ VulkanSetup::VulkanSetup(const char* _appNAme, const char* _engineName, const ch
     logfile = _file;
 	libName = _libName;
     PRINT("Get Vulkan Functions.\n")
+#if defined(ANDROID) || defined(LINUX)
     libvulkan = dlopen(libName, RTLD_NOW | RTLD_LOCAL);
+#elif defined(WINDOWS)
+	libvulkan = LoadLibrary(libName);
+#endif
     if (!libvulkan)
     {
         PRINT("Loading libvulkan.so failed!\n")
@@ -911,8 +933,10 @@ VulkanSetup::VulkanSetup(const char* _appNAme, const char* _engineName, const ch
     GET_FCN_PTR(vkEnumerateInstanceExtensionProperties)
 #ifdef ANDROID
     GET_FCN_PTR(vkCreateAndroidSurfaceKHR)
-#else
+#elif LINUX
 	GET_FCN_PTR(vkCreateXlibSurfaceKHR)
+#elif WINDOWS
+	GET_FCN_PTR(vkCreateWin32SurfaceKHR)
 #endif
     GET_FCN_PTR(vkEnumeratePhysicalDevices)
     GET_FCN_PTR(vkEnumerateDeviceExtensionProperties)
@@ -1242,7 +1266,7 @@ VkExtent2D VulkanSetup::chooseSwapExtent(VkSurfaceCapabilitiesKHR *capabilities)
 	if (capabilities->currentExtent.width != std::numeric_limits<uint32_t>::max())
 		return capabilities->currentExtent;
 	else {
-		VkExtent2D actualExtent = { (uint32_t)window->getWidth(), (uint32_t)window->getHeight() };
+		VkExtent2D actualExtent = { (uint32_t)((Window*)window)->getWidth(), (uint32_t)((Window*)window)->getHeight() };
 		actualExtent.width = std::max(capabilities->minImageExtent.width, std::min(capabilities->maxImageExtent.width, actualExtent.width));
 		actualExtent.height = std::max(capabilities->minImageExtent.height, std::min(capabilities->maxImageExtent.height, actualExtent.height));
 
@@ -2264,8 +2288,10 @@ PFN_vkEnumerateInstanceLayerProperties vkEnumerateInstanceLayerProperties;
 PFN_vkEnumerateInstanceExtensionProperties vkEnumerateInstanceExtensionProperties;
 #ifdef ANDROID
 PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR;
-#else
+#elif LINUX
 PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR;
+#elif WINDOWS
+PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
 #endif
 PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices;
 PFN_vkEnumerateDeviceExtensionProperties vkEnumerateDeviceExtensionProperties;

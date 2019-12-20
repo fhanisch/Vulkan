@@ -1925,7 +1925,7 @@ void RenderObject::createDescriptorSet()
 }
 
 uint32_t RenderObject::getPushConstantRangeCount() { return pushConstantRangeCount; }
-VkPushConstantRange RenderObject::getPushConstantRange() { return *pPushConstantRange; }
+VkPushConstantRange* RenderObject::getPushConstantRange() { return pPushConstantRange; }
 VkPipelineLayout RenderObject::getPipelineLayout() { return pipelineLayout; }
 VkPipeline RenderObject::getGraphicsPipeline() { return graphicsPipeline; }
 VkDescriptorSet *RenderObject::getDescriptorSetPtr() { return &descriptorSet; }
@@ -2100,6 +2100,8 @@ void RenderScene::createCommandBuffers()
 
 			vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 			{
+				vkCmdPushConstants(commandBuffers[i], obj[5]->getPipelineLayout(), obj[5]->getPushConstantRange()->stageFlags, obj[5]->getPushConstantRange()->offset, obj[5]->getPushConstantRange()->size, ((PerlinCircle*)obj[5])->getPushConstants());
+
 				VkBuffer vB[] = { vertexBuffer->getBuffer() };
 				vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
@@ -2142,6 +2144,8 @@ void RenderScene::updateUniformBuffers()
 
 void RenderScene::camMotion()
 {
+	if (key[KEY_SPACE]) createCommandBuffers();
+
 	for (uint32_t i = 0; i < objectCount; i++) obj[i]->motion();
 
 	//2d cam motion

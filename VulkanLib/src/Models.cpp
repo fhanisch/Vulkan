@@ -311,14 +311,10 @@ void PerlinCircle::motion()
 	{
 		pushConsts.seed_u = (float)(clock() - startTime) / CLOCKS_PER_SEC;
 		pushConsts.seed_v = (float)(clock() - startTime) / CLOCKS_PER_SEC + 245.0f;
-		
-		commandBuffer->beginSingleTimeCommands();
-
-		vkCmdPushConstants(commandBuffer->getCommandBuffer(), pipelineLayout, pPushConstantRange->stageFlags, pPushConstantRange->offset, pPushConstantRange->size, &pushConsts);
-
-		commandBuffer->endSingleTimeCommands();
 	}
 }
+
+void* PerlinCircle::getPushConstants() { return &pushConsts; }
 
 Wave::Wave(	VulkanSetup *_vulkanSetup,
 			VkDescriptorPool _descriptorPool,

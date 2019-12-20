@@ -96,6 +96,7 @@ public:
 					const char* resPath);
 	~PerlinCircle();
 	void motion();
+	void* getPushConstants();
 };
 
 class Wave : public RenderObject

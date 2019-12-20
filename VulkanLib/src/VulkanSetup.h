@@ -337,7 +337,7 @@ protected:
 	VkPrimitiveTopology topology;
 	VkPipelineTessellationStateCreateInfo *pTessellationStateCreateInfo;
 	uint32_t pushConstantRangeCount;
-	VkPushConstantRange *pPushConstantRange;
+	VkPushConstantRange* pPushConstantRange;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	Texture *texture;
@@ -374,7 +374,7 @@ public:
 	virtual void updateUniformBuffer();
 	virtual void motion();
 	uint32_t getPushConstantRangeCount();
-	VkPushConstantRange getPushConstantRange();
+	VkPushConstantRange* getPushConstantRange();
 	VkPipelineLayout getPipelineLayout();
 	VkPipeline getGraphicsPipeline();
 	VkDescriptorSet *getDescriptorSetPtr();

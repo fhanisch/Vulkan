@@ -10,10 +10,18 @@
         },
         {
             "name": "Linux",
-            "defines": ["LINUX"],
+            "defines": ["LINUX_"],
             "includePath": [
                 "${default}",
                 "/home/felix/Entwicklung/vulkan-sdk/1.1.126.0/source/Vulkan-Headers/include"
+            ]
+		},
+		{
+            "name": "Windows",
+            "defines": ["WINDOWS"],
+            "includePath": [
+                "${default}",
+                "C:/VulkanSDK/1.1.126.0/Include"
             ]
         }
     ],

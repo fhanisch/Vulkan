@@ -13,6 +13,6 @@ $(dst)/%.cpp.o: src/%.cpp src/%.h
 	clang++ -o $@ -c $< -Wall -I $(VK_INC) -DLINUX
 
 app: $(obj)
-	clang++ -o app $^ -Wall -ldl -lX11 -lpthread
+	clang++ -o $@ $^ -Wall -ldl -lX11 -lpthread
 
 dir: $(dst)

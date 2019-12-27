@@ -6,8 +6,6 @@
 #include <time.h>
 #if defined(LINUX) || defined(ANDROID)
 #include <dlfcn.h>
-#elif defined(WINDOWS) //TODO: notwendig?
-//#include <windows.h>
 #endif
 #include "Window.h"
 #include "VulkanSetup.h"

@@ -598,8 +598,8 @@ void VulkanSetup::createSurface()
 #elif WINDOWS
 	VkWin32SurfaceCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	createInfo.hwnd = ((Window*)window)->getWindow();
-	createInfo.hinstance = ((Window*)window)->getInstance();
+	createInfo.hwnd = ((Window0*)window)->getWindow();
+	createInfo.hinstance = ((Window0*)window)->getInstance();
 
 	if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
 		PRINT("Failed to create window surface!\n")
@@ -1266,7 +1266,7 @@ VkExtent2D VulkanSetup::chooseSwapExtent(VkSurfaceCapabilitiesKHR *capabilities)
 	if (capabilities->currentExtent.width != std::numeric_limits<uint32_t>::max())
 		return capabilities->currentExtent;
 	else {
-		VkExtent2D actualExtent = { (uint32_t)((Window*)window)->getWidth(), (uint32_t)((Window*)window)->getHeight() };
+		VkExtent2D actualExtent = { (uint32_t)((Window0*)window)->getWidth(), (uint32_t)((Window0*)window)->getHeight() };
 		actualExtent.width = std::max(capabilities->minImageExtent.width, std::min(capabilities->maxImageExtent.width, actualExtent.width));
 		actualExtent.height = std::max(capabilities->minImageExtent.height, std::min(capabilities->maxImageExtent.height, actualExtent.height));
 

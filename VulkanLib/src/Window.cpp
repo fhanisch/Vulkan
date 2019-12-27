@@ -1,4 +1,6 @@
 #include "Window.h"
+#include <stdio.h>
+#include <string.h>
 
 static bool key[256];
 static MotionPos motionPos;
@@ -27,7 +29,7 @@ LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-Window::Window(const char *_windowName, int _width, int _height, bool _isFullScreen)
+Window0::Window0(const char *_windowName, int _width, int _height, bool _isFullScreen)
 {
 	windowName = _windowName;
 	width = _width;
@@ -49,13 +51,13 @@ Window::Window(const char *_windowName, int _width, int _height, bool _isFullScr
 	SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE); // notwendig f�r high dpi scaling
 }
 
-Window::~Window()
+Window0::~Window0()
 { 
 	printf("Close Window.\n");
 	if (window) DestroyWindow(window);
 }
 
-void Window::createWindow()
+void Window0::createWindow()
 {
 	DWORD dwStyle;
 	
@@ -81,22 +83,22 @@ void Window::createWindow()
 	if (isFullScreen) ShowCursor(0);
 }
 
-void Window::showWindow()
+void Window0::showWindow()
 {
 	ShowWindow(window, SW_SHOW);
 }
 
-bool *Window::getKey()
+bool *Window0::getKey()
 {
 	return &key[0];
 }
 
-MotionPos* Window::getMotionPosition()
+MotionPos* Window0::getMotionPosition()
 {
 	return &motionPos;
 }
 
-bool Window::checkMessage()
+bool Window0::checkMessage()
 {
 	MSG msg;
 	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -117,18 +119,16 @@ bool Window::checkMessage()
 	return FALSE;
 }
 
-HWND Window::getWindow() { return window; }
+HWND Window0::getWindow() { return window; }
 
-HINSTANCE Window::getInstance() { return hInstance; }
+HINSTANCE Window0::getInstance() { return hInstance; }
 
-int Window::getWidth() { return width; }
+int Window0::getWidth() { return width; }
 
-int Window::getHeight() { return height; }
+int Window0::getHeight() { return height; }
 
 #elif LINUX
 
-#include <stdio.h>
-#include <string.h>
 #include <pthread.h>
 
 void eventHandler(void* args)

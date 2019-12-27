@@ -73,13 +73,16 @@ VulkanApp_unsigned-aligned.apk: output.apk
 VulkanApp: VulkanApp_unsigned-aligned.apk
 	apksigner sign --ks my-release-key.jks --out VulkanApp.apk VulkanApp_unsigned-aligned.apk
 
+
+# *** Windows ***
+
+include app_win.mk
+
 #TODO: Warnings auf W4 umstellen
 app_win:
 	cl /nologo /W3 /c src/matrix.c
 	cl /nologo /EHsc /W3 /c src/main.cpp src/Window.cpp src/VulkanSetup.cpp src/Models.cpp /I$(VK_INC_WIN) /DWINDOWS
 	link /nologo /out:test.exe *.obj user32.lib Shcore.lib
-
-
 
 # *** Linux ***
 include app.mk

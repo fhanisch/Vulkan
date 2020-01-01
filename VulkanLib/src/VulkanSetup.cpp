@@ -1943,6 +1943,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, const char* resP
 	identity4(mView);
 	identity4(mView2);
 	identity4(cam.M);
+	elevation = -105.0f;
 	vertexData = new VertexData;
 	indexData = new IndexData;
 	// Vertex Data
@@ -2188,12 +2189,14 @@ void RenderScene::camMotion()
 	mat4 Rx, Ry, Rz, Rzx, R, mViewIst;
 	float dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f;
 	
-	if (key[KEY_LEFT])	dphi = -0.02f;
-	if (key[KEY_RIGHT])	dphi = 0.02f;
+	if (key[KEY_LEFT])	dphi = -0.05f;
+	if (key[KEY_RIGHT])	dphi = 0.05f;
 	if (key[KEY_W]) dtheta = 0.01f;
 	if (key[KEY_S]) dtheta = -0.01f;
 	if (key[KEY_A]) dpsi = -0.002f;
 	if (key[KEY_D]) dpsi = 0.002f;
+	if (key[KEY_X]) elevation += 0.1;
+	if (key[KEY_Y]) elevation -= 0.1;
 
 	getRotX4(Rx, dtheta);
 	getRotZ4(Rz, dpsi);
@@ -2204,7 +2207,7 @@ void RenderScene::camMotion()
 	mult4(Rzx, Rz, Rx);
 	mult4(R, Rzx, Ry);
 	mult4(mView, R, mViewIst);
-	mView[3][0] = 0.0f; mView[3][1] = -105.0f; mView[3][2] = 0.0f;
+	mView[3][0] = 0.0f; mView[3][1] = elevation; mView[3][2] = 0.0f;
 	invert4(cam.M, mView); // --> für Positionsanzeige
 }
 

@@ -27,6 +27,8 @@
 #define KEY_D 0x44
 #define KEY_W 0x57
 #define KEY_S 0x53
+#define KEY_X 0x58
+#define KEY_Y 0x59
 #else
 #define KEY_ESC 0x9
 #define KEY_SPACE 0x41
@@ -38,6 +40,8 @@
 #define KEY_D X
 #define KEY_W 0x19
 #define KEY_S 0x27
+#define KEY_X X
+#define KEY_Y X
 #endif
 
 char* strCat(const char* dest, const char* src);
@@ -398,6 +402,7 @@ protected:
 		float xAngle, yAngle, zAngle;
 		mat4 M;
 	} cam;
+	float elevation;
 	bool *key;
 	mat4 mView, mView2;
 	VulkanSetup *vulkanSetup;

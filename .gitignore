@@ -7,6 +7,8 @@ build
 log.txt
 *.user
 *.obj
+*.lib
+*.dll
 *.exe
 *.apk
 *.o
@@ -17,3 +19,6 @@ app
 app2
 app3
 *.spv
+*.cmake
+CMakeFiles
+CMakeCache.txt

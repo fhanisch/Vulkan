@@ -658,7 +658,12 @@ Cube::Cube(	VulkanSetup *_vulkanSetup,
 	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 1000.0f);
 	color[0] = 1.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
-	getTrans4(mModel, 0.0f, 110.0f, 0.0f);
+	mat4 T, Rx, Rz, Rxz;
+	getTrans4(T, 0.0f, 110.0f, 0.0f);
+	getRotX4(Rx, -PI / 4.0f);
+	getRotZ4(Rz, +PI / 4.0f);
+	mult4(Rxz, Rx, Rz);
+	mult4(mModel, Rxz, T);
 	createUniformBuffer();
 	createPipelineLayout();
 	createGraphicsPipeline();

@@ -23,6 +23,8 @@
 #define KEY_RIGHT VK_RIGHT
 #define KEY_UP VK_UP
 #define KEY_DOWN VK_DOWN
+#define KEY_A 0x41
+#define KEY_D 0x44
 #define KEY_W 0x57
 #define KEY_S 0x53
 #else
@@ -32,6 +34,8 @@
 #define KEY_RIGHT 0x72
 #define KEY_UP 0x6f
 #define KEY_DOWN 0x74
+#define KEY_A X
+#define KEY_D X
 #define KEY_W 0x19
 #define KEY_S 0x27
 #endif

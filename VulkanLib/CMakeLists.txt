@@ -6,4 +6,6 @@ add_definitions(-DWINDOWS)
 
 include_directories(C:/VulkanSDK/1.1.126.0/Include)
 
-add_executable(app.exe src/main.cpp src/Window.cpp src/VulkanSetup.cpp src/Models.cpp src/matrix.c)
+file(GLOB SOURCES "src/*.cpp" "src/*.c" "src/*.h")
+
+add_executable(app.exe ${SOURCES})

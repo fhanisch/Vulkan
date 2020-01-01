@@ -13,8 +13,8 @@
 #define APP_NAME "VulkanApp"
 #define ENGINE_NAME "MyVulkanEngine"
 #define WINDOW_NAME "My Vulkan App"
-#define WND_WIDTH 1500
-#define WND_HEIGHT 1500
+#define WND_WIDTH 1600
+#define WND_HEIGHT 1600
 #define FULLSCREEN false
 
 #ifdef ANDROID
@@ -58,6 +58,8 @@ class App
 	uint32_t fps = 0;
     timespec tStart, tEnd;
     clock_t start_t;
+    POINT mousePos;
+
 #ifdef DYNAMIC
     VulkanSetup* (*create_object)(const char* _appName, const char* _engineName, const char* _libName, FILE* _file);
 #endif
@@ -122,7 +124,9 @@ public:
             start_t = clock();
 			framecount = 0;
         }
-        renderScene->updateTextOverlay(fps, motionPos->x, motionPos->y);
+        GetCursorPos(&mousePos); // absolute gesamte Bildschirmposition
+        //renderScene->updateTextOverlay(fps, motionPos->x, motionPos->y);
+        renderScene->updateTextOverlay(fps, mousePos.x, mousePos.y);
 #ifndef WINDOWS
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
 #endif

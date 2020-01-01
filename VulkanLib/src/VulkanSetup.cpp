@@ -1943,10 +1943,6 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, const char* resP
 	identity4(mView);
 	identity4(mView2);
 	identity4(cam.M);
-	//getTrans4(cam.M, 0.0f, 101.0f, 0.0f);
-	cam.yPos = 101.0f;
-	cam.zPos = 0.0f;
-	cam.xAngle = 0.0f;
 	vertexData = new VertexData;
 	indexData = new IndexData;
 	// Vertex Data
@@ -2003,8 +1999,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, const char* resP
 	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->addText(str, 5.0f, 5.0f);
 	printMatrix(cam.M, 5.0, 35.0);
-	sprintf(str, "Position: %-4d | %-4d", 0, 0);
+	sprintf(str, "xAngle = %3.1f | yAngle = %3.1f | zAngle = %3.1f", cam.xAngle * 180.0f / PI, cam.yAngle * 180.0f / PI, cam.zAngle * 180.0f / PI);
 	textOverlay->addText(str, 5.0f, 200.0f);
+	sprintf(str, "Position: %-4d | %-4d", 0, 0);
+	textOverlay->addText(str, 5.0f, 240.0f);
 	textOverlay->endTextUpdate();
 	createVertexBuffer();
 	createIndexBuffer();
@@ -2148,9 +2146,11 @@ void RenderScene::camMotion()
 
 	for (uint32_t i = 0; i < objectCount; i++) obj[i]->motion();
 
-	//2d cam motion
-	mat4 A, /*B,*/ T, dT, R, Rx, Ry, /*Rz,*/ tmp;
+	//mat4 A, /*B,*/ T, dT, R, Rx, Ry, /*Rz,*/ tmp;
 
+	/* 2d cam motion */
+	getTrans4(mView2, 100.0f, 0.0f, 0.0f);
+	/*
 	//if (key[0x4a] == true)
 	if (key[KEY_LEFT] == true)
 	{
@@ -2182,51 +2182,30 @@ void RenderScene::camMotion()
 		getTrans4(T, 0.0f, 0.1f, 0.0f);
 		mult4(mView2, T, tmp);
 	}
+	*/
 
-	//3d cam motion
+	/* 3d cam motion */
+	mat4 Rx, Ry, Rz, Rzx, R, mViewIst;
+	float dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f;
 	
-	float dx = 0.0f, dy = 0.0f, dz = 0.0f, dphi = 0.0f, dtheta = 0.0f, /*dpsi = 0.0f,*/ v = 0.2f, w = 0.002f;
+	if (key[KEY_LEFT])	dphi = -0.02f;
+	if (key[KEY_RIGHT])	dphi = 0.02f;
+	if (key[KEY_W]) dtheta = 0.01f;
+	if (key[KEY_S]) dtheta = -0.01f;
+	if (key[KEY_A]) dpsi = -0.002f;
+	if (key[KEY_D]) dpsi = 0.002f;
 
-	if (key[0x57]) dz = -v;
-	if (key[0x53]) dz =  v;
-	if (key[0x41]) dx = -v;
-	if (key[0x44]) dx =  v;
-	if (key[0x58]) dy = -w;
-	if (key[0x59]) dy =  w;
-	if (key[KEY_LEFT])	dphi =  w;
-	if (key[KEY_RIGHT])	dphi = -w;
-	if (key[KEY_W])	dtheta =  w;
-	if (key[KEY_S])	dtheta = -w;
+	getRotX4(Rx, dtheta);
+	getRotZ4(Rz, dpsi);
+	getRotY4(Ry, dphi);
 
-	getTrans4(T, 0, -105.0f, 0);
-	getRotX4(Rx, cam.xAngle += dtheta);
-	mult4(mView, T, Rx);
-
-	/* translatorisch
-	getRotX4(Rx, cam.xAngle += dtheta);
-	getRotY4(Ry, cam.yAngle += dphi);
-	mult4(R, Ry, Rx);
-	//mul4x4(Ry, Rx, R);
-	getTrans4(T, cam.xPos, cam.yPos, cam.zPos);
-	getTrans4(dT, dx, dy, dz);
-	mult4(A, T, R);
-	//mul4x4(T, R, A);
-	mult4(cam.M, A, dT);
-	//mul4x4(A, dT, cam.M);
-	cam.xPos = cam.M[3][0]; cam.yPos = cam.M[3][1]; cam.zPos = cam.M[3][2];
-	invert4(mView, cam.M); // --> Todo: invertieren durch teilw. transponieren
-	*/
-
-	/* rotatorisch
-	getRotY4(Ry, cam.yAngle += dphi);
-	getRotX4(Rx, cam.xAngle += cos(cam.yAngle)*dz - sin(cam.yAngle)*dx);
-	getRotZ4(Rz, cam.zAngle += -sin(cam.yAngle)*dz - cos(cam.yAngle)*dx);
-	getTrans4(T, cam.xPos, cam.yPos+=dy, cam.zPos);
-	mult4(R, Rz, Rx);
-	mult4(A, R, T);
-	mult4(cam.M, A, Ry);
-	invert4(mView, cam.M); // --> Todo: invertieren durch teilw. transponieren
-	*/
+	mView[3][0] = 0.0f; mView[3][1] = 0.0f; mView[3][2] = 0.0f;
+	dup4(mViewIst, mView);
+	mult4(Rzx, Rz, Rx);
+	mult4(R, Rzx, Ry);
+	mult4(mView, R, mViewIst);
+	mView[3][0] = 0.0f; mView[3][1] = -105.0f; mView[3][2] = 0.0f;
+	invert4(cam.M, mView); // --> für Positionsanzeige
 }
 
 void RenderScene::updateTextOverlay(uint32_t fps, int xMotionPos, int yMotionPos)
@@ -2236,8 +2215,10 @@ void RenderScene::updateTextOverlay(uint32_t fps, int xMotionPos, int yMotionPos
 	sprintf(str, "FPS: %-4u", fps);
 	textOverlay->addText(str, 5.0f, 5.0f);
 	printMatrix(cam.M, 5.0, 35.0);
-	sprintf(str, "Position: %-4d | %-4d", xMotionPos, yMotionPos);
+	sprintf(str, "xAngle = %3.1f | yAngle = %3.1f | zAngle = %3.1f", cam.xAngle * 180.0f / PI, cam.yAngle * 180.0f / PI, cam.zAngle * 180.0f / PI);
 	textOverlay->addText(str, 5.0f, 200.0f);
+	sprintf(str, "Position: %-4d | %-4d", xMotionPos, yMotionPos);
+	textOverlay->addText(str, 5.0f, 240.0f);
 	textOverlay->endTextUpdate();
 }
 

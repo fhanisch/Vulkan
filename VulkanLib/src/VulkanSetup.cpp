@@ -1935,11 +1935,14 @@ uint64_t RenderObject::getVertexOffset() { return vertexOffset; }
 uint32_t RenderObject::getIndexCount() { return indexCount; }
 uint32_t RenderObject::getFirstIndex() { return firstIndex; }
 
-RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, const char* resPath)
+RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _motionPos, const char* resPath)
 {
 	vulkanSetup = _vulkanSetup;
 	key = _key;
+	motionPos = _motionPos;
 	resourcesPath = resPath;
+	motionPosIst.xScreen = 1920;
+	motionPosIst.yScreen = 1080;
 	identity4(mView);
 	identity4(mView2);
 	identity4(cam.M);
@@ -2147,56 +2150,52 @@ void RenderScene::camMotion()
 
 	for (uint32_t i = 0; i < objectCount; i++) obj[i]->motion();
 
-	//mat4 A, /*B,*/ T, dT, R, Rx, Ry, /*Rz,*/ tmp;
+	mat4 T, tmp;
 
 	/* 2d cam motion */
-	getTrans4(mView2, 100.0f, 0.0f, 0.0f);
-	/*
-	//if (key[0x4a] == true)
-	if (key[KEY_LEFT] == true)
-	{
+	if (key[KEY_LEFT] && key[KEY_SHIFT] == true) {
 		dup4(tmp, mView2);
 		getTrans4(T, 0.1f, 0.0f, 0.0f);
 		mult4(mView2, T, tmp);
 	}
-
-	//if (key[0x4c] == true)
-	if (key[KEY_RIGHT] == true)
-	{
+	if (key[KEY_RIGHT] && key[KEY_SHIFT] == true) {
 		dup4(tmp, mView2);
 		getTrans4(T, -0.1f, 0.0f, 0.0f);
 		mult4(mView2, T, tmp);
 	}
-
-	//if (key[0x4b] == true)
-	if (key[KEY_DOWN] == true)
-	{
+	if (key[KEY_DOWN] && key[KEY_SHIFT] == true) {
 		dup4(tmp, mView2);
 		getTrans4(T, 0.0f, -0.1f, 0.0f);
 		mult4(mView2, T, tmp);
 	}
-
-	//if (key[0x49] == true)
-	if (key[KEY_UP] == true)
-	{
+	if (key[KEY_UP] && key[KEY_SHIFT] == true) {
 		dup4(tmp, mView2);
 		getTrans4(T, 0.0f, 0.1f, 0.0f);
 		mult4(mView2, T, tmp);
 	}
-	*/
 
 	/* 3d cam motion */
 	mat4 Rx, Ry, Rz, Rzx, R, mViewIst;
 	float dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f;
 	
+	dphi = (float)(motionPos->xScreen - motionPosIst.xScreen) / 500.0f;
+	if (motionPos->xScreen <= 0 || motionPos->xScreen >= 3839) {
+		SetCursorPos(1920, 1080);
+		motionPosIst.xScreen = 1920;
+		motionPosIst.yScreen = 1080;
+	}
+	else {
+		motionPosIst = *motionPos;
+	}
+
 	if (key[KEY_LEFT])	dphi = -0.05f;
 	if (key[KEY_RIGHT])	dphi = 0.05f;
 	if (key[KEY_W]) dtheta = 0.01f;
 	if (key[KEY_S]) dtheta = -0.01f;
 	if (key[KEY_A]) dpsi = -0.002f;
 	if (key[KEY_D]) dpsi = 0.002f;
-	if (key[KEY_X]) elevation += 0.1;
-	if (key[KEY_Y]) elevation -= 0.1;
+	if (key[KEY_X]) elevation += 0.1f;
+	if (key[KEY_Y]) elevation -= 0.1f;
 
 	getRotX4(Rx, dtheta);
 	getRotZ4(Rz, dpsi);

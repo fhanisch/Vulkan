@@ -19,8 +19,8 @@ LRESULT CALLBACK mainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		key[wParam] = FALSE;
 		break;
 	case WM_MOUSEMOVE:
-		motionPos.x = GET_X_LPARAM(lParam);
-		motionPos.y = GET_Y_LPARAM(lParam);
+		motionPos.xWin = GET_X_LPARAM(lParam);
+		motionPos.yWin = GET_Y_LPARAM(lParam);
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
@@ -35,6 +35,7 @@ Window0::Window0(const char *_windowName, int _width, int _height, bool _isFullS
 	width = _width;
 	height = _height;
 	isFullScreen = _isFullScreen;
+	window = NULL;
 	memset(key, 0, sizeof(key));
 	hInstance = GetModuleHandle(nullptr);
 	wc.lpszClassName = "Test";
@@ -48,7 +49,7 @@ Window0::Window0(const char *_windowName, int _width, int _height, bool _isFullS
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	RegisterClass(&wc);
-	SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE); // notwendig f�r high dpi scaling
+	SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE); // notwendig für high dpi scaling
 }
 
 Window0::~Window0()
@@ -81,6 +82,7 @@ void Window0::createWindow()
 	window = CreateWindow(wc.lpszClassName, windowName, dwStyle, 0, 0, width, height, NULL, NULL, hInstance, NULL);
 
 	if (isFullScreen) ShowCursor(0);
+	SetCursorPos(1920, 1080);
 }
 
 void Window0::showWindow()

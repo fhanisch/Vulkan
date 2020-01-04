@@ -23,6 +23,7 @@
 #define KEY_RIGHT VK_RIGHT
 #define KEY_UP VK_UP
 #define KEY_DOWN VK_DOWN
+#define KEY_SHIFT VK_SHIFT
 #define KEY_A 0x41
 #define KEY_D 0x44
 #define KEY_W 0x57
@@ -36,6 +37,7 @@
 #define KEY_RIGHT 0x72
 #define KEY_UP 0x6f
 #define KEY_DOWN 0x74
+#define KEY_SHIFT X
 #define KEY_A X
 #define KEY_D X
 #define KEY_W 0x19
@@ -404,6 +406,8 @@ protected:
 	} cam;
 	float elevation;
 	bool *key;
+	MotionPos* motionPos;
+	MotionPos motionPosIst;
 	mat4 mView, mView2;
 	VulkanSetup *vulkanSetup;
 	uint32_t objectCount;
@@ -422,7 +426,7 @@ protected:
 	void createDescriptorPool();
 	void createCommandBuffers();
 public:
-	RenderScene(VulkanSetup *_vulkanSetup, bool *_key, const char* resPath);
+	RenderScene(VulkanSetup* _vulkanSetup, bool* _key, MotionPos* _motionPos, const char* resPath);
 	~RenderScene();
 	void updateUniformBuffers();
 	void camMotion();

@@ -2,14 +2,16 @@
 #define WINDOW_H
 
 struct MotionPos {
-	int x;
-	int y;
+	int xWin;
+	int yWin;
+	int xScreen;
+	int yScreen;
 };
 
 #ifdef WINDOWS
 
 #include <Windows.h>
-#include <ShellScalingApi.h> // notwendig f�r high dpi scaling
+#include <ShellScalingApi.h> // notwendig für high dpi scaling
 
 class Window0
 {

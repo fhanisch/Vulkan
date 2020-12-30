@@ -13,8 +13,8 @@
 #define APP_NAME "VulkanApp"
 #define ENGINE_NAME "MyVulkanEngine"
 #define WINDOW_NAME "My Vulkan App"
-#define WND_WIDTH 3840
-#define WND_HEIGHT 2160
+#define WND_WIDTH 1920 //3840
+#define WND_HEIGHT 1080 //2160
 #define FULLSCREEN true
 
 #ifdef ANDROID

@@ -4,7 +4,7 @@ project(VulkanApp)
 
 add_definitions(-DWINDOWS)
 
-include_directories(C:/VulkanSDK/1.1.126.0/Include)
+include_directories(C:/VulkanSDK/1.2.162.0/Include)
 
 file(GLOB SOURCES "src/*.cpp" "src/*.c" "src/*.h")
 

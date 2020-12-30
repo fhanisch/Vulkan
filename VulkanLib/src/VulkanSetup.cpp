@@ -1998,7 +1998,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	obj[13] = new Cube(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
 	textOverlay = new TextOverlay(vulkanSetup);
 	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &mView2, key, vertexData, indexData, resourcesPath);
-	char str[32];
+	char str[128];
 	textOverlay->beginTextUpdate();
 	sprintf(str, "FPS: %-4u", 0);
 	textOverlay->addText(str, 5.0f, 5.0f);
@@ -2212,7 +2212,7 @@ void RenderScene::camMotion()
 
 void RenderScene::updateTextOverlay(uint32_t fps, int xMotionPos, int yMotionPos)
 {
-	char str[32];
+	char str[128];
 	textOverlay->beginTextUpdate();
 	sprintf(str, "FPS: %-4u", fps);
 	textOverlay->addText(str, 5.0f, 5.0f);

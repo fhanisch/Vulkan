@@ -1,5 +1,5 @@
 ANDROID_JAR=/home/felix/Android/Sdk/platforms/android-28/android.jar
-VK_INC_WIN = C:/VulkanSDK/1.1.126.0/Include
+VK_INC_WIN = C:/VulkanSDK/1.2.162.0/Include
 
 all: exe shared dynamic
 

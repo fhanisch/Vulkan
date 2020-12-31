@@ -1,8 +1,8 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "VulkanSetup.h"
 #include "Models.h"
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #if defined(LINUX) || defined(ANDROID)
 #include <dlfcn.h>
 #elif defined(WINDOWS)
@@ -11,6 +11,14 @@
 #undef min
 #undef max
 #endif
+
+// --- nicht erforderlich für Kompilierung, aber VS zeigt sonst Fehler an ---
+#ifdef ANDROID
+void exit(int status);
+#include <algorithm>
+#endif
+// --------------------------------------------------------------------------
+
 
 // stb_image.h --> muss hier inkludiert werden statt in Header-Datei, da sonst doppelter Code
 #define STB_IMAGE_IMPLEMENTATION
@@ -77,7 +85,7 @@ static VkBool32 debugCallback(	VkDebugUtilsMessageSeverityFlagBitsEXT messageSev
 								void* pUserData)
 {
 
-    PRINT("Validation layer: %s\n", pCallbackData->pMessage)
+    PRINT("ValidationLayer: %s\n", pCallbackData->pMessage)
 
     return VK_FALSE;
 }
@@ -91,7 +99,7 @@ static VkBool32 debugReportCallback(	VkDebugReportFlagsEXT                      
 										const char*                                 pMessage,
 										void*                                       pUserData)
 {
-	PRINT("Validation layer: %s\n", pMessage)
+	PRINT("ValidationLayer: %s\n", pMessage)
 
     return VK_FALSE;
 }
@@ -520,8 +528,9 @@ void VulkanSetup::createInstance()
 	appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_1;
 #ifdef ANDROID
-    const unsigned int validationLayerCount = 2;
-	const char *validationLayers[] = { "VK_LAYER_GOOGLE_threading", /*"VK_LAYER_LUNARG_parameter_validation", "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_core_validation",*/ "VK_LAYER_GOOGLE_unique_objects" };
+    const unsigned int validationLayerCount = 0;
+	//const char *validationLayers[] = { "VK_LAYER_GOOGLE_threading", /*"VK_LAYER_LUNARG_parameter_validation", "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_core_validation",*/ "VK_LAYER_GOOGLE_unique_objects" };
+	const char** validationLayers = NULL;
 	const unsigned int globalExtensionCount = 3;
     const char *globalExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_ANDROID_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME };
 #elif WINDOWS
@@ -1007,7 +1016,7 @@ VulkanSetup::~VulkanSetup()
 	vkDestroyInstance(instance, nullptr);
 }
 
-void VulkanSetup::init(Window0* _window)
+void VulkanSetup::init(MyWindow _window)
 {
     window = _window;
     PRINT("Init VulkanSetup.\n")
@@ -1572,7 +1581,7 @@ void ObjectModel::loadModel()
 		indices[i] = i;
 	}
 	/*
-			Todo: reduce multiple vertices
+		Todo: reduce multiple vertices
 	*/
 	vertexData->addData((float*)vertices, shapes[0].mesh.indices.size() *sizeof(Vertex));
 	indexData->addData(indices, shapes[0].mesh.indices.size() * sizeof(uint16_t));
@@ -1941,12 +1950,18 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	key = _key;
 	motionPos = _motionPos;
 	resourcesPath = resPath;
-	motionPosIst.xScreen = 1920;
-	motionPosIst.yScreen = 1080;
+	motionPosIst.xScreen = 2560 / 2; // 1920
+	motionPosIst.yScreen = 1600 / 2; // 1080
 	identity4(mView);
+	identity4(mGlobal);
+#ifdef ANDROID
+	getTrans4(mView2, 7.5f, 0.0f, 0.0f);
+#else
 	identity4(mView2);
+#endif
 	identity4(cam.M);
 	elevation = -105.0f;
+	dxi = 0.0f;
 	vertexData = new VertexData;
 	indexData = new IndexData;
 	// Vertex Data
@@ -2175,21 +2190,25 @@ void RenderScene::camMotion()
 	}
 
 	/* 3d cam motion */
-	mat4 Rx, Ry, Rz, Rzx, R, mViewIst;
+	mat4 Rx, Ry, Rz, Rzx, R, mViewIst, Rxi, Mtmp, mGlobalIst;
 	float dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f;
 	
 	dphi = (float)(motionPos->xScreen - motionPosIst.xScreen) / 500.0f;
 	if (motionPos->xScreen <= 0 || motionPos->xScreen >= 3839) {
+#ifdef WINDOWS
 		SetCursorPos(1920, 1080);
-		motionPosIst.xScreen = 1920;
-		motionPosIst.yScreen = 1080;
+#endif
+		motionPosIst.xScreen = 2560 / 2; // 1920
+		motionPosIst.yScreen = 1600 / 2; // 1080
 	}
 	else {
 		motionPosIst = *motionPos;
 	}
 
-	if (key[KEY_LEFT])	dphi = -0.05f;
-	if (key[KEY_RIGHT])	dphi = 0.05f;
+	if (key[KEY_LEFT] && !key[KEY_SHIFT])	dphi = -0.05f;
+	if (key[KEY_RIGHT] && !key[KEY_SHIFT]) dphi = 0.05f;
+	if (key[KEY_UP] && !key[KEY_SHIFT]) dxi += 0.01f;
+	if (key[KEY_DOWN] && !key[KEY_SHIFT]) dxi += -0.01f;
 	if (key[KEY_W]) dtheta = 0.01f;
 	if (key[KEY_S]) dtheta = -0.01f;
 	if (key[KEY_A]) dpsi = -0.002f;
@@ -2200,13 +2219,25 @@ void RenderScene::camMotion()
 	getRotX4(Rx, dtheta);
 	getRotZ4(Rz, dpsi);
 	getRotY4(Ry, dphi);
-
-	mView[3][0] = 0.0f; mView[3][1] = 0.0f; mView[3][2] = 0.0f;
-	dup4(mViewIst, mView);
+	
+	/* Original:
+		mView[3][0] = 0.0f; mView[3][1] = 0.0f; mView[3][2] = 0.0f;
+		dup4(mViewIst, mView);
+		mult4(Rzx, Rz, Rx);
+		mult4(R, Rzx, Ry);
+		mult4(mView, R, mViewIst);
+		mView[3][0] = 0.0f; mView[3][1] = elevation; mView[3][2] = 0.0f;
+	*/
+	
+	getRotX4(Rxi, dxi);
+	dup4(mGlobalIst, mGlobal);
 	mult4(Rzx, Rz, Rx);
 	mult4(R, Rzx, Ry);
-	mult4(mView, R, mViewIst);
-	mView[3][0] = 0.0f; mView[3][1] = elevation; mView[3][2] = 0.0f;
+	mult4(mGlobal, R, mGlobalIst);
+
+	mGlobal[3][0] = 0.0f; mGlobal[3][1] = elevation; mGlobal[3][2] = 0.0f;
+	mult4(mView, Rxi, mGlobal);
+
 	invert4(cam.M, mView); // --> für Positionsanzeige
 }
 

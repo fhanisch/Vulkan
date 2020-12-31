@@ -1,4 +1,4 @@
-#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS /* als Compiler-Argument aufrufen */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,28 +9,36 @@
 #endif
 #include "Window.h"
 #include "VulkanSetup.h"
+#ifdef ANDROID
+#include "android_native_app_glue.h"
+void exit(int status); // --> nicht erforderlich für Kompilierung, aber VS zeigt sonst Fehler an
+#endif
 
 #define APP_NAME "VulkanApp"
 #define ENGINE_NAME "MyVulkanEngine"
 #define WINDOW_NAME "My Vulkan App"
-#define WND_WIDTH 1920 //3840
-#define WND_HEIGHT 1080 //2160
-#define FULLSCREEN true
 
 #ifdef ANDROID
-#include "android_native_app_glue.h"
+#define WND_WIDTH 2560
+#define WND_HEIGHT 1600
 #define LOGFILE "/storage/emulated/0/Dokumente/VulkanApp.log.txt"
 #define RESOURCES_PATH "/storage/emulated/0/Dokumente/Resources"
 #define LIB_NAME "libvulkan.so"
 static bool initialized_ = false;
 #elif LINUX
+#define WND_WIDTH 1920 //3840
+#define WND_HEIGHT 1080 //2160
 #define LOGFILE "VulkanApp.log.txt"
 #define RESOURCES_PATH "/home/felix/Entwicklung/Vulkan/VulkanLib/res"
 #define LIB_NAME "libvulkan.so.1"
+#define FULLSCREEN true
 #elif WINDOWS
+#define WND_WIDTH 1920 //3840
+#define WND_HEIGHT 1080 //2160
 #define LOGFILE "VulkanApp.log.txt"
 #define RESOURCES_PATH "C:/Home/Entwicklung/Vulkan/VulkanLib/res"
 #define LIB_NAME "vulkan-1.dll"
+#define FULLSCREEN true
 #endif
 
 #ifdef LOG
@@ -45,6 +53,7 @@ printf(__VA_ARGS__);
 
 // TODO: zu userdata hinzufügen
 static FILE* file = NULL;
+bool* key;
 MotionPos* motionPos;
 
 class App
@@ -53,7 +62,7 @@ class App
 	const char *engineName = ENGINE_NAME;
 	const char *resourcesPath = RESOURCES_PATH;
 	const char *libName = LIB_NAME;
-	Window0* window;
+	MyWindow window;
 	uint32_t framecount = 0;
 	uint32_t fps = 0;
 	timespec tStart, tEnd;
@@ -96,11 +105,11 @@ public:
 #endif
 	}
 
-	void init(Window0* _window)
+	void init(MyWindow _window)
 	{
 		window = _window;
 		vkSetup->init(window);
-		renderScene = new RenderScene(vkSetup, window->getKey(), motionPos, resourcesPath);
+		renderScene = new RenderScene(vkSetup, key, motionPos, resourcesPath);
 		start_t = clock();
 #ifndef WINDOWS
 		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
@@ -110,7 +119,9 @@ public:
 	void draw()
 	{
 		framecount++;
+#ifdef WINDOWS
 		GetCursorPos((POINT*)(&motionPos->xScreen)); // absolute gesamte Bildschirmposition
+#endif
 		renderScene->updateUniformBuffers();
 		renderScene->camMotion();
 		renderScene->drawFrame();
@@ -136,16 +147,16 @@ static int32_t handle_input(struct android_app* app, AInputEvent* event)
 {
 	if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
 		
-		xMotionPos = AMotionEvent_getX(event, 0);
-		yMotionPos = AMotionEvent_getY(event, 0);
+		motionPos->xScreen = AMotionEvent_getX(event, 0);
+		motionPos->yScreen = AMotionEvent_getY(event, 0);
 
-		if(xMotionPos<200) key[KEY_LEFT] = true; else key[KEY_LEFT] = false;
-		if(xMotionPos>2000) key[KEY_RIGHT] = true; else key[KEY_RIGHT] = false;
+		if (motionPos->xScreen < 200) key[KEY_LEFT] = true; else key[KEY_LEFT] = false;
+		if (motionPos->xScreen > 2000) key[KEY_RIGHT] = true; else key[KEY_RIGHT] = false;
 
-		if(yMotionPos<200) key[KEY_UP] = true; else key[KEY_UP] = false;
-		if(yMotionPos>1300) key[KEY_DOWN] = true; else key[KEY_DOWN] = false;
+		if (motionPos->yScreen < 200) key[KEY_UP] = true; else key[KEY_UP] = false;
+		if (motionPos->yScreen > 1300) key[KEY_DOWN] = true; else key[KEY_DOWN] = false;
 		
-		PRINT("Position: %d,%d\n", xMotionPos, yMotionPos);
+		PRINT("Position: %d,%d\n", motionPos->xScreen, motionPos->yScreen);
 		return 1;
 	}
 	return 0;
@@ -158,13 +169,16 @@ void handle_cmd(android_app* a_app, int32_t cmd)
 	{
 		case APP_CMD_INIT_WINDOW:
 			// The window is being shown, get it ready.
-			((App*)a_app->userData)->init(a_app->window);
+			((App*)a_app->userData)->init((MyWindow)a_app->window);
 			initialized_ = true;
 			key[KEY_W] = true;
 			break;
 		case APP_CMD_TERM_WINDOW:
 			// The window is being hidden or closed, clean it up.
-			initialized_ = false;
+			PRINT("Window terminated.\n")
+			fclose(file);
+			initialized_ = false;			
+			a_app->destroyRequested = 1;
 			break;
 		default:
 			PRINT("Event not handled: %d\n", cmd)
@@ -196,6 +210,10 @@ int main(int argc, char **argv)
 	app = new App();
 
 #ifdef ANDROID
+	key = new bool[256]; /* --> wird hier alles mit 0 initialisiert?
+	--> Alternativ: memset(key, 0, sizeof(bool)*256);*/
+	motionPos = new MotionPos;
+
 	a_app->userData = app;
 
 	// Set the callback to process system events
@@ -215,7 +233,7 @@ int main(int argc, char **argv)
 		// render if vulkan is ready
 		if (initialized_) app->draw();
 
-	} while (a_app->destroyRequested == 0);
+	} while (a_app->destroyRequested == 0 || !initialized_);
 
 	delete app;
 
@@ -223,8 +241,9 @@ int main(int argc, char **argv)
 	if (argc>1) PRINT("%s", argv[1])
 	Window0* window = new Window0(WINDOW_NAME, WND_WIDTH, WND_HEIGHT, FULLSCREEN);
 	window->createWindow();
+	key = ((Window0*)window)->getKey();
 	motionPos = window->getMotionPosition();
-	app->init(window);
+	app->init((MyWindow)window);
 	window->showWindow();
 	while(!window->checkMessage())
 	{

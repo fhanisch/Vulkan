@@ -11,6 +11,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <vulkan/vulkan.h>
 #include "Window.h"
@@ -37,13 +38,13 @@
 #define KEY_RIGHT 0x72
 #define KEY_UP 0x6f
 #define KEY_DOWN 0x74
-#define KEY_SHIFT X
-#define KEY_A X
-#define KEY_D X
+#define KEY_SHIFT 0xff
+#define KEY_A 0xff
+#define KEY_D 0xff
 #define KEY_W 0x19
 #define KEY_S 0x27
-#define KEY_X X
-#define KEY_Y X
+#define KEY_X 0xff
+#define KEY_Y 0xff
 #endif
 
 char* strCat(const char* dest, const char* src);
@@ -177,7 +178,7 @@ class VulkanSetup
 protected:
     const char* appName;
 	const char* engineName;
-    Window0* window;
+    MyWindow window;
     const char* libName;
 
     struct SwapChainSupportDetails {
@@ -244,7 +245,7 @@ public:
     VulkanSetup(const char* _appNAme, const char* _engineName, const char* _libName, FILE* _file);
     /* 'virtual' ermöglicht dynamisches Laden der Klasse in einem shared object */
     virtual ~VulkanSetup();
-    virtual void init(Window0* _window);
+    virtual void init(MyWindow _window);
 
     /* Getter */
     VkDevice getDevice();
@@ -405,10 +406,11 @@ protected:
 		mat4 M;
 	} cam;
 	float elevation;
+	float dxi;
 	bool *key;
 	MotionPos* motionPos;
 	MotionPos motionPosIst;
-	mat4 mView, mView2;
+	mat4 mView, mView2, mGlobal;
 	VulkanSetup *vulkanSetup;
 	uint32_t objectCount;
 	RenderObject **obj;

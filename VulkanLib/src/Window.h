@@ -1,6 +1,8 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+typedef struct MyWindow_T* MyWindow;
+
 struct MotionPos {
 	int xWin;
 	int yWin;
@@ -25,7 +27,7 @@ protected:
 	int height;
 	bool isFullScreen;
 public:
-	Window0(const char *_windowName, int _width, int _height, bool _isFullScreen);
+	Window0(const char* _windowName, int _width, int _height, bool _isFullScreen);
 	~Window0();
 	void createWindow();
 	void showWindow();

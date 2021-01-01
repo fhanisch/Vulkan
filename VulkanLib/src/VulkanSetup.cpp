@@ -526,7 +526,7 @@ void VulkanSetup::createInstance()
 	appInfo.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
 	appInfo.pEngineName = engineName;
 	appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_1;
+	appInfo.apiVersion = apiVersion;
 #ifdef ANDROID
     const unsigned int validationLayerCount = 0;
 	//const char *validationLayers[] = { "VK_LAYER_GOOGLE_threading", /*"VK_LAYER_LUNARG_parameter_validation", "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_core_validation",*/ "VK_LAYER_GOOGLE_unique_objects" };
@@ -925,10 +925,12 @@ VulkanSetup::VulkanSetup(const char* _appNAme, const char* _engineName, const ch
     engineName = _engineName;
     logfile = _file;
 	libName = _libName;
-    PRINT("Get Vulkan Functions.\n")
+	PRINT("Get Vulkan Functions.\n")
 #if defined(ANDROID) || defined(LINUX)
-    libvulkan = dlopen(libName, RTLD_NOW | RTLD_LOCAL);
+	apiVersion = VK_API_VERSION_1_1;
+	libvulkan = dlopen(libName, RTLD_NOW | RTLD_LOCAL);
 #elif defined(WINDOWS)
+	apiVersion = VK_MAKE_VERSION(1, 2, 0); // VK_API_VERSION_1_2; --> funktioniert nicht!!! sehr seltsam???
 	libvulkan = LoadLibrary(libName);
 #endif
     if (!libvulkan)
@@ -2190,13 +2192,13 @@ void RenderScene::camMotion()
 	}
 
 	/* 3d cam motion */
-	mat4 Rx, Ry, Rz, Rzx, R, mViewIst, Rxi, Mtmp, mGlobalIst;
+	mat4 Rx, Ry, Rz, Rzx, R, Rxi, mGlobalIst;
 	float dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f;
 	
 	dphi = (float)(motionPos->xScreen - motionPosIst.xScreen) / 500.0f;
 	if (motionPos->xScreen <= 0 || motionPos->xScreen >= 3839) {
 #ifdef WINDOWS
-		SetCursorPos(1920, 1080);
+		SetCursorPos(1920 / 2, 1080 / 2);
 #endif
 		motionPosIst.xScreen = 2560 / 2; // 1920
 		motionPosIst.yScreen = 1600 / 2; // 1080

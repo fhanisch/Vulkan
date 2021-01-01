@@ -178,6 +178,7 @@ class VulkanSetup
 protected:
     const char* appName;
 	const char* engineName;
+	uint32_t apiVersion;
     MyWindow window;
     const char* libName;
 

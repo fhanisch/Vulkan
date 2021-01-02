@@ -13,9 +13,9 @@ main: src/main.cpp
 	mkdir -p build/linux
 	clang++ -o build/linux/main.o -c src/main.cpp -Wall -I $(VK_INC) -DLINUX
 
-main_android: src/main.cpp
+main_android: src/AndroidMain.cpp
 #mkdir build\android
-	aarch64-linux-android28-clang++ -o build/android/main.o -c src/main.cpp -Wall -fpic -DANDROID -DLOG
+	aarch64-linux-android28-clang++ -o build/android/AndroidMain.o -c src/AndroidMain.cpp -Wall -fpic -DANDROID -DLOG
 
 android_native_app_glue: src/android_native_app_glue.c
 #mkdir build/android
@@ -62,11 +62,11 @@ libVulkanApp: main_android android_native_app_glue VulkanSetup_android Models_an
 #mkdir lib\arm64-v8a
 #Beim Linken mit aarch64-linux-android28-clang++ muss die 'libc++_shared.so' in das APK inkludiert werden!
 	aarch64-linux-android28-clang -shared -o lib/arm64-v8a/libmatrix.so build/android/matrix.o -Wall
-	aarch64-linux-android28-clang++ -shared -o lib/arm64-v8a/libVulkanApp.so build/android/main.o build/android/android_native_app_glue.o build/android/VulkanSetup.o build/android/Models.o -landroid -llog -ldl -lmatrix -Wall -L./lib/arm64-v8a
+	aarch64-linux-android28-clang++ -shared -o lib/arm64-v8a/libVulkanApp.so build/android/AndroidMain.o build/android/android_native_app_glue.o build/android/VulkanSetup.o build/android/Models.o -landroid -llog -ldl -lmatrix -Wall -L./lib/arm64-v8a
 
 output.apk: libVulkanApp AndroidManifest.xml
 	aapt2 link -o output.apk -I $(ANDROID_JAR) --manifest AndroidManifest.xml
-	7z a output.apk lib/
+	7z a output.apk lib/ assets/
 
 VulkanApp_unsigned-aligned.apk: output.apk
 	del VulkanApp_unsigned-aligned.apk

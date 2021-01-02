@@ -1,0 +1,278 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <dlfcn.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include "Window.h"
+#include "VulkanSetup.h"
+#include "android_native_app_glue.h"
+
+void exit(int status); // --> nicht erforderlich für Kompilierung, aber VS zeigt sonst Fehler an
+
+#define APP_NAME "VulkanApp"
+#define ENGINE_NAME "MyVulkanEngine"
+#define WINDOW_NAME "My Vulkan App"
+
+#define WND_WIDTH 2560
+#define WND_HEIGHT 1600
+#define LOGFILE "/storage/emulated/0/Dokumente/VulkanApp.log.txt"
+//#define RESOURCES_PATH "/storage/emulated/0/Dokumente/Resources"
+#define LIB_NAME "libvulkan.so"
+static bool initialized_ = false;
+
+#ifdef LOG
+	static char buf[1048];
+	#define PRINT(...) \
+	sprintf(buf, __VA_ARGS__); \
+	fwrite(buf, strlen(buf), 1, file);
+#else
+	#define PRINT(...) \
+	printf(__VA_ARGS__);
+#endif
+
+// TODO: zu userdata hinzufügen
+static FILE* file = NULL;
+bool* key;
+MotionPos* motionPos;
+
+class App
+{
+	const char *appName = APP_NAME;
+	const char *engineName = ENGINE_NAME;
+	const char *resourcesPath;
+	const char *libName = LIB_NAME;
+	MyWindow window;
+	uint32_t framecount = 0;
+	uint32_t fps = 0;
+	timespec tStart, tEnd;
+	clock_t start_t;
+
+#ifdef DYNAMIC
+	VulkanSetup* (*create_object)(const char* _appName, const char* _engineName, const char* _libName, FILE* _file);
+#endif
+	VulkanSetup *vkSetup;
+	RenderScene *renderScene;
+public:
+	App(android_app* a_app)
+	{
+		resourcesPath = a_app->activity->internalDataPath;
+		char dirPath[128];
+		char assetPath[64];
+		struct stat st = { 0 };
+		int assetDirCount = 3;
+		const char* assetDirs[] = { "shader","textures","3dmodels" };
+
+		PRINT("Start App.\n")		
+
+		for (int i = 0; i < assetDirCount; i++) {
+			AAssetDir* assetDir = AAssetManager_openDir(a_app->activity->assetManager, assetDirs[i]);
+			if (assetDir) {
+				PRINT("Open asset directory: %s\n", assetDirs[i])
+				sprintf(dirPath, "%s/%s", a_app->activity->internalDataPath, assetDirs[i]);
+				if (stat(dirPath, &st) == -1) {
+					if (mkdir(dirPath, 0777) == -1) {
+						PRINT("Couldn't create '%s' directory!\n", assetDirs[i]);
+					}
+					else {						
+						while (const char* fileName = AAssetDir_getNextFileName(assetDir)) {
+							sprintf(assetPath, "%s/%s", assetDirs[i], fileName);
+							AAsset* assetFile = AAssetManager_open(a_app->activity->assetManager, assetPath, AASSET_MODE_BUFFER);
+							if (assetFile) {
+								PRINT("Read %s\n", assetPath)
+								size_t fileLength = AAsset_getLength(assetFile);
+								char* fileContent = new char[fileLength];
+								AAsset_read(assetFile, fileContent, fileLength);
+								AAsset_close(assetFile);
+								sprintf(dirPath, "%s/%s/%s", a_app->activity->internalDataPath, assetDirs[i], fileName);
+								FILE* internalDataFile = fopen(dirPath, "wb");
+								if (internalDataFile) {
+									PRINT("Copy to %s\n", dirPath)
+									fwrite(fileContent, fileLength, 1, internalDataFile);
+									fclose(internalDataFile);
+								}
+								else {
+									PRINT("Coudn't write File to %s!", dirPath);
+								}
+							}
+							else {
+								PRINT("Couldn't open %s!\n", assetPath)
+							}
+						}
+						AAssetDir_close(assetDir);
+					}
+				}
+				else {
+					PRINT("%s already exists!\n", dirPath)
+				}
+			}
+			else {
+				PRINT("Couldn't open asset directory: %s!\n", assetDirs[i])
+			}
+		}
+
+		AAsset* shaderFile = AAssetManager_open(a_app->activity->assetManager, "3dmodels/cube.x", AASSET_MODE_BUFFER);
+		if (shaderFile) {
+			PRINT("Juhu!!!\n")
+			size_t fileLength = AAsset_getLength(shaderFile);
+
+			char* fileContent = new char[fileLength];
+
+			AAsset_read(shaderFile, fileContent, fileLength);
+			AAsset_close(shaderFile);
+
+			PRINT("fileLength = %zu\n", fileLength);
+			fileContent[fileLength] = 0;
+			PRINT("%s\n", fileContent);
+		}
+		else {
+			PRINT("Scheiße!!!\n")
+		}
+#ifdef DYNAMIC
+		void* libVulkan = dlopen("./libVulkan.so", RTLD_LAZY);
+		if (!libVulkan)
+		{
+			PRINT("Loading libVulkan.so failed!\n")
+			exit(1);
+		}
+		create_object = (VulkanSetup * (*)(const char* _appName, const char* _engineName, const char* _libName, FILE * _file))dlsym(libVulkan, "create_object");
+		if (!create_object)
+		{
+			PRINT("Find Symbol create_object failed!\n")
+			exit(1);
+		}
+		vkSetup = create_object(appName, engineName, libName, file);
+#else
+		vkSetup = new VulkanSetup(appName, engineName, libName, file);
+#endif
+	}
+
+	~App()
+	{
+		delete vkSetup;
+		PRINT("Close App.\n")
+#ifdef LOG
+		fclose(file);
+#endif
+	}
+
+	void init(MyWindow _window)
+	{
+		window = _window;
+		vkSetup->init(window);
+		renderScene = new RenderScene(vkSetup, key, motionPos, resourcesPath);
+		start_t = clock();
+		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
+	}
+
+	void cleanUpVulkan() {
+		vkSetup->cleanUp();
+	}
+
+	void draw()
+	{
+		framecount++;
+		renderScene->updateUniformBuffers();
+		renderScene->camMotion();
+		renderScene->drawFrame();
+		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tEnd);
+		while (((tEnd.tv_sec - tStart.tv_sec) * (long)1e9 + (tEnd.tv_nsec - tStart.tv_nsec)) < (long)(1000000000/60)) clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tEnd);
+		if ((clock() - start_t) > CLOCKS_PER_SEC)
+		{
+			fps = framecount;
+			start_t = clock();
+			framecount = 0;
+		}
+		renderScene->updateTextOverlay(fps, motionPos->xScreen, motionPos->yScreen);
+		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
+	}
+};
+
+static int32_t handle_input(struct android_app* app, AInputEvent* event)
+{
+	if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
+		
+		motionPos->xScreen = AMotionEvent_getX(event, 0);
+		motionPos->yScreen = AMotionEvent_getY(event, 0);
+
+		if (motionPos->xScreen < 200) key[KEY_LEFT] = true; else key[KEY_LEFT] = false;
+		if (motionPos->xScreen > 2000) key[KEY_RIGHT] = true; else key[KEY_RIGHT] = false;
+
+		if (motionPos->yScreen < 200) key[KEY_UP] = true; else key[KEY_UP] = false;
+		if (motionPos->yScreen > 1300) key[KEY_DOWN] = true; else key[KEY_DOWN] = false;
+		
+		PRINT("Position: %d,%d\n", motionPos->xScreen, motionPos->yScreen);
+		return 1;
+	}
+	return 0;
+}
+
+// Process the next main command.
+void handle_cmd(android_app* a_app, int32_t cmd)
+{
+	switch (cmd)
+	{
+		case APP_CMD_INIT_WINDOW:
+			// The window is being shown, get it ready.
+			((App*)a_app->userData)->init((MyWindow)a_app->window);
+			initialized_ = true;
+			key[KEY_W] = true;
+			break;
+		case APP_CMD_TERM_WINDOW:
+			// The window is being hidden or closed, clean it up.
+			PRINT("Window terminated.\n")
+			((App*)a_app->userData)->cleanUpVulkan();
+			initialized_ = false;
+			break;
+		default:
+			PRINT("Event not handled: %d\n", cmd)
+	}
+}
+
+void android_main(struct android_app* a_app)
+{
+	App* app;
+	time_t current_time;
+	char* c_time_string;
+
+	current_time = time(NULL);
+	c_time_string = ctime(&current_time);
+
+#ifdef LOG
+	file = fopen(LOGFILE, "w");
+	if (file == NULL) exit(1);
+#endif
+
+	PRINT("\n==================\n*** Vulkan App ***\n==================\n\n")
+	PRINT("%s\n", c_time_string)
+
+	app = new App(a_app);
+	key = new bool[256]; /* --> wird hier alles mit 0 initialisiert?
+	--> Alternativ: memset(key, 0, sizeof(bool)*256);*/
+	motionPos = new MotionPos;
+
+	a_app->userData = app;
+
+	// Set the callback to process system events
+	a_app->onAppCmd = handle_cmd;
+	a_app->onInputEvent = handle_input;
+
+	// Used to poll the events in the main loop
+	int events;
+	android_poll_source* source;
+
+	// Main loop
+	do {
+		if (ALooper_pollAll(initialized_ ? 1 : 0, nullptr, &events, (void**)&source) >= 0) {
+			if (source != NULL) source->process(a_app, source);
+		}
+
+		// render if vulkan is ready
+		if (initialized_) app->draw();
+
+	} while (a_app->destroyRequested == 0);
+
+	delete app;
+}

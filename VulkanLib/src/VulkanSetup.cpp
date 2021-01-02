@@ -1015,6 +1015,11 @@ VulkanSetup::VulkanSetup(const char* _appNAme, const char* _engineName, const ch
 VulkanSetup::~VulkanSetup()
 {
     PRINT("Close Vulkan.\n")
+	/* TODO: close shared library */
+}
+
+void VulkanSetup::cleanUp() {
+	PRINT("Clean up Vulkan.\n")
 	vkDestroyInstance(instance, nullptr);
 }
 

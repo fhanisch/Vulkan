@@ -1,10 +1,10 @@
 shader: src/shader/*
 
 src/shader/*:
-	glslc -c $@ -o res/shader/$(@F).spv
+	glslc -c $@ -o assets/shader/$(@F).spv
 #alternativ:
 #src/shader/*:
-#	glslangValidator -V $@ -o res/shader/$(@F).spv
+#	glslangValidator -V $@ -o assets/shader/$(@F).spv
 
 #shader: src/shader/*
 #	glslc -c $?

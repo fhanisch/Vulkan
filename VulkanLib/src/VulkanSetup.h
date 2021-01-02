@@ -247,7 +247,7 @@ public:
     /* 'virtual' ermöglicht dynamisches Laden der Klasse in einem shared object */
     virtual ~VulkanSetup();
     virtual void init(MyWindow _window);
-
+	virtual void cleanUp();
     /* Getter */
     VkDevice getDevice();
 	VkPhysicalDevice getPhysicalDevice();

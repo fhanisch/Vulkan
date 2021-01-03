@@ -1,9 +1,8 @@
-#define _CRT_SECURE_NO_WARNINGS /* als Compiler-Argument aufrufen */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <dlfcn.h>
 #include "defs.h"
 #include "Window.h"
 #include "VulkanSetup.h"
@@ -15,8 +14,8 @@
 #define WND_WIDTH 1920 //3840
 #define WND_HEIGHT 1080 //2160
 #define LOGFILE "VulkanApp.log.txt"
-#define RESOURCES_PATH "C:/Home/Entwicklung/Vulkan/VulkanLib/assets"
-#define LIB_NAME "vulkan-1.dll"
+#define RESOURCES_PATH "/home/felix/Entwicklung/Vulkan/VulkanLib/assets"
+#define LIB_NAME "libvulkan.so.1"
 #define FULLSCREEN true
 
 // TODO: zu userdata hinzufügen
@@ -33,6 +32,7 @@ class App
 	MyWindow window;
 	uint32_t framecount = 0;
 	uint32_t fps = 0;
+	timespec tStart, tEnd;
 	clock_t start_t;
 
 #ifdef DYNAMIC
@@ -78,15 +78,17 @@ public:
 		vkSetup->init(window);
 		renderScene = new RenderScene(vkSetup, key, motionPos, resourcesPath);
 		start_t = clock();
+		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
 	}
 
 	void draw()
 	{
 		framecount++;
-		GetCursorPos((POINT*)(&motionPos->xScreen)); // absolute gesamte Bildschirmposition
 		renderScene->updateUniformBuffers();
 		renderScene->camMotion();
-		renderScene->drawFrame();     
+		renderScene->drawFrame();
+		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tEnd);
+		while (((tEnd.tv_sec - tStart.tv_sec) * (long)1e9 + (tEnd.tv_nsec - tStart.tv_nsec)) < (long)(1000000000/60)) clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tEnd);
 		if ((clock() - start_t) > CLOCKS_PER_SEC)
 		{
 			fps = framecount;
@@ -94,6 +96,7 @@ public:
 			framecount = 0;
 		}
 		renderScene->updateTextOverlay(fps, motionPos->xScreen, motionPos->yScreen);
+		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tStart);
 	}
 };
 
@@ -115,6 +118,7 @@ int main(int argc, char **argv)
 	PRINT("%s\n", c_time_string)
 
 	app = new App();
+
 	if (argc>1) PRINT("%s", argv[1])
 	Window0* window = new Window0(WINDOW_NAME, WND_WIDTH, WND_HEIGHT, FULLSCREEN);
 	window->createWindow();

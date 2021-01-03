@@ -243,7 +243,7 @@ protected:
 	VkFormat findDepthFormat();
 
 public:
-    VulkanSetup(const char* _appNAme, const char* _engineName, const char* _libName, FILE* _file);
+    VulkanSetup(const char* _appNAme, const char* _engineName, const char* _libName, FILE* _logfile);
     /* 'virtual' ermöglicht dynamisches Laden der Klasse in einem shared object */
     virtual ~VulkanSetup();
     virtual void init(MyWindow _window);
@@ -407,7 +407,7 @@ protected:
 		mat4 M;
 	} cam;
 	float elevation;
-	float dxi;
+	float xi;
 	bool *key;
 	MotionPos* motionPos;
 	MotionPos motionPosIst;

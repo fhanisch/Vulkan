@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "defs.h"
 #include "Window.h"
 #include "VulkanSetup.h"
 #include "android_native_app_glue.h"
@@ -19,22 +20,11 @@ void exit(int status); // --> nicht erforderlich für Kompilierung, aber VS zeig
 #define WND_WIDTH 2560
 #define WND_HEIGHT 1600
 #define LOGFILE "/storage/emulated/0/Dokumente/VulkanApp.log.txt"
-//#define RESOURCES_PATH "/storage/emulated/0/Dokumente/Resources"
 #define LIB_NAME "libvulkan.so"
 static bool initialized_ = false;
 
-#ifdef LOG
-	static char buf[1048];
-	#define PRINT(...) \
-	sprintf(buf, __VA_ARGS__); \
-	fwrite(buf, strlen(buf), 1, file);
-#else
-	#define PRINT(...) \
-	printf(__VA_ARGS__);
-#endif
-
 // TODO: zu userdata hinzufügen
-static FILE* file = NULL;
+static FILE* logfile = NULL;
 bool* key;
 MotionPos* motionPos;
 
@@ -51,7 +41,7 @@ class App
 	clock_t start_t;
 
 #ifdef DYNAMIC
-	VulkanSetup* (*create_object)(const char* _appName, const char* _engineName, const char* _libName, FILE* _file);
+	VulkanSetup* (*create_object)(const char* _appName, const char* _engineName, const char* _libName, FILE* _logfile);
 #endif
 	VulkanSetup *vkSetup;
 	RenderScene *renderScene;
@@ -137,15 +127,15 @@ public:
 			PRINT("Loading libVulkan.so failed!\n")
 			exit(1);
 		}
-		create_object = (VulkanSetup * (*)(const char* _appName, const char* _engineName, const char* _libName, FILE * _file))dlsym(libVulkan, "create_object");
+		create_object = (VulkanSetup * (*)(const char* _appName, const char* _engineName, const char* _libName, FILE * _logfile))dlsym(libVulkan, "create_object");
 		if (!create_object)
 		{
 			PRINT("Find Symbol create_object failed!\n")
 			exit(1);
 		}
-		vkSetup = create_object(appName, engineName, libName, file);
+		vkSetup = create_object(appName, engineName, libName, logfile);
 #else
-		vkSetup = new VulkanSetup(appName, engineName, libName, file);
+		vkSetup = new VulkanSetup(appName, engineName, libName, logfile);
 #endif
 	}
 
@@ -154,7 +144,7 @@ public:
 		delete vkSetup;
 		PRINT("Close App.\n")
 #ifdef LOG
-		fclose(file);
+		fclose(logfile);
 #endif
 	}
 
@@ -190,20 +180,65 @@ public:
 	}
 };
 
-static int32_t handle_input(struct android_app* app, AInputEvent* event)
-{
+static int32_t handle_input(struct android_app* app, AInputEvent* event) {
+
+	float down_x_new = 0.0f;
+	float down_y_new = 0.0f;
+
 	if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
 		
+		size_t pointerCount = AMotionEvent_getPointerCount(event);
+		PRINT("pointerCount = %zu\n", pointerCount);
+		int32_t action = AMotionEvent_getAction(event);
+		unsigned int flags = action & AMOTION_EVENT_ACTION_MASK;
+		switch (flags) {
+			case AMOTION_EVENT_ACTION_DOWN:
+				PRINT("Action Down\n")				
+				motionPos->down_x = AMotionEvent_getX(event, 0);
+				motionPos->down_y = AMotionEvent_getY(event, 0);
+				break;
+			case AMOTION_EVENT_ACTION_MOVE:
+				PRINT("Action Move\n")
+				down_x_new = AMotionEvent_getX(event, 0);
+				down_y_new = AMotionEvent_getY(event, 0);
+				if (pointerCount == 1) {					
+					motionPos->delta_x = down_x_new - motionPos->down_x;
+					motionPos->delta_y = down_y_new - motionPos->down_y;					
+				}
+				else if (pointerCount == 2) {
+					motionPos->delta_x_2 = down_x_new - motionPos->down_x;
+					motionPos->delta_y_2 = down_y_new - motionPos->down_y;					
+				}
+				motionPos->down_x = down_x_new;
+				motionPos->down_y = down_y_new;
+				PRINT("delta_x = %f\n", motionPos->delta_x)
+				PRINT("delta_y = %f\n", motionPos->delta_y)
+				break;
+			case AMOTION_EVENT_ACTION_UP:
+				PRINT("Action Up\n")				
+				motionPos->delta_x = 0.0f;
+				motionPos->delta_y = 0.0f;
+				motionPos->delta_x_2 = 0.0f;
+				motionPos->delta_y_2 = 0.0f;
+				int64_t eventTime = AMotionEvent_getEventTime(event);
+				PRINT("eventTime = %ld\n", eventTime);
+				int64_t downTime = AMotionEvent_getDownTime(event);
+				PRINT("downTime = %ld\n", downTime);
+				break;
+		}
+
 		motionPos->xScreen = AMotionEvent_getX(event, 0);
 		motionPos->yScreen = AMotionEvent_getY(event, 0);
-
+		
+		/*
 		if (motionPos->xScreen < 200) key[KEY_LEFT] = true; else key[KEY_LEFT] = false;
 		if (motionPos->xScreen > 2000) key[KEY_RIGHT] = true; else key[KEY_RIGHT] = false;
 
 		if (motionPos->yScreen < 200) key[KEY_UP] = true; else key[KEY_UP] = false;
 		if (motionPos->yScreen > 1300) key[KEY_DOWN] = true; else key[KEY_DOWN] = false;
-		
+
 		PRINT("Position: %d,%d\n", motionPos->xScreen, motionPos->yScreen);
+		*/
 		return 1;
 	}
 	return 0;
@@ -241,17 +276,18 @@ void android_main(struct android_app* a_app)
 	c_time_string = ctime(&current_time);
 
 #ifdef LOG
-	file = fopen(LOGFILE, "w");
-	if (file == NULL) exit(1);
+	logfile = fopen(LOGFILE, "w");
+	if (logfile == NULL) exit(1);
 #endif
 
 	PRINT("\n==================\n*** Vulkan App ***\n==================\n\n")
 	PRINT("%s\n", c_time_string)
 
 	app = new App(a_app);
-	key = new bool[256]; /* --> wird hier alles mit 0 initialisiert?
-	--> Alternativ: memset(key, 0, sizeof(bool)*256);*/
+	key = new bool[256]; // --> wird hier alles mit 0 initialisiert?
+	memset(key, 0, sizeof(bool)*256);
 	motionPos = new MotionPos;
+	memset(motionPos, 0, sizeof(MotionPos));
 
 	a_app->userData = app;
 

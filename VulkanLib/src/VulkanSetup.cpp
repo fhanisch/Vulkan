@@ -11,6 +11,7 @@
 #undef min
 #undef max
 #endif
+#include "defs.h"
 
 // --- nicht erforderlich für Kompilierung, aber VS zeigt sonst Fehler an ---
 #ifdef ANDROID
@@ -30,16 +31,6 @@ void exit(int status);
 // Max. number of chars the text overlay buffer can hold
 #define TEXTOVERLAY_MAX_CHAR_COUNT 2048
 stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
-
-#ifdef LOG
-static char buf[128];
-#define PRINT(...) \
-sprintf(buf, __VA_ARGS__); \
-fwrite(buf, strlen(buf), 1, logfile);
-#else
-#define PRINT(...) \
-printf(__VA_ARGS__);
-#endif
 
 #if defined(LINUX) || defined(ANDROID)
 #define GET_FCN_PTR(fun) \
@@ -919,11 +910,11 @@ void VulkanSetup::createSemaphores()
     PRINT("Semaphores created.\n")
 }
 
-VulkanSetup::VulkanSetup(const char* _appNAme, const char* _engineName, const char* _libName, FILE* _file)
+VulkanSetup::VulkanSetup(const char* _appNAme, const char* _engineName, const char* _libName, FILE* _logfile)
 {
     appName = _appNAme;
     engineName = _engineName;
-    logfile = _file;
+    logfile = _logfile;
 	libName = _libName;
 	PRINT("Get Vulkan Functions.\n")
 #if defined(ANDROID) || defined(LINUX)
@@ -1961,14 +1952,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	motionPosIst.yScreen = 1600 / 2; // 1080
 	identity4(mView);
 	identity4(mGlobal);
-#ifdef ANDROID
-	getTrans4(mView2, 7.5f, 0.0f, 0.0f);
-#else
 	identity4(mView2);
-#endif
 	identity4(cam.M);
-	elevation = -105.0f;
-	dxi = 0.0f;
+	elevation = -125.0f;
+	xi = 0.0f;
 	vertexData = new VertexData;
 	indexData = new IndexData;
 	// Vertex Data
@@ -2196,27 +2183,32 @@ void RenderScene::camMotion()
 		mult4(mView2, T, tmp);
 	}
 
+	dup4(tmp, mView2);
+	getTrans4(T, motionPos->delta_x_2 / 500.0f, motionPos->delta_y_2 / 500.0f, 0.0f);
+	mult4(mView2, T, tmp);
+
 	/* 3d cam motion */
 	mat4 Rx, Ry, Rz, Rzx, R, Rxi, mGlobalIst;
 	float dphi = 0.0f, dtheta = 0.0f, dpsi = 0.0f;
-	
+	dphi = motionPos->delta_x / 500.0f;
+	xi += motionPos->delta_y / 500.0f;
+#ifdef WINDOWS
 	dphi = (float)(motionPos->xScreen - motionPosIst.xScreen) / 500.0f;
 	if (motionPos->xScreen <= 0 || motionPos->xScreen >= 3839) {
-#ifdef WINDOWS
 		SetCursorPos(1920 / 2, 1080 / 2);
-#endif
 		motionPosIst.xScreen = 2560 / 2; // 1920
 		motionPosIst.yScreen = 1600 / 2; // 1080
 	}
 	else {
 		motionPosIst = *motionPos;
 	}
+#endif
 
 	if (key[KEY_LEFT] && !key[KEY_SHIFT])	dphi = -0.05f;
 	if (key[KEY_RIGHT] && !key[KEY_SHIFT]) dphi = 0.05f;
-	if (key[KEY_UP] && !key[KEY_SHIFT]) dxi += 0.01f;
-	if (key[KEY_DOWN] && !key[KEY_SHIFT]) dxi += -0.01f;
-	if (key[KEY_W]) dtheta = 0.01f;
+	if (key[KEY_UP] && !key[KEY_SHIFT]) xi += 0.01f;
+	if (key[KEY_DOWN] && !key[KEY_SHIFT]) xi += -0.01f;
+	if (key[KEY_W]) dtheta = 0.001f;
 	if (key[KEY_S]) dtheta = -0.01f;
 	if (key[KEY_A]) dpsi = -0.002f;
 	if (key[KEY_D]) dpsi = 0.002f;
@@ -2236,7 +2228,7 @@ void RenderScene::camMotion()
 		mView[3][0] = 0.0f; mView[3][1] = elevation; mView[3][2] = 0.0f;
 	*/
 	
-	getRotX4(Rxi, dxi);
+	getRotX4(Rxi, xi);
 	dup4(mGlobalIst, mGlobal);
 	mult4(Rzx, Rz, Rx);
 	mult4(R, Rzx, Ry);
@@ -2301,9 +2293,9 @@ void RenderScene::drawFrame()
 }
 
 /* Funktion für dynamisches Laden */
-extern "C" VulkanSetup* create_object(const char* _appName, const char* _engineName, const char* _libName, FILE* _file)
+extern "C" VulkanSetup* create_object(const char* _appName, const char* _engineName, const char* _libName, FILE* _logfile)
 {
-    return new VulkanSetup(_appName, _engineName, _libName, _file);
+    return new VulkanSetup(_appName, _engineName, _libName, _logfile);
 }
 
 /* Vulkan Function Pointer */

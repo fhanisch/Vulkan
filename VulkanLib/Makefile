@@ -1,4 +1,4 @@
-ANDROID_JAR=C:/Users/Felix/AppData/Local/Android/Sdk/platforms/android-28/android.jar
+ANDROID_JAR=C:/Users/Felix/AppData/Local/Android/Sdk/platforms/android-29/android.jar
 VK_INC_WIN = C:/VulkanSDK/1.2.162.0/Include
 
 all: exe shared dynamic
@@ -15,11 +15,11 @@ main: src/main.cpp
 
 main_android: src/AndroidMain.cpp
 #mkdir build\android
-	aarch64-linux-android28-clang++ -o build/android/AndroidMain.o -c src/AndroidMain.cpp -Wall -fpic -DANDROID -DLOG
+	aarch64-linux-android29-clang++ -o build/android/AndroidMain.o -c src/AndroidMain.cpp -Wall -fpic -DANDROID -DLOG
 
 android_native_app_glue: src/android_native_app_glue.c
 #mkdir build/android
-	aarch64-linux-android28-clang -o build/android/android_native_app_glue.o -c src/android_native_app_glue.c -Wall -fpic -DANDROID -DLOG
+	aarch64-linux-android29-clang -o build/android/android_native_app_glue.o -c src/android_native_app_glue.c -Wall -fpic -DANDROID -DLOG
 
 main_dl: src/main.cpp
 	mkdir -p build/linux
@@ -29,7 +29,7 @@ main_dl: src/main.cpp
 
 VulkanSetup_android: src/VulkanSetup.cpp src/VulkanSetup.h
 #mkdir -p build/android
-	aarch64-linux-android28-clang++ -o build/android/VulkanSetup.o -c src/VulkanSetup.cpp -Wall -fpic -DANDROID -DLOG
+	aarch64-linux-android29-clang++ -o build/android/VulkanSetup.o -c src/VulkanSetup.cpp -Wall -fpic -DANDROID -DLOG
 
 Models: src/Models.cpp src/Models.h
 	mkdir -p build/linux
@@ -37,7 +37,7 @@ Models: src/Models.cpp src/Models.h
 
 Models_android: src/Models.cpp src/Models.h
 #mkdir -p build/android
-	aarch64-linux-android28-clang++ -o build/android/Models.o -c src/Models.cpp -Wall -fpic -DANDROID -DLOG
+	aarch64-linux-android29-clang++ -o build/android/Models.o -c src/Models.cpp -Wall -fpic -DANDROID -DLOG
 
 matrix: src/matrix.c src/matrix.h
 	mkdir -p build/linux
@@ -45,7 +45,7 @@ matrix: src/matrix.c src/matrix.h
 
 matrix_android: src/matrix.c src/matrix.h
 #mkdir -p build/android
-	aarch64-linux-android28-clang -o build/android/matrix.o -c src/matrix.c -Wall -fpic
+	aarch64-linux-android29-clang -o build/android/matrix.o -c src/matrix.c -Wall -fpic
 
 libVulkan: VulkanSetup
 	clang++ -shared -o libVulkan.so build/linux/VulkanSetup.o -Wall
@@ -60,9 +60,9 @@ app3: main_dl libVulkan
 
 libVulkanApp: main_android android_native_app_glue VulkanSetup_android Models_android matrix_android
 #mkdir lib\arm64-v8a
-#Beim Linken mit aarch64-linux-android28-clang++ muss die 'libc++_shared.so' in das APK inkludiert werden!
-	aarch64-linux-android28-clang -shared -o lib/arm64-v8a/libmatrix.so build/android/matrix.o -Wall
-	aarch64-linux-android28-clang++ -shared -o lib/arm64-v8a/libVulkanApp.so build/android/AndroidMain.o build/android/android_native_app_glue.o build/android/VulkanSetup.o build/android/Models.o -landroid -llog -ldl -lmatrix -Wall -L./lib/arm64-v8a
+#Beim Linken mit aarch64-linux-android29-clang++ muss die 'libc++_shared.so' in das APK inkludiert werden!
+	aarch64-linux-android29-clang -shared -o lib/arm64-v8a/libmatrix.so build/android/matrix.o -Wall
+	aarch64-linux-android29-clang++ -shared -o lib/arm64-v8a/libVulkanApp.so build/android/AndroidMain.o build/android/android_native_app_glue.o build/android/VulkanSetup.o build/android/Models.o -landroid -llog -ldl -lmatrix -Wall -L./lib/arm64-v8a
 
 output.apk: libVulkanApp AndroidManifest.xml
 	aapt2 link -o output.apk -I $(ANDROID_JAR) --manifest AndroidManifest.xml
@@ -83,7 +83,7 @@ include app_win.mk
 #TODO: Warnings auf W4 umstellen
 app_win:
 	cl /nologo /W3 /c src/matrix.c
-	cl /nologo /EHsc /W3 /c src/main.cpp src/Window.cpp src/VulkanSetup.cpp src/Models.cpp /I$(VK_INC_WIN) /DWINDOWS
+	cl /nologo /EHsc /W3 /c src/WindowsMain.cpp src/Window.cpp src/VulkanSetup.cpp src/Models.cpp /I$(VK_INC_WIN) /DWINDOWS
 	link /nologo /out:app.exe *.obj user32.lib Shcore.lib
 
 # *** Linux ***

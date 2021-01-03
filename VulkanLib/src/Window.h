@@ -8,6 +8,12 @@ struct MotionPos {
 	int yWin;
 	int xScreen;
 	int yScreen;
+	float down_x;
+	float down_y;	
+	float delta_x;
+	float delta_y;
+	float delta_x_2;
+	float delta_y_2;
 };
 
 #ifdef WINDOWS

@@ -2,12 +2,14 @@
 #define DEFS_H
 
 #ifdef LOG
-static char buf[1048];
-#define PRINT(...) \
+	static char buf[1048];
+	#define PRINT(...) \
 	sprintf(buf, __VA_ARGS__); \
 	fwrite(buf, strlen(buf), 1, logfile);
+#elif NOLOG
+	#define PRINT(...)
 #else
-#define PRINT(...) \
+	#define PRINT(...) \
 	printf(__VA_ARGS__);
 #endif
 

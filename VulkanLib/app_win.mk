@@ -1,4 +1,4 @@
-VK_INC_WIN = C:/VulkanSDK/1.1.126.0/Include
+VK_INC_WIN = C:/VulkanSDK/1.2.162.0/Include
 dst=build/win64
 obj=$(dst)/WindowsMain.cpp.o $(dst)/Window.cpp.o $(dst)/VulkanSetup.cpp.o $(dst)/Models.cpp.o $(dst)/matrix.c.o
 

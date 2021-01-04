@@ -261,7 +261,9 @@ void handle_cmd(android_app* a_app, int32_t cmd)
 			((App*)a_app->userData)->cleanUpVulkan();
 			initialized_ = false;
 			break;
+#ifdef LOG
 		default:
+#endif
 			PRINT("Event not handled: %d\n", cmd)
 	}
 }

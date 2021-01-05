@@ -13,7 +13,7 @@ LIB=$(BUILDDIR)/libapp_glue.a
 LIBDIR=lib/arm64-v8a
 SO=$(LIBDIR)/libmatrix.so
 LIBNAME=libVulkanApp.so
-CFLAGS=-Wall -fpic -DANDROID -DNOLOG
+CFLAGS=-Wall -fpic -DANDROID -DLOG
 LDFLAGS=-landroid -llog -ldl
 
 $(BUILDDIR)/%.cpp.o: $(SRCDIR)/%.cpp
@@ -31,6 +31,7 @@ $(LIBDIR)/%.so: $(BUILDDIR)/matrix.c.o
 $(LIBDIR)/$(LIBNAME): $(OBJ) $(SO)
 #Für dynamisches Linken der 'libc++' mit clang++ muss die 'libc++_shared.so' in das APK inkludiert werden!		
 	$(CXX) $(TARGET) -shared -o $@ $(OBJ) $(LDFLAGS) -lmatrix -Wall -L./$(LIBDIR)
+#$(CXX) $(TARGET) -shared -o $@ $(OBJ) $(LDFLAGS) -lmatrix -Wall -L./$(LIBDIR) -static-libstdc++
 #$(LIBDIR)/$(LIBNAME): $(OBJ) $(LIB) $(SO)
 #$(CXX) $(TARGET) -shared -o $@ $(OBJ) $(LDFLAGS) -lapp_glue -lmatrix -Wall -L./$(LIBDIR) -L./$(BUILDDIR) -u ANativeActivity_onCreate -static-libstdc++
 #$(CXX) $(TARGET) -shared -o $@ $(OBJ) $(LDFLAGS) -lapp_glue -lmatrix -Wall -L./$(LIBDIR) -L./$(BUILDDIR) -u ANativeActivity_onCreate

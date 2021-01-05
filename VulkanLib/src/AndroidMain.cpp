@@ -268,6 +268,53 @@ void handle_cmd(android_app* a_app, int32_t cmd)
 	}
 }
 
+jstring getPermissionName(JNIEnv* env, const char* name) {
+	jclass manifestpermission = env->FindClass("android/Manifest$permission");
+	jfieldID fieldID = env->GetStaticFieldID(manifestpermission, name, "Ljava/lang/String;");
+	jstring jPermissionName = (jstring)env->GetStaticObjectField(manifestpermission, fieldID);
+	const char*  permissionName = env->GetStringUTFChars(jPermissionName, NULL);
+	//PRINT("permissionName: %s\n", permissionName)
+	return jPermissionName;
+}
+
+bool checkPermission(JNIEnv* env, jobject activity, const char* name) {
+	jint permissionGranted = -1;
+	jclass packageManager = env->FindClass("android/content/pm/PackageManager");
+	jfieldID fieldID = env->GetStaticFieldID(packageManager, "PERMISSION_GRANTED", "I");	
+	permissionGranted = env->GetStaticIntField(packageManager, fieldID);
+	jclass contentContext = env->FindClass("android/content/Context");
+	jmethodID checkSelfPermission = env->GetMethodID(contentContext, "checkSelfPermission", "(Ljava/lang/String;)I");
+	jint result = env->CallIntMethod(activity, checkSelfPermission, getPermissionName(env, name));
+	//PRINT("permissionGranted = %d\n", result)
+	return (result == permissionGranted);
+}
+
+void requestPermissions(JNIEnv* env, jobject activity) {
+	jobjectArray objArray = env->NewObjectArray(2, env->FindClass("java/lang/String"), env->NewStringUTF(""));
+	env->SetObjectArrayElement(objArray, 0, getPermissionName(env, "WRITE_EXTERNAL_STORAGE"));
+	env->SetObjectArrayElement(objArray, 1, getPermissionName(env, "READ_EXTERNAL_STORAGE"));
+	jclass classActivity = env->FindClass("android/app/Activity");
+	jmethodID requestPermissions = env->GetMethodID(classActivity, "requestPermissions", "([Ljava/lang/String;I)V");
+	env->CallVoidMethod(activity, requestPermissions, objArray, 0);
+}
+
+int  checkAndroidPermissions(android_app* a_app) {
+	//PRINT("Check Permissions\n")
+	JavaVM* vm = a_app->activity->vm;
+	JNIEnv* env = a_app->activity->env;
+	vm->AttachCurrentThread(&env, NULL);
+	jobject activity = a_app->activity->clazz;
+	
+	//checkPermission(env, activity, "CAMERA");
+
+	if ( !(checkPermission(env, activity, "WRITE_EXTERNAL_STORAGE") && checkPermission(env, activity, "READ_EXTERNAL_STORAGE")) ) {
+		requestPermissions(env, activity);
+		while (1);
+	}
+	//vm->DetachCurrentThread();
+	return 0;
+}
+
 void android_main(struct android_app* a_app)
 {
 	App* app;
@@ -277,9 +324,11 @@ void android_main(struct android_app* a_app)
 	current_time = time(NULL);
 	c_time_string = ctime(&current_time);
 
+	if (checkAndroidPermissions(a_app)) return;
+
 #ifdef LOG
 	logfile = fopen(LOGFILE, "w");
-	if (logfile == NULL) exit(1);
+	if (logfile == NULL) return;
 #endif
 
 	PRINT("\n==================\n*** Vulkan App ***\n==================\n\n")

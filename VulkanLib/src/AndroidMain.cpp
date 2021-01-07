@@ -19,7 +19,7 @@ void exit(int status); // --> nicht erforderlich für Kompilierung, aber VS zeig
 
 #define WND_WIDTH 2560
 #define WND_HEIGHT 1600
-#define LOGFILE "/storage/emulated/0/Dokumente/VulkanApp.log.txt"
+//#define LOGFILE "/storage/emulated/0/Dokumente/VulkanApp.log.txt"
 #define LIB_NAME "libvulkan.so"
 static bool initialized_ = false;
 
@@ -273,7 +273,7 @@ jstring getPermissionName(JNIEnv* env, const char* name) {
 	jfieldID fieldID = env->GetStaticFieldID(manifestpermission, name, "Ljava/lang/String;");
 	jstring jPermissionName = (jstring)env->GetStaticObjectField(manifestpermission, fieldID);
 	const char*  permissionName = env->GetStringUTFChars(jPermissionName, NULL);
-	//PRINT("permissionName: %s\n", permissionName)
+	PRINT("permissionName: %s\n", permissionName)
 	return jPermissionName;
 }
 
@@ -285,11 +285,12 @@ bool checkPermission(JNIEnv* env, jobject activity, const char* name) {
 	jclass contentContext = env->FindClass("android/content/Context");
 	jmethodID checkSelfPermission = env->GetMethodID(contentContext, "checkSelfPermission", "(Ljava/lang/String;)I");
 	jint result = env->CallIntMethod(activity, checkSelfPermission, getPermissionName(env, name));
-	//PRINT("permissionGranted = %d\n", result)
+	PRINT("permissionGranted = %d\n", result)
 	return (result == permissionGranted);
 }
 
 void requestPermissions(JNIEnv* env, jobject activity) {
+	PRINT("Request Permissions\n")
 	jobjectArray objArray = env->NewObjectArray(2, env->FindClass("java/lang/String"), env->NewStringUTF(""));
 	env->SetObjectArrayElement(objArray, 0, getPermissionName(env, "WRITE_EXTERNAL_STORAGE"));
 	env->SetObjectArrayElement(objArray, 1, getPermissionName(env, "READ_EXTERNAL_STORAGE"));
@@ -299,7 +300,7 @@ void requestPermissions(JNIEnv* env, jobject activity) {
 }
 
 int  checkAndroidPermissions(android_app* a_app) {
-	//PRINT("Check Permissions\n")
+	PRINT("Check Permissions\n")
 	JavaVM* vm = a_app->activity->vm;
 	JNIEnv* env = a_app->activity->env;
 	vm->AttachCurrentThread(&env, NULL);
@@ -309,14 +310,15 @@ int  checkAndroidPermissions(android_app* a_app) {
 
 	if ( !(checkPermission(env, activity, "WRITE_EXTERNAL_STORAGE") && checkPermission(env, activity, "READ_EXTERNAL_STORAGE")) ) {
 		requestPermissions(env, activity);
-		while (1);
+		//while (1); --> TODO: onRequestPermissionsResult() - Callback implementieren
 	}
-	//vm->DetachCurrentThread();
+	vm->DetachCurrentThread();
 	return 0;
 }
 
 void android_main(struct android_app* a_app)
 {
+	char externalDataPath[128];
 	App* app;
 	time_t current_time;
 	char* c_time_string;
@@ -324,15 +326,16 @@ void android_main(struct android_app* a_app)
 	current_time = time(NULL);
 	c_time_string = ctime(&current_time);
 
-	if (checkAndroidPermissions(a_app)) return;
-
 #ifdef LOG
-	logfile = fopen(LOGFILE, "w");
+	sprintf(externalDataPath, "%s/VulkanApp.log.txt", a_app->activity->externalDataPath);
+	logfile = fopen(externalDataPath, "w");
 	if (logfile == NULL) return;
 #endif
 
 	PRINT("\n==================\n*** Vulkan App ***\n==================\n\n")
 	PRINT("%s\n", c_time_string)
+
+	if (checkAndroidPermissions(a_app)) return;
 
 	app = new App(a_app);
 	key = new bool[256]; // --> wird hier alles mit 0 initialisiert?

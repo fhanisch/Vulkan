@@ -118,7 +118,7 @@ void main() {
 	n+=normalize(n1);
 
 	fragColor = vec3(0.0, 1.0, 0.0);
-	texCoords = vec2(10.0*pu, 5.0*pv);
+	texCoords = vec2(8.0*pu, 4.0*pv);
 	vertexPosition = vec3(ubo.mView * ubo.mModel * vec4(f, 1.0));
 	normalPosition = vec3(transpose(inverse(ubo.mView * ubo.mModel)) * vec4(normalize(n), 1.0));
 	gl_Position = ubo.mProj * vec4(vertexPosition, 1.0);

@@ -35,6 +35,7 @@ app3: main_dl libVulkan
 
 # *** Android ***
 
+# Achtung! Wenn Android.mk inkludiert ist funktioniert die Kompilierung für Windows nicht mehr! --> TODO: checken!
 include Android.mk
 
 # *** Windows ***

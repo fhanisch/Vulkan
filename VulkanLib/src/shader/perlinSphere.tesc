@@ -17,31 +17,41 @@ layout (location = 1) out vec2 texCoords[4];
 
 const float pi = 3.14159;
 
-void main() {
-    float R=1.0;
-	float grid;
+float getTessLevel(vec3 pos) {
+	float R=1.0;
     vec3 f;
 
-	if (gl_InvocationID == 0) { // wird nur beim ersten Durchlauf gesetzt
-        float u = 2.0*pi*gl_in[0].gl_Position.x;
-        float v = pi*gl_in[0].gl_Position.z;
+	float u = 2.0*pi*pos.x;
+        float v = pi*pos.z;
         f.x = R*sin(v)*cos(u);
 	    f.y = R*sin(v)*sin(u);
 	    f.z = R*cos(v);
 		vec4 p = ubo.mView * ubo.mModel * vec4(f,1.0);
 		float distance = length(vec3(p.xyz));
 
-		if (distance < 200.0)
-			grid = 100.0;
+		if (distance <= 200.0)
+			return 100.0;
 		else
-			grid = 1.0;
+			return 1.0;
+}
 
-		gl_TessLevelOuter[0] = grid;
-		gl_TessLevelOuter[1] = grid;
-		gl_TessLevelOuter[2] = grid;
-		gl_TessLevelOuter[3] = grid;
-		gl_TessLevelInner[0] = grid;
-		gl_TessLevelInner[1] = grid;
+void main() {
+
+	float grid[4];
+
+	if (gl_InvocationID == 0) { // wird nur beim ersten Durchlauf gesetzt
+        
+		grid[0] = getTessLevel(vec3(gl_in[0].gl_Position));
+		grid[1] = getTessLevel(vec3(gl_in[1].gl_Position));
+		grid[2] = getTessLevel(vec3(gl_in[2].gl_Position));
+		grid[3] = getTessLevel(vec3(gl_in[3].gl_Position));
+
+		gl_TessLevelOuter[0] = max(max(max(grid[0],grid[1]),grid[2]), grid[3]);
+		gl_TessLevelOuter[1] = max(max(max(grid[0],grid[1]),grid[2]), grid[3]);
+		gl_TessLevelOuter[2] = max(max(max(grid[0],grid[1]),grid[2]), grid[3]);
+		gl_TessLevelOuter[3] = max(max(max(grid[0],grid[1]),grid[2]), grid[3]);
+		gl_TessLevelInner[0] = max(max(max(grid[0],grid[1]),grid[2]), grid[3]);
+		gl_TessLevelInner[1] = max(max(max(grid[0],grid[1]),grid[2]), grid[3]);
 	}
 
 	fragColor[gl_InvocationID] = inColor[gl_InvocationID];

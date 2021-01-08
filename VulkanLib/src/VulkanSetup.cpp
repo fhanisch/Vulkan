@@ -1954,7 +1954,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	identity4(mGlobal);
 	identity4(mView2);
 	identity4(cam.M);
-	elevation = -125.0f;
+	elevation = -425.0f;
 	xi = 0.0f;
 	vertexData = new VertexData;
 	indexData = new IndexData;
@@ -1968,6 +1968,8 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	vecf(&verticesPatches2, &verticesPatches2Size, 0.0f, 1.0f, patchesCount);
 	vertexData->addData(verticesPatches2, verticesPatches2Size);
 	createMeshGrid(&meshGridVertices, &meshGridVerticesSize, 101, 101);
+	vertexData->addData(meshGridVertices, meshGridVerticesSize);
+	createMeshGrid(&meshGridVertices, &meshGridVerticesSize, 11, 11);
 	vertexData->addData(meshGridVertices, meshGridVerticesSize);
 	// Index Data
 	indexData->addData((uint16_t*)indicesPlane, sizeof(indicesPlane));
@@ -1984,6 +1986,8 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	}
 	indexData->addData(indicesPatches2, indicesPatches2Size);
 	createMeshGridIndices(&meshGridIndices, &meshGridIndicesSize, 101, 101, 0);
+	indexData->addData(meshGridIndices, meshGridIndicesSize);
+	createMeshGridPatchIndices(&meshGridIndices, &meshGridIndicesSize, 11, 11, 0);
 	indexData->addData(meshGridIndices, meshGridIndicesSize);
 	// Load Object Models from file
 	ObjectModel cube(strCat(resourcesPath, "/3dmodels/cube.x"), vertexData, indexData);
@@ -2208,10 +2212,10 @@ void RenderScene::camMotion()
 	if (key[KEY_RIGHT] && !key[KEY_SHIFT]) dphi = 0.05f;
 	if (key[KEY_UP] && !key[KEY_SHIFT]) xi += 0.01f;
 	if (key[KEY_DOWN] && !key[KEY_SHIFT]) xi += -0.01f;
-	if (key[KEY_W]) dtheta = 0.001f;
-	if (key[KEY_S]) dtheta = -0.01f;
-	if (key[KEY_A]) dpsi = -0.002f;
-	if (key[KEY_D]) dpsi = 0.002f;
+	if (key[KEY_W]) dtheta = 0.0025f; //0.01f;
+	if (key[KEY_S]) dtheta = -0.0025f; //-0.01f;
+	if (key[KEY_A]) dpsi = -0.0025f;
+	if (key[KEY_D]) dpsi = 0.0025f;
 	if (key[KEY_X]) elevation += 0.1f;
 	if (key[KEY_Y]) elevation -= 0.1f;
 

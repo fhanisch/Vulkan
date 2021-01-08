@@ -537,7 +537,7 @@ Plane::Plane(	VulkanSetup *_vulkanSetup,
 	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	getScale4(S, 10.0f, 1.0f, 10.0f);
 	getRotX4(Rx, PI / 2.0f);
-	getTrans4(T, 0.0f, 100.0f, 0.0f);
+	getTrans4(T, 0.0f, 400.0f, 0.0f);
 	mult4(tmp, S, Rx);
 	mult4(mModel, T, tmp);
 	createUniformBuffer();
@@ -556,21 +556,23 @@ Planet::Planet(	VulkanSetup *_vulkanSetup,
 				VertexData *vertexData,
 				IndexData *indexData,
 				const char* resPath)
-				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
-{
-	vertexShader.load(strCat(resourcesPath, "/shader/perlinSphere.vert.spv"));
+				:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath) {
+
+	vertexShader.load(strCat(resourcesPath, "/shader/uvMesh.vert.spv"));
+	tessellationControlShader.load(strCat(resourcesPath, "/shader/perlinSphere.tesc.spv"));
+	tessellationEvaluationShader.load(strCat(resourcesPath, "/shader/perlinSphere.tese.spv"));
 	fragmentShader.load(strCat(resourcesPath, "/shader/defaultTex.frag.spv"));
-	vertexOffset = vertexData->getOffset(5);
-	indexCount = indexData->getIndexCount(5);
-	firstIndex = indexData->getFirstIndex(5);
-	stageCount = 2;
+	vertexOffset = vertexData->getOffset(6);
+	indexCount = indexData->getIndexCount(6);
+	firstIndex = indexData->getFirstIndex(6);
+	stageCount = 4;
 	attributeDescriptionCount = 1;
 	VkFormat formats[] = { VK_FORMAT_R32G32_SFLOAT };
 	uint32_t offsets[] = { 0 };
 	pAttributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
-	topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
 	bindingDescription = getBindingDescription(2*sizeof(float));
-	pTessellationStateCreateInfo = nullptr;
+	pTessellationStateCreateInfo = getTessellationStateCreateInfo(4);
 	pushConstantRangeCount = 0;
 	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
@@ -578,7 +580,7 @@ Planet::Planet(	VulkanSetup *_vulkanSetup,
 	getFrustum(mProj, 0.25f*(float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 1000.0f);
 	color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/moon.png"));
-	getScale4(mModel, 100.0f, 100.0f, 100.0f);
+	getScale4(mModel, 400.0f, 400.0f, 400.0f);
 	//getTrans4(mModel, 0.0f, 1.5f, 0.0f);
 	createUniformBuffer();
 	createPipelineLayout();
@@ -619,7 +621,7 @@ Sphere::Sphere(	VulkanSetup *_vulkanSetup,
 	color[0] = 1.0f; color[1] = 0.0f; color[2] = 1.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	//getScale4(mModel, 100.0f, 100.0f, 100.0f);
-	getTrans4(mModel, 0.0f, 101.5f, 0.0f);
+	getTrans4(mModel, 0.0f, 401.5f, 0.0f);
 	createUniformBuffer();
 	createPipelineLayout();
 	createGraphicsPipeline();
@@ -640,9 +642,9 @@ Cube::Cube(	VulkanSetup *_vulkanSetup,
 {
 	vertexShader.load(strCat(resourcesPath, "/shader/default.vert.spv"));
 	fragmentShader.load(strCat(resourcesPath, "/shader/test.frag.spv"));
-	vertexOffset = vertexData->getOffset(6);
-	indexCount = indexData->getIndexCount(6);
-	firstIndex = indexData->getFirstIndex(6);
+	vertexOffset = vertexData->getOffset(7);
+	indexCount = indexData->getIndexCount(7);
+	firstIndex = indexData->getFirstIndex(7);
 	stageCount = 2;
 	attributeDescriptionCount = 3;
 	VkFormat formats[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
@@ -659,7 +661,7 @@ Cube::Cube(	VulkanSetup *_vulkanSetup,
 	color[0] = 1.0f; color[1] = 1.0f; color[2] = 0.0f; color[3] = 1.0f;
 	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
 	mat4 T, Rx, Rz, Rxz;
-	getTrans4(T, 0.0f, 110.0f, 0.0f);
+	getTrans4(T, 0.0f, 410.0f, 0.0f);
 	getRotX4(Rx, -PI / 4.0f);
 	getRotZ4(Rz, +PI / 4.0f);
 	mult4(Rxz, Rx, Rz);

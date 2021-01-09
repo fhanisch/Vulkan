@@ -1971,6 +1971,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	vertexData->addData(meshGridVertices, meshGridVerticesSize);
 	createMeshGrid(&meshGridVertices, &meshGridVerticesSize, 11, 11);
 	vertexData->addData(meshGridVertices, meshGridVerticesSize);
+	vertexData->addData((float*)teapotPatchVertices, sizeof(teapotPatchVertices));
 	// Index Data
 	indexData->addData((uint16_t*)indicesPlane, sizeof(indicesPlane));
 	indexData->addData((uint16_t*)indicesStar, sizeof(indicesStar));
@@ -1989,10 +1990,11 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	indexData->addData(meshGridIndices, meshGridIndicesSize);
 	createMeshGridPatchIndices(&meshGridIndices, &meshGridIndicesSize, 11, 11, 0);
 	indexData->addData(meshGridIndices, meshGridIndicesSize);
+	indexData->addData((uint16_t*)teapotPatchIndices, sizeof(teapotPatchIndices));
 	// Load Object Models from file
 	ObjectModel cube(strCat(resourcesPath, "/3dmodels/cube.x"), vertexData, indexData);
 	// Objects
-	objectCount = 14;
+	objectCount = 15;
 	obj = new RenderObject*[objectCount];
 	createDescriptorPool();
 	obj[0] = new Square(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
@@ -2009,6 +2011,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	obj[11] = new Planet(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
 	obj[12] = new Sphere(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
 	obj[13] = new Cube(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
+	obj[14] = new Teapot(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
 	textOverlay = new TextOverlay(vulkanSetup);
 	txtObj = new TxtObj(vulkanSetup, descriptorPool, textOverlay, &mView2, key, vertexData, indexData, resourcesPath);
 	char str[128];

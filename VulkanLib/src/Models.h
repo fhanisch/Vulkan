@@ -212,6 +212,20 @@ public:
 	~Cube();
 };
 
+class Teapot : public RenderObject
+{
+public:
+	Teapot(	VulkanSetup* _vulkanSetup,
+			VkDescriptorPool _descriptorPool,
+			TextOverlay* _textOverlay,
+			mat4* _mView,
+			bool* _key,
+			VertexData* vertexData,
+			IndexData* indexData,
+			const char* resPath);
+	~Teapot();
+};
+
 class TxtObj : public RenderObject
 {
 public:

@@ -2212,10 +2212,10 @@ void RenderScene::camMotion()
 	if (key[KEY_RIGHT] && !key[KEY_SHIFT]) dphi = 0.05f;
 	if (key[KEY_UP] && !key[KEY_SHIFT]) xi += 0.01f;
 	if (key[KEY_DOWN] && !key[KEY_SHIFT]) xi += -0.01f;
-	if (key[KEY_W]) dtheta = 0.0025f; //0.01f;
-	if (key[KEY_S]) dtheta = -0.0025f; //-0.01f;
-	if (key[KEY_A]) dpsi = -0.0025f;
-	if (key[KEY_D]) dpsi = 0.0025f;
+	if (key[KEY_W]) dtheta = 0.001f; //0.01f;
+	if (key[KEY_S]) dtheta = -0.001f; //-0.01f;
+	if (key[KEY_A]) dpsi = -0.001f;
+	if (key[KEY_D]) dpsi = 0.001f;
 	if (key[KEY_X]) elevation += 0.1f;
 	if (key[KEY_Y]) elevation -= 0.1f;
 

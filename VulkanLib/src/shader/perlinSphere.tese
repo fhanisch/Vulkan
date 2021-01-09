@@ -17,12 +17,6 @@ layout(location = 1) out vec2 texCoords;
 layout(location = 2) out vec3 vertexPosition;
 layout(location = 3) out vec3 normalPosition;
 
-/*
-out gl_PerVertex {
-	vec4 gl_Position;
-};
-*/
-
 const float pi = 3.14159;
 const float SEED_U = 4289.0;
 const float SEED_V = 987.0;

@@ -12,10 +12,6 @@ layout(location = 0) in vec2 mesh;
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 texCoords;
 
-out gl_PerVertex {
-	vec4 gl_Position;
-};
-
 void main() {
 	fragColor = vec3(0.0, 1.0, 0.0);
 	texCoords = mesh;

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef WINDOWS
 
 #include "android_native_app_glue.h"
 
@@ -455,3 +456,5 @@ void ANativeActivity_onCreate(ANativeActivity* activity, void* savedState, size_
 
     activity->instance = android_app_create(activity, savedState, savedStateSize);
 }
+
+#endif // !WINDOWS

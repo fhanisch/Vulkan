@@ -1,3 +1,5 @@
+#ifndef WINDOWS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -134,3 +136,5 @@ int main(int argc, char **argv)
 	delete window;
 	return 0;
 }
+
+#endif // !WINDOWS

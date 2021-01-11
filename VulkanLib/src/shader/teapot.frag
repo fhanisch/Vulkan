@@ -17,7 +17,7 @@ layout(location = 1) in vec3 normalPosition;
 
 layout (location = 0) out vec4 outColor;
 
-const vec3 lightPosition = vec3(1000000.0,1000000.0,1000000.0);
+const vec3 lightPosition = vec3(1000000.0,1000000.0,0.0);
 
 vec3 calcADS(vec3 c, vec3 vertex, vec3 normal, vec3 light) {
 	vec3 A = 0.1*c;

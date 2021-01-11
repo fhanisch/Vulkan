@@ -198,6 +198,20 @@ public:
 	~Sphere();
 };
 
+class CubeSphere : public RenderObject
+{
+public:
+	CubeSphere(VulkanSetup* _vulkanSetup,
+		VkDescriptorPool _descriptorPool,
+		TextOverlay* _textOverlay,
+		mat4* _mView,
+		bool* _key,
+		VertexData* vertexData,
+		IndexData* indexData,
+		const char* resPath);
+	~CubeSphere();
+};
+
 class Cube : public RenderObject
 {
 public:

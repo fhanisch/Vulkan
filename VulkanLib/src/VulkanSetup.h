@@ -741,6 +741,14 @@ public:
 	uint32_t getFirstIndex();
 };
 
+class ObjectHandler {
+public:
+	ObjectHandler();
+	~ObjectHandler();
+	void addObject(RenderObject* obj);
+	void removeObject();
+};
+
 class RenderScene
 {
 protected:

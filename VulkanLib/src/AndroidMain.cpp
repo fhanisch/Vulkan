@@ -1,3 +1,5 @@
+#ifndef WINDOWS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -366,3 +368,5 @@ void android_main(struct android_app* a_app)
 
 	delete app;
 }
+
+#endif // !WINDOWS

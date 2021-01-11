@@ -37,6 +37,7 @@ Window0::Window0(const char *_windowName, int _width, int _height, bool _isFullS
 	isFullScreen = _isFullScreen;
 	window = NULL;
 	memset(key, 0, sizeof(key));
+	memset(&motionPos, 0, sizeof(MotionPos));
 	hInstance = GetModuleHandle(nullptr);
 	wc.lpszClassName = "Test";
 	wc.lpszMenuName = NULL;
@@ -170,6 +171,7 @@ Window0::Window0(const char *_windowName, int _width, int _height, bool _isFullS
 	height = _height;
 	isFullScreen = _isFullScreen;
 	memset(key, 0, sizeof(key));
+	memset(&motionPos, 0, sizeof(MotionPos));
 }
 
 Window0::~Window0()

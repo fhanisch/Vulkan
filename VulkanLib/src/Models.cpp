@@ -629,6 +629,48 @@ Sphere::Sphere(	VulkanSetup *_vulkanSetup,
 
 Sphere::~Sphere() {}
 
+CubeSphere::CubeSphere(VulkanSetup* _vulkanSetup,
+	VkDescriptorPool _descriptorPool,
+	TextOverlay* _textOverlay,
+	mat4* _mView,
+	bool* _key,
+	VertexData* vertexData,
+	IndexData* indexData,
+	const char* resPath)
+	:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
+{
+	vertexShader.load(strCat(resourcesPath, "/shader/cubesphere.vert.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/test2.frag.spv"));
+	vertexOffset = vertexData->getOffset(5);
+	indexCount = indexData->getIndexCount(5);
+	firstIndex = indexData->getFirstIndex(5);
+	stageCount = 2;
+	attributeDescriptionCount = 1;
+	VkFormat formats[] = { VK_FORMAT_R32G32_SFLOAT };
+	uint32_t offsets[] = { 0 };
+	pAttributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
+	topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	bindingDescription = getBindingDescription(2 * sizeof(float));
+	pTessellationStateCreateInfo = nullptr;
+	pushConstantRangeCount = 0;
+	pPushConstantRange = nullptr;
+	uboBufferSize = 0x200;
+	identity4(mModel);
+	getFrustum(mProj, 0.25f * (float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 1000.0f);
+	color[0] = 1.0f; color[1] = 0.0f; color[2] = 1.0f; color[3] = 1.0f;
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
+	mat4 S, T;
+	getScale4(S, 2.0f, 2.0f, 2.0f);
+	getTrans4(T, 0.0f, 410.0f, 0.0f);
+	mult4(mModel, T, S);
+	createUniformBuffer();
+	createPipelineLayout();
+	createGraphicsPipeline();
+	createDescriptorSet();
+}
+
+CubeSphere::~CubeSphere() {}
+
 Cube::Cube(	VulkanSetup *_vulkanSetup,
 			VkDescriptorPool _descriptorPool,
 			TextOverlay *_textOverlay,

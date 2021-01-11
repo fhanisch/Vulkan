@@ -1948,8 +1948,10 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	key = _key;
 	motionPos = _motionPos;
 	resourcesPath = resPath;
-	motionPosIst.xScreen = 2560 / 2; // 1920
-	motionPosIst.yScreen = 1600 / 2; // 1080
+	motionPosIst.xScreen = 1920 / 2; // 1920  2560
+	motionPosIst.yScreen = 1080 / 2; // 1080  1600
+	SetCursorPos(motionPosIst.xScreen, motionPosIst.yScreen);
+	memset(&cam, 0, sizeof(Camera));
 	identity4(mView);
 	identity4(mGlobal);
 	identity4(mView2);
@@ -2001,15 +2003,16 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	obj[1] = new Tacho(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
 	obj[2] = new FlatPerlin2d(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
 	obj[3] = new Star(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
-	obj[4] = new FilledCircle(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
-	obj[5] = new PerlinCircle(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
-	obj[6] = new Wave(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
-	obj[7] = new Perlin1d(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
-	obj[8] = new CurveTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
-	obj[9] = new Perlin1dTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
-	obj[10] = new Plane(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
-	obj[11] = new Planet(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
-	obj[12] = new Sphere(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
+	//obj[4] = new FilledCircle(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[4] = new PerlinCircle(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[5] = new Wave(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[6] = new Perlin1d(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[7] = new CurveTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[8] = new Perlin1dTessellator(vulkanSetup, descriptorPool, nullptr, &mView2, key, vertexData, indexData, resourcesPath);
+	obj[9] = new Plane(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
+	obj[10] = new Planet(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
+	obj[11] = new Sphere(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
+	obj[12] = new CubeSphere(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
 	obj[13] = new Cube(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
 	obj[14] = new Teapot(vulkanSetup, descriptorPool, nullptr, &mView, key, vertexData, indexData, resourcesPath);
 	textOverlay = new TextOverlay(vulkanSetup);
@@ -2118,7 +2121,7 @@ void RenderScene::createCommandBuffers()
 
 			vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 			{
-				vkCmdPushConstants(commandBuffers[i], obj[5]->getPipelineLayout(), obj[5]->getPushConstantRange()->stageFlags, obj[5]->getPushConstantRange()->offset, obj[5]->getPushConstantRange()->size, ((PerlinCircle*)obj[5])->getPushConstants());
+				vkCmdPushConstants(commandBuffers[i], obj[4]->getPipelineLayout(), obj[4]->getPushConstantRange()->stageFlags, obj[4]->getPushConstantRange()->offset, obj[4]->getPushConstantRange()->size, ((PerlinCircle*)obj[4])->getPushConstants());
 
 				VkBuffer vB[] = { vertexBuffer->getBuffer() };
 				vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT16);

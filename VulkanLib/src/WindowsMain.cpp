@@ -1,4 +1,4 @@
-#define _CRT_SECURE_NO_WARNINGS /* als Compiler-Argument aufrufen */
+#define _CRT_SECURE_NO_WARNINGS /* TODO: als Compiler-Argument aufrufen */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,8 +12,8 @@
 #define ENGINE_NAME "MyVulkanEngine"
 #define WINDOW_NAME "My Vulkan App"
 
-#define WND_WIDTH 1920 //3840
-#define WND_HEIGHT 1080 //2160
+#define WND_WIDTH 3840 //1920 //3840
+#define WND_HEIGHT 2160 //1080 //2160
 #define LOGFILE "VulkanApp.log.txt"
 #define RESOURCES_PATH "C:/Home/Entwicklung/Vulkan/VulkanLib/assets"
 #define LIB_NAME "vulkan-1.dll"

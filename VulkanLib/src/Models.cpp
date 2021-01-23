@@ -629,36 +629,38 @@ Sphere::Sphere(	VulkanSetup *_vulkanSetup,
 
 Sphere::~Sphere() {}
 
-CubeSphere::CubeSphere(VulkanSetup* _vulkanSetup,
-	VkDescriptorPool _descriptorPool,
-	TextOverlay* _textOverlay,
-	mat4* _mView,
-	bool* _key,
-	VertexData* vertexData,
-	IndexData* indexData,
-	const char* resPath)
-	:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath)
-{
-	vertexShader.load(strCat(resourcesPath, "/shader/cubesphere.vert.spv"));
-	fragmentShader.load(strCat(resourcesPath, "/shader/test2.frag.spv"));
-	vertexOffset = vertexData->getOffset(5);
-	indexCount = indexData->getIndexCount(5);
-	firstIndex = indexData->getFirstIndex(5);
-	stageCount = 2;
-	attributeDescriptionCount = 1;
-	VkFormat formats[] = { VK_FORMAT_R32G32_SFLOAT };
-	uint32_t offsets[] = { 0 };
+CubeSphere::CubeSphere(	VulkanSetup* _vulkanSetup,
+						VkDescriptorPool _descriptorPool,
+						TextOverlay* _textOverlay,
+						mat4* _mView,
+						bool* _key,
+						VertexData* vertexData,
+						IndexData* indexData,
+						const char* resPath)
+						:RenderObject(_vulkanSetup, _descriptorPool, _textOverlay, _mView, _key, resPath ) {
+
+	vertexShader.load(strCat(resourcesPath, "/shader/__cubesphere.vert.spv"));
+	tessellationControlShader.load(strCat(resourcesPath, "/shader/cubesphere.tesc.spv"));
+	tessellationEvaluationShader.load(strCat(resourcesPath, "/shader/cubesphere.tese.spv"));
+	fragmentShader.load(strCat(resourcesPath, "/shader/cubesphere.frag.spv"));
+	vertexOffset = vertexData->getOffset(8);
+	indexCount = indexData->getIndexCount(8);
+	firstIndex = indexData->getFirstIndex(8);
+	stageCount = 4;
+	attributeDescriptionCount = 4;
+	VkFormat formats[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
+	uint32_t offsets[] = { offsetof(Vertex, pos), offsetof(Vertex, normal), offsetof(Vertex, color), offsetof(Vertex, texCoords) };
 	pAttributeDescriptions = getAttributeDescriptions(attributeDescriptionCount, formats, offsets);
-	topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	bindingDescription = getBindingDescription(2 * sizeof(float));
-	pTessellationStateCreateInfo = nullptr;
+	topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+	bindingDescription = getBindingDescription(sizeof(Vertex));
+	pTessellationStateCreateInfo = getTessellationStateCreateInfo(4);
 	pushConstantRangeCount = 0;
 	pPushConstantRange = nullptr;
 	uboBufferSize = 0x200;
 	identity4(mModel);
 	getFrustum(mProj, 0.25f * (float)vulkanSetup->getSwapChainExtent().width / (float)vulkanSetup->getSwapChainExtent().height, 0.25f, 0.5f, 1000.0f);
 	color[0] = 1.0f; color[1] = 0.0f; color[2] = 1.0f; color[3] = 1.0f;
-	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/texture.jpg"));
+	texture = new Texture(vulkanSetup, strCat(resourcesPath, "/textures/moon.png"));
 	mat4 S, T;
 	getScale4(S, 2.0f, 2.0f, 2.0f);
 	getTrans4(T, 0.0f, 410.0f, 0.0f);
@@ -683,9 +685,9 @@ Cube::Cube(	VulkanSetup *_vulkanSetup,
 {
 	vertexShader.load(strCat(resourcesPath, "/shader/default.vert.spv"));
 	fragmentShader.load(strCat(resourcesPath, "/shader/test.frag.spv"));
-	vertexOffset = vertexData->getOffset(8);
-	indexCount = indexData->getIndexCount(8);
-	firstIndex = indexData->getFirstIndex(8);
+	vertexOffset = vertexData->getOffset(9);
+	indexCount = indexData->getIndexCount(9);
+	firstIndex = indexData->getFirstIndex(9);
 	stageCount = 2;
 	attributeDescriptionCount = 3;
 	VkFormat formats[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };
@@ -774,9 +776,9 @@ TxtObj::TxtObj(	VulkanSetup *_vulkanSetup,
 {
 	vertexShader.load(strCat(resourcesPath, "/shader/text.vert.spv"));
 	fragmentShader.load(strCat(resourcesPath, "/shader/text.frag.spv"));
-	vertexOffset = vertexData->getOffset(0);
-	indexCount = indexData->getIndexCount(0);
-	firstIndex = indexData->getFirstIndex(0);
+	vertexOffset = 0;
+	indexCount = 0;
+	firstIndex = 0;
 	stageCount = 2;
 	attributeDescriptionCount = 2;
 	VkFormat formats[] = { VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32_SFLOAT };

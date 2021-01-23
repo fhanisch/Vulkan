@@ -38,25 +38,9 @@ vec3 calcADS(vec3 c, vec3 vertex, vec3 normal, vec3 light) {
 	return A + diffuseIntensity*D + S;
 }
 
-void main() {
-	vec4 farbe;
-    vec3 farbe2;
-	float x = texCoords.x;
-	float y = texCoords.y;
-
-    farbe2=color;
-    if ( (mod(floor(2*y),2.0)==1 && mod(floor(2*x),2.0)==1) || (mod(floor(2*y),2.0)==0 && mod(floor(2*x),2.0)==0) )
-        farbe2 = vec3(col.myColor);
-
-	if ( (mod(floor(scale*y),2.0)==1 && mod(floor(scale*x),2.0)==1) || (mod(floor(scale*y),2.0)==0 && mod(floor(scale*x),2.0)==0) )
-		farbe=vec4(farbe2,1.0);
-	else
-		farbe=vec4(0.5*farbe2,1.0);
-
-	float u = texCoords.x;
-    float v = 1.0 - texCoords.y;
-    vec4 texColor = texture(texSampler, vec2(u,v));
+void main() {	
+    vec3 texColor = vec3(texture(texSampler, vec2(texCoords.x, texCoords.y)));
 	vec3 lightPosition = vec3(ubo.mView * vec4(lightSource, 1.0));
-	vec3 ADS = calcADS(vec3(mix(farbe,texColor,0.5)), vertexPosition, normalPosition, lightPosition);
+	vec3 ADS = calcADS(texColor, vertexPosition, normalPosition, lightPosition);
 	outColor = vec4(ADS, 1.0);
 }

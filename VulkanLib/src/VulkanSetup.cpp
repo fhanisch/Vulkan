@@ -1662,7 +1662,7 @@ VkVertexInputBindingDescription RenderObject::getBindingDescription(uint32_t str
 
 VkVertexInputAttributeDescription *RenderObject::getAttributeDescriptions(uint32_t count, VkFormat *formats, uint32_t *offsets)
 {
-	VkVertexInputAttributeDescription *attributeDescriptions = new VkVertexInputAttributeDescription[3];
+	VkVertexInputAttributeDescription *attributeDescriptions = new VkVertexInputAttributeDescription[count];
 
 	for (uint32_t i = 0; i < count; i++)
 	{
@@ -1974,6 +1974,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	createMeshGrid(&meshGridVertices, &meshGridVerticesSize, 11, 11);
 	vertexData->addData(meshGridVertices, meshGridVerticesSize);
 	vertexData->addData((float*)teapotPatchVertices, sizeof(teapotPatchVertices));
+	vertexData->addData((float*)verticesCube, sizeof(verticesCube));
 	// Index Data
 	indexData->addData((uint16_t*)indicesPlane, sizeof(indicesPlane));
 	indexData->addData((uint16_t*)indicesStar, sizeof(indicesStar));
@@ -1993,6 +1994,7 @@ RenderScene::RenderScene(VulkanSetup *_vulkanSetup, bool *_key, MotionPos* _moti
 	createMeshGridPatchIndices(&meshGridIndices, &meshGridIndicesSize, 11, 11, 0);
 	indexData->addData(meshGridIndices, meshGridIndicesSize);
 	indexData->addData((uint16_t*)teapotPatchIndices, sizeof(teapotPatchIndices));
+	indexData->addData((uint16_t*)indicesCubeSpherePatches, sizeof(indicesCubeSpherePatches));
 	// Load Object Models from file
 	ObjectModel cube(strCat(resourcesPath, "/3dmodels/cube.x"), vertexData, indexData);
 	// Objects
